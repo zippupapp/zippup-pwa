@@ -9,6 +9,7 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
     <style>
         * {
             margin: 0;
@@ -16,13 +17,42 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #2563EB;
+            --primary-light: #3B82F6;
+            --primary-dark: #1E40AF;
+            --secondary: #10B981;
+            --accent: #F59E0B;
+            --error: #EF4444;
+            --warning: #F59E0B;
+            --success: #10B981;
+            --info: #06B6D4;
+            --background: #F9FAFB;
+            --surface: #FFFFFF;
+            --surface-hover: #F3F4F6;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --text-muted: #94A3B8;
+            --border: #E2E8F0;
+            --border-light: #F1F5F9;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+            --radius-lg: 16px;
+            --spacing: 16px;
+            --font-size: 16px;
+            --line-height: 1.5;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f8fafc;
-            color: #1e293b;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            color: var(--text-primary);
+            background-color: var(--background);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .hidden { display: none !important; }
@@ -33,8 +63,8 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -43,18 +73,22 @@
             transition: opacity 0.5s ease;
         }
 
-        .app-logo {
-            width: 120px;
-            height: 120px;
-            background: white;
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .splash-logo {
             font-size: 4rem;
-            animation: bounce 1.5s infinite;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        .splash-title {
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .splash-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
         }
 
         @keyframes bounce {
@@ -64,382 +98,309 @@
             90% { transform: translate3d(0,-4px,0); }
         }
 
-        .splash-text {
-            color: white;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .splash-subtitle {
-            color: rgba(255,255,255,0.8);
-            font-size: 1rem;
-        }
-
         /* Auth Screen */
         .auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--background);
             display: none;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
             align-items: center;
             justify-content: center;
+            z-index: 1000;
+            padding: 20px;
         }
 
         .auth-container {
-            background: white;
+            background: var(--surface);
             padding: 40px 30px;
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
             width: 100%;
             max-width: 400px;
-            margin: 0 auto;
         }
 
         .auth-logo {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 30px;
         }
 
-        .auth-logo .logo {
-            width: 80px;
-            height: 80px;
-            background: #2563eb;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            margin-bottom: 16px;
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 10px;
         }
 
         .auth-title {
-            font-size: 1.75rem;
-            font-weight: 700;
+            font-size: 1.5rem;
+            font-weight: 600;
             text-align: center;
             margin-bottom: 8px;
         }
 
         .auth-subtitle {
-            color: #64748b;
+            color: var(--text-secondary);
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 30px;
+        }
+
+        .demo-info {
+            background: var(--surface-hover);
+            padding: 15px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            font-size: 0.875rem;
+            border-left: 4px solid var(--info);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
         }
 
         .input {
             width: 100%;
             padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 1rem;
-            outline: none;
-            margin-bottom: 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-size: var(--font-size);
+            transition: all 0.2s ease;
+            background: var(--surface);
         }
 
         .input:focus {
-            border-color: #2563eb;
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .input.error {
-            border-color: #ef4444;
-            background-color: #fef2f2;
+            border-color: var(--error);
         }
 
         .error-message {
-            color: #ef4444;
+            color: var(--error);
             font-size: 0.875rem;
-            margin-top: -12px;
-            margin-bottom: 16px;
+            margin-top: 5px;
         }
 
         .btn {
             width: 100%;
             padding: 12px 24px;
-            border-radius: 12px;
             border: none;
+            border-radius: var(--radius);
+            font-size: var(--font-size);
             font-weight: 600;
             cursor: pointer;
-            font-size: 1rem;
-            margin-bottom: 12px;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: #2563eb;
-            color: white;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: #1d4ed8;
-        }
-
-        .btn-secondary {
-            background: white;
-            color: #2563eb;
-            border: 2px solid #2563eb;
-        }
-
-        .auth-switch {
-            text-align: center;
-            margin-top: 24px;
-            color: #64748b;
-        }
-
-        .auth-switch a {
-            color: #2563eb;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        /* Demo credentials info */
-        .demo-info {
-            background: #f0f9ff;
-            border: 1px solid #0ea5e9;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 16px;
-            font-size: 0.875rem;
-        }
-
-        .demo-info strong {
-            color: #0ea5e9;
-        }
-
-        /* PWA Install Prompt */
-        .install-prompt {
-            position: fixed;
-            bottom: 100px;
-            left: 20px;
-            right: 20px;
-            background: white;
-            padding: 16px 20px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            transform: translateY(100px);
-            transition: transform 0.3s ease;
-        }
-
-        .install-prompt.show {
-            transform: translateY(0);
-        }
-
-        .install-prompt .install-icon {
-            font-size: 2rem;
-            margin-right: 16px;
-        }
-
-        .install-prompt .install-text {
-            flex: 1;
-        }
-
-        .install-prompt .install-text h4 {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .install-prompt .install-text p {
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-
-        .install-buttons {
+            transition: all 0.2s ease;
             display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 8px;
         }
 
-        .install-btn {
-            background: #2563eb;
+        .btn-primary {
+            background: var(--primary);
             color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 0.875rem;
         }
 
-        .dismiss-btn {
-            background: #f1f5f9;
-            color: #64748b;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 0.875rem;
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn.loading::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .auth-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .auth-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
         }
 
         /* Main App */
-        .app {
+        #app {
             display: none;
             min-height: 100vh;
             padding-bottom: 80px;
         }
 
-        /* Page System */
-        .page {
-            display: none;
-            min-height: calc(100vh - 160px);
-            padding: 20px;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        .page-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .back-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: #2563eb;
-            cursor: pointer;
-            margin-right: 16px;
-            padding: 8px;
-        }
-
-        .page-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
+        /* Header */
         .header {
-            background: white;
-            padding: 20px;
-            margin: 0 0 20px 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: var(--surface);
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .header-top {
+        .header-content {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        .user-info h2 {
-            font-size: 1.25rem;
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
             font-weight: 600;
         }
 
-        .user-location {
-            color: #64748b;
+        .user-details h3 {
             font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .user-location {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .user-location:hover {
-            color: #2563eb;
-        }
-
-        /* Profile Dropdown */
-        .profile-dropdown {
+        .profile-section {
             position: relative;
         }
 
         .profile-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #2563eb;
-            color: white;
+            background: none;
             border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
             cursor: pointer;
+            padding: 8px;
+            border-radius: var(--radius);
+            transition: background 0.2s ease;
+        }
+
+        .profile-btn:hover {
+            background: var(--surface-hover);
         }
 
         .dropdown-menu {
             position: absolute;
-            top: 50px;
+            top: 100%;
             right: 0;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            padding: 12px 0;
-            min-width: 180px;
-            z-index: 1000;
-            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            min-width: 200px;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
         }
 
         .dropdown-menu.active {
-            display: block;
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
         }
 
         .dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s ease;
             display: flex;
             align-items: center;
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: background-color 0.2s;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
         }
 
         .dropdown-item:hover {
-            background-color: #f8fafc;
+            background: var(--surface-hover);
         }
 
-        .dropdown-item.logout:hover {
-            background-color: #fef2f2;
-            color: #ef4444;
+        /* Search */
+        .search-section {
+            padding: 20px;
+            background: var(--surface);
+            position: relative;
         }
 
-        .dropdown-icon {
-            margin-right: 12px;
-            font-size: 1.2rem;
-        }
-
-        /* Search with Suggestions */
         .search-container {
             position: relative;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
         .search-box {
             display: flex;
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 4px;
-            border: 2px solid #e2e8f0;
+            align-items: center;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 4px 4px 4px 16px;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--primary);
         }
 
         .search-input {
             flex: 1;
             border: none;
             outline: none;
-            padding: 12px 16px;
             background: transparent;
-            font-size: 1rem;
+            padding: 12px 8px;
+            font-size: var(--font-size);
         }
 
-        .voice-btn {
+        .search-btn, .voice-btn {
             width: 44px;
             height: 44px;
-            border-radius: 10px;
-            background: #2563eb;
-            color: white;
             border: none;
+            border-radius: var(--radius);
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
-            cursor: pointer;
+            margin-left: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .search-btn:hover, .voice-btn:hover {
+            background: var(--primary-dark);
         }
 
         .search-suggestions {
@@ -447,598 +408,303 @@
             top: 100%;
             left: 0;
             right: 0;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 1000;
-            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
             max-height: 300px;
             overflow-y: auto;
+            z-index: 150;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
         }
 
         .search-suggestions.active {
-            display: block;
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
         }
 
         .suggestion-item {
-            display: flex;
-            align-items: center;
             padding: 12px 16px;
             cursor: pointer;
-            border-bottom: 1px solid #f1f5f9;
-            transition: background-color 0.2s;
-        }
-
-        .suggestion-item:hover {
-            background-color: #f8fafc;
+            transition: background 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-light);
         }
 
         .suggestion-item:last-child {
             border-bottom: none;
         }
 
-        .suggestion-icon {
-            margin-right: 12px;
-            font-size: 1.2rem;
+        .suggestion-item:hover {
+            background: var(--surface-hover);
         }
 
-        .suggestion-text {
-            flex: 1;
+        .suggestion-icon {
+            font-size: 1.25rem;
         }
 
         .suggestion-title {
-            font-weight: 600;
+            font-weight: 500;
             margin-bottom: 2px;
         }
 
         .suggestion-category {
-            font-size: 0.875rem;
-            color: #64748b;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
         }
 
+        /* Currency Display */
+        .currency {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* Provider Status */
+        .provider-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .provider-status.available {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .provider-status.unavailable {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* Emergency Button */
         .emergency-btn {
-            background: #ef4444;
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--error);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-weight: 600;
-            margin: 0 20px 20px 20px;
+            border-radius: 50%;
+            font-size: 1.5rem;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+            box-shadow: var(--shadow-lg);
+            z-index: 150;
+            transform: translateY(-50%);
+            transition: all 0.2s ease;
         }
 
-        .content {
-            padding: 0 20px;
+        .emergency-btn:hover {
+            transform: translateY(-50%) scale(1.1);
         }
 
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 16px;
+        /* Pages */
+        .page {
+            display: none;
+            min-height: calc(100vh - 160px);
         }
 
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 32px;
+        .page.active {
+            display: block;
         }
 
-        .quick-action {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
-
-        .quick-action:hover {
-            transform: translateY(-2px);
-        }
-
-        .quick-action-icon {
-            font-size: 2rem;
-            margin-bottom: 8px;
-        }
-
-        .services {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
+        .page-header {
+            background: var(--surface);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
             gap: 16px;
         }
 
-        .service-card {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            text-align: center;
+        .back-btn {
+            background: none;
+            border: none;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
+            padding: 8px;
+            border-radius: var(--radius);
+            transition: background 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: var(--surface-hover);
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .page-content {
+            padding: 20px;
+        }
+
+        /* Service Cards */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .service-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-light);
             position: relative;
         }
 
         .service-card:hover {
             transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
 
         .service-icon {
-            font-size: 3rem;
+            font-size: 2.5rem;
             margin-bottom: 12px;
         }
 
         .service-name {
+            font-size: 1.125rem;
             font-weight: 600;
             margin-bottom: 8px;
         }
 
         .service-description {
-            color: #64748b;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
             font-size: 0.875rem;
-            margin-bottom: 8px;
         }
 
         .service-examples {
-            color: #64748b;
+            color: var(--text-muted);
             font-size: 0.75rem;
-            margin-bottom: 8px;
+            margin-bottom: 16px;
             line-height: 1.4;
         }
 
         .service-price {
-            color: #2563eb;
             font-weight: 600;
-        }
-
-        .service-distance {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: #10b981;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        /* Category Grid */
-        .category-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .category-card {
-            background: white;
-            padding: 24px;
-            border-radius: 16px;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
-
-        .category-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .category-icon {
-            font-size: 3rem;
-            margin-bottom: 12px;
-        }
-
-        .category-name {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .category-count {
-            color: #64748b;
-            font-size: 0.875rem;
-        }
-
-        /* Food Items Grid */
-        .food-items {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-
-        .food-item {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .food-item:hover {
-            transform: translateY(-2px);
-        }
-
-        .food-image {
-            width: 100%;
-            height: 120px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-        }
-
-        .food-info {
-            padding: 16px;
-        }
-
-        .food-name {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .food-restaurant {
-            color: #64748b;
-            font-size: 0.875rem;
-            margin-bottom: 8px;
-        }
-
-        .food-price {
-            color: #10b981;
-            font-weight: 600;
-        }
-
-        .food-rating {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        /* Digital Services */
-        .digital-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-
-        .digital-card {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
-
-        .digital-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .digital-icon {
-            font-size: 2.5rem;
-            margin-bottom: 12px;
-        }
-
-        .digital-name {
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .digital-description {
-            color: #64748b;
+            color: var(--primary);
             font-size: 0.875rem;
         }
 
         /* Provider Cards */
-        .providers-grid {
-            display: grid;
-            gap: 16px;
-        }
-
         .provider-card {
-            background: white;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
             padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 16px;
+            border: 1px solid var(--border-light);
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s ease;
         }
 
         .provider-card:hover {
             transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
 
         .provider-header {
             display: flex;
             align-items: center;
+            gap: 12px;
             margin-bottom: 16px;
         }
 
         .provider-avatar {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            margin-right: 16px;
         }
 
         .provider-info h3 {
+            font-size: 1rem;
             font-weight: 600;
             margin-bottom: 4px;
         }
 
         .provider-rating {
-            display: flex;
-            align-items: center;
-            color: #f59e0b;
             font-size: 0.875rem;
+            color: var(--accent);
+            font-weight: 500;
         }
 
         .provider-details {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 16px;
+            margin-bottom: 12px;
         }
 
         .provider-stat {
             text-align: center;
-            padding: 12px;
-            background: #f8fafc;
-            border-radius: 8px;
         }
 
         .provider-stat-value {
             font-weight: 600;
-            color: #2563eb;
+            font-size: 0.875rem;
+            margin-bottom: 2px;
         }
 
         .provider-stat-label {
             font-size: 0.75rem;
-            color: #64748b;
-            margin-top: 4px;
+            color: var(--text-secondary);
         }
 
         .provider-description {
-            color: #64748b;
+            color: var(--text-secondary);
             font-size: 0.875rem;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .provider-price {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #10b981;
-            text-align: center;
-        }
-
-        /* Wallet Styles */
-        .wallet-balance {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             color: white;
-            padding: 32px 24px;
-            border-radius: 20px;
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .balance-amount {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .balance-label {
-            opacity: 0.8;
-            font-size: 1rem;
-        }
-
-        .wallet-actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .wallet-action {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .transactions-list {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .transaction-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .transaction-item:last-child {
-            border-bottom: none;
-        }
-
-        .transaction-info {
-            display: flex;
-            align-items: center;
-        }
-
-        .transaction-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            font-size: 1.2rem;
-        }
-
-        .transaction-icon.credit {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-
-        .transaction-icon.debit {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .transaction-details h4 {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .transaction-date {
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-
-        .transaction-amount {
-            font-weight: 600;
-        }
-
-        .transaction-amount.credit {
-            color: #16a34a;
-        }
-
-        .transaction-amount.debit {
-            color: #dc2626;
-        }
-
-        /* Profile Styles */
-        .profile-header {
-            background: white;
-            padding: 32px 24px;
-            border-radius: 20px;
-            text-align: center;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .profile-avatar-large {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            margin-bottom: 16px;
-        }
-
-        .profile-menu {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .profile-menu-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px;
-            border-bottom: 1px solid #f1f5f9;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .profile-menu-item:hover {
-            background-color: #f8fafc;
-        }
-
-        .profile-menu-item:last-child {
-            border-bottom: none;
-        }
-
-        .profile-menu-left {
-            display: flex;
-            align-items: center;
-        }
-
-        .profile-menu-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #f1f5f9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 16px;
-            font-size: 1.2rem;
-        }
-
-        /* Location Picker */
-        .location-picker {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .current-location {
-            display: flex;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .location-icon {
-            font-size: 1.5rem;
-            margin-right: 12px;
-            color: #10b981;
-        }
-
-        .location-text {
-            flex: 1;
-        }
-
-        .location-address {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .location-accuracy {
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-
-        .change-location-btn {
-            background: #f1f5f9;
-            color: #2563eb;
-            border: none;
             padding: 8px 16px;
-            border-radius: 8px;
+            border-radius: var(--radius);
             font-weight: 600;
-            cursor: pointer;
             font-size: 0.875rem;
+            text-align: center;
+        }
+
+        .provider-distance {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            padding: 4px 8px;
+            border-radius: var(--radius);
+            font-size: 0.75rem;
+            font-weight: 600;
         }
 
         /* Bottom Navigation */
@@ -1047,31 +713,32 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
-            border-top: 1px solid #e2e8f0;
+            background: var(--surface);
+            border-top: 1px solid var(--border-light);
             display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
             z-index: 100;
         }
 
         .nav-item {
-            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 8px 4px;
-            background: none;
-            border: none;
+            padding: 8px 16px;
             cursor: pointer;
-            color: #64748b;
-            transition: color 0.2s;
+            transition: all 0.2s ease;
+            border-radius: var(--radius);
+            min-width: 60px;
         }
 
         .nav-item.active {
-            color: #2563eb;
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.1);
         }
 
         .nav-icon {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             margin-bottom: 4px;
         }
 
@@ -1080,88 +747,344 @@
             font-weight: 500;
         }
 
+        /* Quick Actions */
+        .quick-actions {
+            padding: 20px;
+            background: var(--surface);
+        }
+
+        .quick-actions h3 {
+            margin-bottom: 16px;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .quick-action {
+            background: var(--background);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quick-action:hover {
+            background: var(--surface-hover);
+            transform: translateY(-2px);
+        }
+
+        .quick-action-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .quick-action-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Modals */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        /* PWA Install Prompt */
+        .install-prompt {
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            right: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-lg);
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .install-prompt.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .install-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .install-icon {
+            font-size: 2rem;
+        }
+
+        .install-text h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .install-text p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .install-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .install-actions button {
+            flex: 1;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .install-actions .btn-primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
         /* Notifications */
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 16px 20px;
-            border-radius: 12px;
-            color: white;
-            font-weight: 500;
+            background: var(--surface);
+            color: var(--text-primary);
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 1001;
             max-width: 300px;
-            z-index: 10000;
+            opacity: 0;
             transform: translateX(100%);
-            transition: transform 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
         }
 
         .notification.show {
+            opacity: 1;
             transform: translateX(0);
         }
 
-        .notification.success { background: #10b981; }
-        .notification.error { background: #ef4444; }
-        .notification.info { background: #06b6d4; }
-
-        /* Loading spinner */
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
+        .notification.success {
+            border-left: 4px solid var(--success);
         }
 
-        .loading::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            margin: -10px 0 0 -10px;
-            border: 2px solid transparent;
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .notification.error {
+            border-left: 4px solid var(--error);
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .notification.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        .notification.info {
+            border-left: 4px solid var(--info);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .services-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .provider-details {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .quick-actions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .search-section {
+                padding: 16px;
+            }
+
+            .page-content {
+                padding: 16px;
+            }
         }
 
         @media (max-width: 480px) {
-            .content { padding: 0 16px; }
-            .emergency-btn { margin: 0 16px 20px 16px; }
-            .quick-actions { grid-template-columns: repeat(2, 1fr); }
-            .provider-details { grid-template-columns: repeat(2, 1fr); }
-            .wallet-actions { grid-template-columns: 1fr; }
-            .category-grid { grid-template-columns: 1fr; }
-            .digital-grid { grid-template-columns: 1fr; }
+            .auth-container {
+                padding: 30px 20px;
+            }
+
+            .header-content {
+                padding: 0 10px;
+            }
+
+            .emergency-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.25rem;
+                right: 16px;
+            }
+
+            .provider-details {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
+
+        /* Additional styles for new features */
+        .availability-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--surface-hover);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--success);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(20px);
+        }
+
+        .provider-registration {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px dashed var(--border);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .provider-registration:hover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .registration-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+
+        .registration-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .registration-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
         }
     </style>
 </head>
 <body>
     <!-- Splash Screen -->
     <div id="splash-screen" class="splash-screen">
-        <div class="app-logo">🚀</div>
-        <div class="splash-text">ZippUp</div>
-        <div class="splash-subtitle">Complete Service Platform</div>
+        <div class="splash-logo">🚀</div>
+        <h1 class="splash-title">ZippUp</h1>
+        <p class="splash-subtitle">Your Complete Service Platform</p>
     </div>
 
     <!-- PWA Install Prompt -->
     <div id="install-prompt" class="install-prompt">
-        <div class="install-icon">🚀</div>
-        <div class="install-text">
-            <h4>Install ZippUp</h4>
-            <p>Add to home screen for better experience</p>
+        <div class="install-content">
+            <div class="install-icon">📱</div>
+            <div class="install-text">
+                <h4>Install ZippUp App</h4>
+                <p>Add to home screen for better experience</p>
+            </div>
         </div>
-        <div class="install-buttons">
-            <button id="install-btn" class="install-btn">Install</button>
-            <button id="dismiss-install" class="dismiss-btn">Dismiss</button>
+        <div class="install-actions">
+            <button id="dismiss-install">Not now</button>
+            <button id="install-btn" class="btn-primary">Install</button>
         </div>
     </div>
 
-     <!-- Auth Screen -->
+       <!-- Auth Screen -->
     <div id="auth-screen" class="auth-screen">
         <div class="auth-container">
             <div class="auth-logo">
@@ -1178,595 +1101,647 @@
                     Password: password123
                 </div>
                 
-                <input type="text" id="login-email" class="input" placeholder="Email or Phone" required>
-                <div id="login-email-error" class="error-message hidden"></div>
+                <div class="input-group">
+                    <input type="email" id="login-email" class="input" placeholder="Email or Phone" required>
+                    <div id="login-email-error" class="error-message hidden"></div>
+                </div>
                 
-                <input type="password" id="login-password" class="input" placeholder="Password" required>
-                <div id="login-password-error" class="error-message hidden"></div>
+                <div class="input-group">
+                    <input type="password" id="login-password" class="input" placeholder="Password" required>
+                    <div id="login-password-error" class="error-message hidden"></div>
+                </div>
                 
                 <button id="login-btn" class="btn btn-primary">Sign In</button>
-                <button id="demo-login-btn" class="btn btn-secondary">Quick Demo Access</button>
+                <button id="demo-login-btn" class="btn btn-primary" style="margin-top: 10px; background: var(--success);">Quick Demo Login</button>
                 
-                <div class="auth-switch">
-                    Don't have an account? <a href="#" id="show-register">Create Account</a>
+                <div class="auth-link">
+                    <p>Don't have an account? <a href="#" id="show-register">Sign up</a></p>
                 </div>
             </div>
-
+            
             <div id="register-form" class="hidden">
                 <h2 class="auth-title">Create Account</h2>
                 <p class="auth-subtitle">Join ZippUp today</p>
                 
-                <input type="text" id="register-name" class="input" placeholder="Full Name" required>
-                <div id="register-name-error" class="error-message hidden"></div>
+                <div class="input-group">
+                    <input type="text" id="register-name" class="input" placeholder="Full Name" required>
+                    <div id="register-name-error" class="error-message hidden"></div>
+                </div>
                 
-                <input type="email" id="register-email" class="input" placeholder="Email" required>
-                <div id="register-email-error" class="error-message hidden"></div>
+                <div class="input-group">
+                    <input type="email" id="register-email" class="input" placeholder="Email Address" required>
+                    <div id="register-email-error" class="error-message hidden"></div>
+                </div>
                 
-                <input type="tel" id="register-phone" class="input" placeholder="Phone Number" required>
-                <div id="register-phone-error" class="error-message hidden"></div>
+                <div class="input-group">
+                    <input type="tel" id="register-phone" class="input" placeholder="Phone Number" required>
+                    <div id="register-phone-error" class="error-message hidden"></div>
+                </div>
                 
-                <input type="password" id="register-password" class="input" placeholder="Password (min 6 characters)" required>
-                <div id="register-password-error" class="error-message hidden"></div>
+                <div class="input-group">
+                    <input type="password" id="register-password" class="input" placeholder="Password (min 6 chars)" required>
+                    <div id="register-password-error" class="error-message hidden"></div>
+                </div>
                 
                 <button id="register-btn" class="btn btn-primary">Create Account</button>
                 
-                <div class="auth-switch">
-                    Already have an account? <a href="#" id="show-login">Sign In</a>
+                <div class="auth-link">
+                    <p>Already have an account? <a href="#" id="show-login">Sign in</a></p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Main App -->
-    <div id="app" class="app">
+    <div id="app">
         <!-- Header -->
         <header class="header">
-            <div class="header-top">
+            <div class="header-content">
                 <div class="user-info">
-                    <h2>Hello, <span id="user-name">Guest</span>!</h2>
-                    <div id="user-location" class="user-location">📍 Getting location...</div>
+                    <div class="user-avatar" id="user-avatar">U</div>
+                    <div class="user-details">
+                        <h3 id="user-name">Demo User</h3>
+                        <div id="user-location" class="user-location">📍 Loading location...</div>
+                    </div>
                 </div>
                 
-                <div class="profile-dropdown">
-                    <button id="profile-btn" class="profile-btn">👤</button>
+                <div class="profile-section">
+                    <button id="profile-btn" class="profile-btn">⚙️</button>
                     <div id="dropdown-menu" class="dropdown-menu">
-                        <div class="dropdown-item" id="wallet-nav">
-                            <span class="dropdown-icon">💳</span>
+                        <div id="wallet-nav" class="dropdown-item">
+                            <span>💰</span>
                             <span>Wallet</span>
                         </div>
-                        <div class="dropdown-item" id="profile-nav">
-                            <span class="dropdown-icon">⚙️</span>
+                        <div id="profile-nav" class="dropdown-item">
+                            <span>👤</span>
                             <span>Profile</span>
                         </div>
-                        <div class="dropdown-item" id="marketplace-nav">
-                            <span class="dropdown-icon">🛍️</span>
+                        <div id="marketplace-nav" class="dropdown-item">
+                            <span>🛍️</span>
                             <span>Marketplace</span>
                         </div>
-                        <div class="dropdown-item logout" id="logout-btn">
-                            <span class="dropdown-icon">🚪</span>
+                        <div id="provider-registration-nav" class="dropdown-item">
+                            <span>🔐</span>
+                            <span>Become Provider</span>
+                        </div>
+                        <div id="logout-btn" class="dropdown-item">
+                            <span>🚪</span>
                             <span>Logout</span>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="search-container">
-                <div class="search-box">
-                    <input type="text" id="search-input" class="search-input" placeholder="Search for services..." autocomplete="off">
-                    <button id="voice-btn" class="voice-btn">🎤</button>
-                </div>
-                <div id="search-suggestions" class="search-suggestions">
-                    <!-- Search suggestions will appear here -->
-                </div>
-            </div>
         </header>
 
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search for services, food, transport...">
+                    <button id="voice-btn" class="voice-btn">🎤</button>
+                    <button id="search-btn" class="search-btn">🔍</button>
+                </div>
+                <div id="search-suggestions" class="search-suggestions"></div>
+            </div>
+        </div>
+
         <!-- Emergency Button -->
-        <button id="emergency-btn" class="emergency-btn">🚨 Emergency Help</button>
+        <button id="emergency-btn" class="emergency-btn">🚨</button>
 
-        <!-- HOME PAGE -->
+        <!-- Home Page -->
         <div id="home-page" class="page active">
-            <!-- Location Picker -->
-            <div class="location-picker">
-                <div class="current-location">
-                    <div class="location-icon">📍</div>
-                    <div class="location-text">
-                        <div class="location-address" id="current-address">Getting your location...</div>
-                        <div class="location-accuracy" id="location-accuracy">Locating...</div>
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h3>Quick Actions</h3>
+                <div class="quick-actions-grid">
+                    <div class="quick-action" data-action="ride">
+                        <div class="quick-action-icon">🚗</div>
+                        <div class="quick-action-label">Book Ride</div>
                     </div>
-                    <button class="change-location-btn" id="change-location">Change</button>
+                    <div class="quick-action" data-action="food">
+                        <div class="quick-action-icon">🍔</div>
+                        <div class="quick-action-label">Order Food</div>
+                    </div>
+                    <div class="quick-action" data-action="digital">
+                        <div class="quick-action-icon">📱</div>
+                        <div class="quick-action-label">Buy Airtime</div>
+                    </div>
+                    <div class="quick-action" data-action="marketplace">
+                        <div class="quick-action-icon">🛍️</div>
+                        <div class="quick-action-label">Shop</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="content">
-                <!-- Quick Actions -->
-                <section>
-                    <h3 class="section-title">Quick Actions</h3>
-                    <div class="quick-actions">
-                        <div class="quick-action" data-action="ride">
-                            <div class="quick-action-icon">🚗</div>
-                            <div>Book Ride</div>
-                        </div>
-                        <div class="quick-action" data-action="food">
-                            <div class="quick-action-icon">🍔</div>
-                            <div>Order Food</div>
-                        </div>
-                        <div class="quick-action" data-action="digital">
-                            <div class="quick-action-icon">📱</div>
-                            <div>Digital Services</div>
-                        </div>
-                        <div class="quick-action" data-action="marketplace">
-                            <div class="quick-action-icon">🛍️</div>
-                            <div>Marketplace</div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Services -->
-                <section>
-                    <h3 class="section-title">All Services</h3>
-                    <div class="services" id="services">
-                        <!-- Services loaded by JavaScript -->
-                    </div>
-                </section>
+            <!-- Services -->
+            <div class="page-content">
+                <h3 style="margin-bottom: 20px; font-size: 1.25rem; font-weight: 600;">All Services</h3>
+                <div id="services" class="services-grid"></div>
             </div>
         </div>
 
-        <!-- FOOD CATEGORIES PAGE -->
-        <div id="food-categories-page" class="page">
-            <div class="page-header">
-                <button class="back-btn" id="food-categories-back">←</button>
-                <h1 class="page-title">Food & Grocery</h1>
-            </div>
-            
-            <div class="category-grid">
-                <div class="category-card" data-category="fastfood">
-                    <div class="category-icon">🍔</div>
-                    <div class="category-name">Fast Food</div>
-                    <div class="category-count">50+ restaurants</div>
-                </div>
-                <div class="category-card" data-category="grocery">
-                    <div class="category-icon">🛒</div>
-                    <div class="category-name">Grocery</div>
-                    <div class="category-count">20+ stores</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- FAST FOOD CATEGORIES PAGE -->
-        <div id="fastfood-categories-page" class="page">
-            <div class="page-header">
-                <button class="back-btn" id="fastfood-categories-back">←</button>
-                <h1 class="page-title">Fast Food Categories</h1>
-            </div>
-            
-            <div class="search-container" style="margin-bottom: 24px;">
-                <div class="search-box">
-                    <input type="text" id="food-search" class="search-input" placeholder="Search for food...">
-                    <button class="voice-btn">🔍</button>
-                </div>
-            </div>
-            
-            <div class="category-grid">
-                <div class="category-card" data-foodtype="pizza">
-                    <div class="category-icon">🍕</div>
-                    <div class="category-name">Pizza</div>
-                    <div class="category-count">15+ options</div>
-                </div>
-                <div class="category-card" data-foodtype="burger">
-                    <div class="category-icon">🍔</div>
-                    <div class="category-name">Burgers</div>
-                    <div class="category-count">20+ options</div>
-                </div>
-                <div class="category-card" data-foodtype="meat">
-                    <div class="category-icon">🥩</div>
-                    <div class="category-name">Meat & Grill</div>
-                    <div class="category-count">12+ options</div>
-                </div>
-                <div class="category-card" data-foodtype="fries">
-                    <div class="category-icon">🍟</div>
-                    <div class="category-name">Fries & Sides</div>
-                    <div class="category-count">25+ options</div>
-                </div>
-                <div class="category-card" data-foodtype="chicken">
-                    <div class="category-icon">🍗</div>
-                    <div class="category-name">Chicken</div>
-                    <div class="category-count">18+ options</div>
-                </div>
-                <div class="category-card" data-foodtype="drinks">
-                    <div class="category-icon">🥤</div>
-                    <div class="category-name">Drinks</div>
-                    <div class="category-count">30+ options</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- FOOD ITEMS PAGE -->
-        <div id="food-items-page" class="page">
-            <div class="page-header">
-                <button class="back-btn" id="food-items-back">←</button>
-                <h1 class="page-title" id="food-items-title">Food Items</h1>
-            </div>
-            
-            <div class="search-container" style="margin-bottom: 24px;">
-                <div class="search-box">
-                    <input type="text" id="food-items-search" class="search-input" placeholder="Search food items...">
-                    <button class="voice-btn">🔍</button>
-                </div>
-            </div>
-            
-            <div id="food-items-grid" class="food-items">
-                <!-- Food items will be loaded here -->
-            </div>
-        </div>
-
-        <!-- GROCERY PAGE -->
-        <div id="grocery-page" class="page">
-            <div class="page-header">
-                <button class="back-btn" id="grocery-back">←</button>
-                <h1 class="page-title">Grocery Stores</h1>
-            </div>
-            
-            <div class="search-container" style="margin-bottom: 24px;">
-                <div class="search-box">
-                    <input type="text" id="grocery-search" class="search-input" placeholder="Search grocery items...">
-                    <button class="voice-btn">🔍</button>
-                </div>
-            </div>
-            
-            <div id="grocery-stores" class="providers-grid">
-                <!-- Grocery stores will be loaded here -->
-            </div>
-        </div>
-
-        <!-- TRANSPORT CATEGORIES PAGE -->
-        <div id="transport-categories-page" class="page">
-            <div class="page-header">
-                <button class="back-btn" id="transport-categories-back">←</button>
-                <h1 class="page-title">Transportation</h1>
-            </div>
-            
-            <div class="category-grid">
-                <div class="category-card" data-transport="ride">
-                    <div class="category-icon">🚗</div>
-                    <div class="category-name">Rides</div>
-                    <div class="category-count">Taxi, Car, Bike</div>
-                </div>
-                <div class="category-card" data-transport="moving">
-                    <div class="category-icon">🚛</div>
-                    <div class="category-name">Moving & Delivery</div>
-                    <div class="category-count">Trucks, Vans, Pickup</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- DIGITAL SERVICES PAGE -->
-        <div id="digital-services-page" class="page">
-            <div class="page-header">
-                <button class="back-btn" id="digital-services-back">←</button>
-                <h1 class="page-title">Digital Services</h1>
-            </div>
-            
-            <div class="digital-grid">
-                <div class="digital-card" data-digital="airtime">
-                    <div class="digital-icon">📞</div>
-                    <div class="digital-name">Buy Airtime</div>
-                    <div class="digital-description">Top up phone credit</div>
-                </div>
-                <div class="digital-card" data-digital="data">
-                    <div class="digital-icon">📱</div>
-                    <div class="digital-name">Buy Data</div>
-                    <div class="digital-description">Internet data bundles</div>
-                </div>
-                <div class="digital-card" data-digital="bills">
-                    <div class="digital-icon">⚡</div>
-                    <div class="digital-name">Pay Bills</div>
-                    <div class="digital-description">Electricity, water, cable</div>
-                </div>
-                <div class="digital-card" data-digital="vouchers">
-                    <div class="digital-icon">🎫</div>
-                    <div class="digital-name">Gift Vouchers</div>
-                    <div class="digital-description">Digital gift cards</div>
-                </div>
-                <div class="digital-card" data-digital="gaming">
-                    <div class="digital-icon">🎮</div>
-                    <div class="digital-name">Gaming Credits</div>
-                    <div class="digital-description">Game top-ups & coins</div>
-                </div>
-                <div class="digital-card" data-digital="streaming">
-                    <div class="digital-icon">📺</div>
-                    <div class="digital-name">Streaming</div>
-                    <div class="digital-description">Netflix, Spotify, etc.</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- MARKETPLACE PAGE -->
-        <div id="marketplace-page" class="page">
-            <div class="page-header">
-                <button class="back-btn" id="marketplace-back">←</button>
-                <h1 class="page-title">Marketplace</h1>
-            </div>
-            
-            <div class="search-container" style="margin-bottom: 24px;">
-                <div class="search-box">
-                    <input type="text" id="marketplace-search" class="search-input" placeholder="Search products...">
-                    <button class="voice-btn">🔍</button>
-                </div>
-            </div>
-            
-            <div class="category-grid">
-                <div class="category-card" data-marketplace="electronics">
-                    <div class="category-icon">📱</div>
-                    <div class="category-name">Electronics</div>
-                    <div class="category-count">500+ items</div>
-                </div>
-                <div class="category-card" data-marketplace="fashion">
-                    <div class="category-icon">👕</div>
-                    <div class="category-name">Fashion</div>
-                    <div class="category-count">1000+ items</div>
-                </div>
-                <div class="category-card" data-marketplace="home">
-                    <div class="category-icon">🏠</div>
-                    <div class="category-name">Home & Garden</div>
-                    <div class="category-count">300+ items</div>
-                </div>
-                <div class="category-card" data-marketplace="cars">
-                    <div class="category-icon">🚗</div>
-                    <div class="category-name">Vehicles</div>
-                    <div class="category-count">150+ items</div>
-                </div>
-                <div class="category-card" data-marketplace="books">
-                    <div class="category-icon">📚</div>
-                    <div class="category-name">Books</div>
-                    <div class="category-count">200+ items</div>
-                </div>
-                <div class="category-card" data-marketplace="sports">
-                    <div class="category-icon">⚽</div>
-                    <div class="category-name">Sports</div>
-                    <div class="category-count">100+ items</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- PROVIDERS PAGE -->
-        <div id="providers-page" class="page">
-            <div class="page-header">
-                <button class="back-btn" id="providers-back">←</button>
-                <h1 class="page-title" id="providers-title">Service Providers</h1>
-            </div>
-            <div id="providers-list" class="providers-grid">
-                <!-- Providers loaded by JavaScript -->
-            </div>
-        </div>
-
-        <!-- WALLET PAGE -->
-        <div id="wallet-page" class="page">
-            <div class="page-header">
-                <button class="back-btn" id="wallet-back">←</button>
-                <h1 class="page-title">My Wallet</h1>
-            </div>
-            
-            <div class="wallet-balance">
-                <div class="balance-amount">$125.50</div>
-                <div class="balance-label">Available Balance</div>
-            </div>
-
-            <div class="wallet-actions">
-                <div class="wallet-action" id="add-money">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">💰</div>
-                    <div>Add Money</div>
-                </div>
-                <div class="wallet-action" id="send-money">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">📤</div>
-                    <div>Send Money</div>
-                </div>
-            </div>
-
-            <h3 class="section-title">Recent Transactions</h3>
-            <div class="transactions-list">
-                <div class="transaction-item">
-                    <div class="transaction-info">
-                        <div class="transaction-icon credit">💰</div>
-                        <div class="transaction-details">
-                            <h4>Wallet Top-up</h4>
-                            <div class="transaction-date">Today, 2:30 PM</div>
-                        </div>
-                    </div>
-                    <div class="transaction-amount credit">+$50.00</div>
-                </div>
-                <div class="transaction-item">
-                    <div class="transaction-info">
-                        <div class="transaction-icon debit">🚗</div>
-                        <div class="transaction-details">
-                            <h4>Ride Payment</h4>
-                            <div class="transaction-date">Yesterday, 6:45 PM</div>
-                        </div>
-                    </div>
-                    <div class="transaction-amount debit">-$18.50</div>
-                </div>
-                <div class="transaction-item">
-                    <div class="transaction-info">
-                        <div class="transaction-icon debit">🍔</div>
-                        <div class="transaction-details">
-                            <h4>Food Order</h4>
-                            <div class="transaction-date">Yesterday, 1:20 PM</div>
-                        </div>
-                    </div>
-                    <div class="transaction-amount debit">-$24.75</div>
-                </div>
-                <div class="transaction-item">
-                    <div class="transaction-info">
-                        <div class="transaction-icon credit">🎁</div>
-                        <div class="transaction-details">
-                            <h4>Referral Bonus</h4>
-                            <div class="transaction-date">2 days ago</div>
-                        </div>
-                    </div>
-                    <div class="transaction-amount credit">+$10.00</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- PROFILE PAGE -->
-        <div id="profile-page" class="page">
-            <div class="page-header">
-                <button class="back-btn" id="profile-back">←</button>
-                <h1 class="page-title">Profile</h1>
-            </div>
-            
-            <div class="profile-header">
-                <div class="profile-avatar-large">👤</div>
-                <h2 id="profile-name">Demo User</h2>
-                <p id="profile-email">demo@zippup.com</p>
-            </div>
-
-            <div class="profile-menu">
-                <div class="profile-menu-item" id="edit-profile">
-                    <div class="profile-menu-left">
-                        <div class="profile-menu-icon">📝</div>
-                        <div>
-                            <h4>Edit Profile</h4>
-                            <p style="font-size: 0.875rem; color: #64748b;">Update your information</p>
-                        </div>
-                    </div>
-                    <div>→</div>
-                </div>
-                <div class="profile-menu-item" id="payment-methods">
-                    <div class="profile-menu-left">
-                        <div class="profile-menu-icon">💳</div>
-                        <div>
-                            <h4>Payment Methods</h4>
-                            <p style="font-size: 0.875rem; color: #64748b;">Manage cards & payments</p>
-                        </div>
-                    </div>
-                    <div>→</div>
-                </div>
-                <div class="profile-menu-item" id="notifications-settings">
-                    <div class="profile-menu-left">
-                        <div class="profile-menu-icon">🔔</div>
-                        <div>
-                            <h4>Notifications</h4>
-                            <p style="font-size: 0.875rem; color: #64748b;">Notification preferences</p>
-                        </div>
-                    </div>
-                    <div>→</div>
-                </div>
-                <div class="profile-menu-item" id="help-support">
-                    <div class="profile-menu-left">
-                        <div class="profile-menu-icon">❓</div>
-                        <div>
-                            <h4>Help & Support</h4>
-                            <p style="font-size: 0.875rem; color: #64748b;">Get help or contact us</p>
-                        </div>
-                    </div>
-                    <div>→</div>
-                </div>
-                <div class="profile-menu-item" id="settings">
-                    <div class="profile-menu-left">
-                        <div class="profile-menu-icon">⚙️</div>
-                        <div>
-                            <h4>Settings</h4>
-                            <p style="font-size: 0.875rem; color: #64748b;">App preferences</p>
-                        </div>
-                    </div>
-                    <div>→</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SERVICES PAGE -->
+        <!-- Services Page -->
         <div id="services-page" class="page">
             <div class="page-header">
-                <button class="back-btn" id="services-back">←</button>
-                <h1 class="page-title">All Services</h1>
+                <button id="services-back" class="back-btn">←</button>
+                <h2 class="page-title">All Services</h2>
             </div>
-            <div class="services" id="all-services">
-                <!-- All services loaded here -->
+            <div class="page-content">
+                <div id="all-services" class="services-grid"></div>
             </div>
         </div>
 
-        <!-- BOOKINGS PAGE -->
+        <!-- Providers Page -->
+        <div id="providers-page" class="page">
+            <div class="page-header">
+                <button id="providers-back" class="back-btn">←</button>
+                <h2 id="providers-title" class="page-title">Service Providers</h2>
+            </div>
+            <div class="page-content">
+                <div id="providers-list"></div>
+            </div>
+        </div>
+
+        <!-- Food Categories Page -->
+        <div id="food-categories-page" class="page">
+            <div class="page-header">
+                <button id="food-categories-back" class="back-btn">←</button>
+                <h2 class="page-title">Food & Delivery</h2>
+            </div>
+            <div class="page-content">
+                <div class="services-grid">
+                    <div class="service-card" data-category="fastfood">
+                        <div class="service-icon">🍔</div>
+                        <div class="service-name">Fast Food</div>
+                        <div class="service-description">Quick meals and snacks</div>
+                        <div class="service-examples">Pizza, burgers, fried chicken, fries, drinks, etc.</div>
+                        <div class="service-price">From <span class="currency">$5</span></div>
+                    </div>
+                    <div class="service-card" data-category="grocery">
+                        <div class="service-icon">🛒</div>
+                        <div class="service-name">Grocery Shopping</div>
+                        <div class="service-description">Fresh groceries delivered</div>
+                        <div class="service-examples">Fruits, vegetables, dairy, household items, etc.</div>
+                        <div class="service-price">From <span class="currency">$10</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fast Food Categories Page -->
+        <div id="fastfood-categories-page" class="page">
+            <div class="page-header">
+                <button id="fastfood-categories-back" class="back-btn">←</button>
+                <h2 class="page-title">Fast Food Categories</h2>
+            </div>
+            <div class="page-content">
+                <div class="services-grid">
+                    <div class="service-card" data-foodtype="pizza">
+                        <div class="service-icon">🍕</div>
+                        <div class="service-name">Pizza</div>
+                        <div class="service-examples">Margherita, pepperoni, BBQ chicken, veggie, etc.</div>
+                        <div class="service-price"><span class="currency">$12-25</span></div>
+                    </div>
+                    <div class="service-card" data-foodtype="burger">
+                        <div class="service-icon">🍔</div>
+                        <div class="service-name">Burgers</div>
+                        <div class="service-examples">Beef, chicken, veggie, bacon, cheese, etc.</div>
+                        <div class="service-price"><span class="currency">$8-15</span></div>
+                    </div>
+                    <div class="service-card" data-foodtype="chicken">
+                        <div class="service-icon">🍗</div>
+                        <div class="service-name">Chicken</div>
+                        <div class="service-examples">Fried, grilled, wings, tenders, etc.</div>
+                        <div class="service-price"><span class="currency">$9-18</span></div>
+                    </div>
+                    <div class="service-card" data-foodtype="fries">
+                        <div class="service-icon">🍟</div>
+                        <div class="service-name">Fries & Sides</div>
+                        <div class="service-examples">Classic, loaded, sweet potato, cheese, etc.</div>
+                        <div class="service-price"><span class="currency">$4-8</span></div>
+                    </div>
+                    <div class="service-card" data-foodtype="drinks">
+                        <div class="service-icon">🥤</div>
+                        <div class="service-name">Drinks</div>
+                        <div class="service-examples">Sodas, juices, smoothies, coffee, etc.</div>
+                        <div class="service-price"><span class="currency">$2-7</span></div>
+                    </div>
+                    <div class="service-card" data-foodtype="meat">
+                        <div class="service-icon">🥩</div>
+                        <div class="service-name">Meat & Grill</div>
+                        <div class="service-examples">Steak, ribs, lamb, pork, grilled items, etc.</div>
+                        <div class="service-price"><span class="currency">$15-35</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Food Items Page -->
+        <div id="food-items-page" class="page">
+            <div class="page-header">
+                <button id="food-items-back" class="back-btn">←</button>
+                <h2 id="food-items-title" class="page-title">Food Items</h2>
+            </div>
+            <div class="page-content">
+                <div id="food-items-search" style="margin-bottom: 20px;">
+                    <input type="text" id="food-search-input" class="input" placeholder="Search for specific items...">
+                </div>
+                <div id="food-items-grid" class="services-grid"></div>
+            </div>
+        </div>
+
+        <!-- Grocery Page -->
+        <div id="grocery-page" class="page">
+            <div class="page-header">
+                <button id="grocery-back" class="back-btn">←</button>
+                <h2 class="page-title">Grocery Stores</h2>
+            </div>
+            <div class="page-content">
+                <div id="grocery-search" style="margin-bottom: 20px;">
+                    <input type="text" id="grocery-search-input" class="input" placeholder="Search grocery stores or products...">
+                </div>
+                <div id="grocery-stores"></div>
+            </div>
+        </div>
+
+        <!-- Transport Categories Page -->
+        <div id="transport-categories-page" class="page">
+            <div class="page-header">
+                <button id="transport-categories-back" class="back-btn">←</button>
+                <h2 class="page-title">Transport Services</h2>
+            </div>
+            <div class="page-content">
+                <div class="services-grid">
+                    <div class="service-card" data-transport="ride">
+                        <div class="service-icon">🚗</div>
+                        <div class="service-name">Ride Services</div>
+                        <div class="service-description">Personal transportation</div>
+                        <div class="service-examples">Taxi, car rides, motorcycle, bike rides, etc.</div>
+                        <div class="service-price">From <span class="currency">$5</span></div>
+                    </div>
+                    <div class="service-card" data-transport="moving">
+                        <div class="service-icon">🚛</div>
+                        <div class="service-name">Moving & Delivery</div>
+                        <div class="service-description">Transport goods and items</div>
+                        <div class="service-examples">Moving trucks, vans, pickup trucks, delivery, etc.</div>
+                        <div class="service-price">From <span class="currency">$25</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Digital Services Page -->
+        <div id="digital-services-page" class="page">
+            <div class="page-header">
+                <button id="digital-services-back" class="back-btn">←</button>
+                <h2 class="page-title">Digital Services</h2>
+            </div>
+            <div class="page-content">
+                <div class="services-grid">
+                    <div class="service-card" data-digital="airtime">
+                        <div class="service-icon">📞</div>
+                        <div class="service-name">Buy Airtime</div>
+                        <div class="service-description">Mobile credit top-up</div>
+                        <div class="service-examples">All networks, instant delivery, bonus offers, etc.</div>
+                        <div class="service-price">From <span class="currency">$1</span></div>
+                    </div>
+                    <div class="service-card" data-digital="data">
+                        <div class="service-icon">📶</div>
+                        <div class="service-name">Data Bundles</div>
+                        <div class="service-description">Internet data packages</div>
+                        <div class="service-examples">Daily, weekly, monthly plans, all networks, etc.</div>
+                        <div class="service-price">From <span class="currency">$2</span></div>
+                    </div>
+                    <div class="service-card" data-digital="bills">
+                        <div class="service-icon">💡</div>
+                        <div class="service-name">Pay Bills</div>
+                        <div class="service-description">Utility bill payments</div>
+                        <div class="service-examples">Electricity, water, cable TV, internet, etc.</div>
+                        <div class="service-price">No fees</div>
+                    </div>
+                    <div class="service-card" data-digital="vouchers">
+                        <div class="service-icon">🎁</div>
+                        <div class="service-name">Gift Vouchers</div>
+                        <div class="service-description">Digital gift cards</div>
+                        <div class="service-examples">Amazon, iTunes, Google Play, Netflix, etc.</div>
+                        <div class="service-price">From <span class="currency">$10</span></div>
+                    </div>
+                    <div class="service-card" data-digital="gaming">
+                        <div class="service-icon">🎮</div>
+                        <div class="service-name">Gaming Credits</div>
+                        <div class="service-description">Game currency and items</div>
+                        <div class="service-examples">PUBG, Fortnite, Mobile Legends, Free Fire, etc.</div>
+                        <div class="service-price">From <span class="currency">$5</span></div>
+                    </div>
+                    <div class="service-card" data-digital="streaming">
+                        <div class="service-icon">📺</div>
+                        <div class="service-name">Streaming</div>
+                        <div class="service-description">Entertainment subscriptions</div>
+                        <div class="service-examples">Netflix, Spotify, Disney+, YouTube Premium, etc.</div>
+                        <div class="service-price">From <span class="currency">$8</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Marketplace Page -->
+        <div id="marketplace-page" class="page">
+            <div class="page-header">
+                <button id="marketplace-back" class="back-btn">←</button>
+                <h2 class="page-title">Marketplace</h2>
+            </div>
+            <div class="page-content">
+                <div class="services-grid">
+                    <div class="service-card" data-marketplace="electronics">
+                        <div class="service-icon">📱</div>
+                        <div class="service-name">Electronics</div>
+                        <div class="service-description">Phones, laptops, gadgets</div>
+                        <div class="service-examples">iPhones, Samsung, laptops, headphones, etc.</div>
+                        <div class="service-price">From <span class="currency">$50</span></div>
+                    </div>
+                    <div class="service-card" data-marketplace="fashion">
+                        <div class="service-icon">👕</div>
+                        <div class="service-name">Fashion</div>
+                        <div class="service-description">Clothing and accessories</div>
+                        <div class="service-examples">Shirts, dresses, shoes, bags, jewelry, etc.</div>
+                        <div class="service-price">From <span class="currency">$15</span></div>
+                    </div>
+                    <div class="service-card" data-marketplace="home">
+                        <div class="service-icon">🏠</div>
+                        <div class="service-name">Home & Garden</div>
+                        <div class="service-description">Furniture and decor</div>
+                        <div class="service-examples">Furniture, appliances, tools, plants, etc.</div>
+                        <div class="service-price">From <span class="currency">$25</span></div>
+                    </div>
+                    <div class="service-card" data-marketplace="sports">
+                        <div class="service-icon">⚽</div>
+                        <div class="service-name">Sports</div>
+                        <div class="service-description">Sports equipment</div>
+                        <div class="service-examples">Gym equipment, footballs, bikes, gear, etc.</div>
+                        <div class="service-price">From <span class="currency">$20</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallet Page -->
+        <div id="wallet-page" class="page">
+            <div class="page-header">
+                <button id="wallet-back" class="back-btn">←</button>
+                <h2 class="page-title">My Wallet</h2>
+            </div>
+            <div class="page-content">
+                <div class="provider-card" style="text-align: center; margin-bottom: 20px;">
+                    <h3>Current Balance</h3>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary); margin: 16px 0;">
+                        <span class="currency">$245.80</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;">
+                        <button id="add-money" class="btn btn-primary">💰 Add Money</button>
+                        <button id="send-money" class="btn" style="background: var(--secondary); color: white;">📤 Send</button>
+                    </div>
+                </div>
+
+                <h3 style="margin-bottom: 16px;">Recent Transactions</h3>
+                <div id="wallet-transactions">
+                    <div class="provider-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4>Food Delivery</h4>
+                                <p style="color: var(--text-secondary); font-size: 0.875rem;">Pizza Palace - Order #1234</p>
+                                <p style="color: var(--text-muted); font-size: 0.75rem;">Today, 2:30 PM</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: var(--error);">-<span class="currency">$18.50</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="provider-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4>Wallet Top-up</h4>
+                                <p style="color: var(--text-secondary); font-size: 0.875rem;">Card ending in 4567</p>
+                                <p style="color: var(--text-muted); font-size: 0.75rem;">Yesterday, 11:15 AM</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: var(--success);">+<span class="currency">$100.00</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="provider-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4>Ride Service</h4>
+                                <p style="color: var(--text-secondary); font-size: 0.875rem;">John Driver - Trip #5678</p>
+                                <p style="color: var(--text-muted); font-size: 0.75rem;">2 days ago, 6:45 PM</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: var(--error);">-<span class="currency">$12.30</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="profile-page" class="page">
+            <div class="page-header">
+                <button id="profile-back" class="back-btn">←</button>
+                <h2 class="page-title">My Profile</h2>
+            </div>
+            <div class="page-content">
+                <!-- Provider Registration Card -->
+                <div id="provider-registration-card" class="provider-registration">
+                    <div class="registration-icon">🔐</div>
+                    <div class="registration-title">Become a Verified Provider</div>
+                    <div class="registration-description">Join our network and start earning by offering your services</div>
+                </div>
+
+                <!-- Provider Status (hidden by default) -->
+                <div id="provider-status" class="hidden" style="margin-bottom: 20px;">
+                    <div class="availability-toggle">
+                        <div>
+                            <h4>Provider Status</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem;">Toggle your availability to receive bookings</p>
+                        </div>
+                        <div id="availability-toggle" class="toggle-switch">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                    <div id="provider-info" class="provider-card">
+                        <div class="provider-status available">
+                            <div class="status-indicator"></div>
+                            <span>Available for bookings</span>
+                        </div>
+                        <div style="margin-top: 12px;">
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                                <div style="text-align: center;">
+                                    <div style="font-weight: 600; color: var(--primary);">47</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Completed</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-weight: 600; color: var(--primary);">4.8</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-weight: 600; color: var(--primary);"><span class="currency">$1,240</span></div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Earned</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Info -->
+                <div class="provider-card">
+                    <h3 style="margin-bottom: 16px;">Personal Information</h3>
+                    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                        <div class="user-avatar" style="width: 60px; height: 60px; font-size: 1.5rem;">U</div>
+                        <div>
+                            <h4 id="profile-name">Demo User</h4>
+                            <p id="profile-email" style="color: var(--text-secondary);">demo@zippup.com</p>
+                            <p id="profile-phone" style="color: var(--text-secondary);">+1234567890</p>
+                        </div>
+                    </div>
+                    <button id="edit-profile" class="btn btn-primary" style="width: 100%;">✏️ Edit Profile</button>
+                </div>
+
+                <!-- Account Settings -->
+                <div class="provider-card">
+                    <h3 style="margin-bottom: 16px;">Account Settings</h3>
+                    <div style="display: grid; gap: 12px;">
+                        <button id="payment-methods" class="dropdown-item" style="justify-content: flex-start; padding: 12px; border-radius: var(--radius);">
+                            <span>💳</span>
+                            <span>Payment Methods</span>
+                        </button>
+                        <button id="notifications-settings" class="dropdown-item" style="justify-content: flex-start; padding: 12px; border-radius: var(--radius);">
+                            <span>🔔</span>
+                            <span>Notifications</span>
+                        </button>
+                        <button id="help-support" class="dropdown-item" style="justify-content: flex-start; padding: 12px; border-radius: var(--radius);">
+                            <span>❓</span>
+                            <span>Help & Support</span>
+                        </button>
+                        <button id="settings" class="dropdown-item" style="justify-content: flex-start; padding: 12px; border-radius: var(--radius);">
+                            <span>⚙️</span>
+                            <span>App Settings</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bookings Page -->
         <div id="bookings-page" class="page">
             <div class="page-header">
-                <button class="back-btn" id="bookings-back">←</button>
-                <h1 class="page-title">My Bookings</h1>
+                <button id="bookings-back" class="back-btn">←</button>
+                <h2 class="page-title">My Bookings</h2>
             </div>
-            <div id="bookings-list">
-                <!-- Bookings will be loaded here -->
+            <div class="page-content">
+                <div id="bookings-list"></div>
             </div>
         </div>
 
-        <!-- CHAT PAGE -->
+        <!-- Chat Page -->
         <div id="chat-page" class="page">
             <div class="page-header">
-                <button class="back-btn" id="chat-back">←</button>
-                <h1 class="page-title">Messages</h1>
+                <button id="chat-back" class="back-btn">←</button>
+                <h2 class="page-title">Messages</h2>
             </div>
-            <div style="text-align: center; padding: 60px 20px;">
-                <div style="font-size: 4rem; margin-bottom: 20px;">💬</div>
-                <h3>No messages yet</h3>
-                <p style="color: var(--text-secondary); margin-top: 8px;">
-                    Start booking services to chat with providers
-                </p>
+            <div class="page-content">
+                <div style="text-align: center; padding: 60px 20px;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">💬</div>
+                    <h3>No messages yet</h3>
+                    <p style="color: var(--text-secondary); margin-top: 8px;">
+                        Start a booking to chat with providers
+                    </p>
+                </div>
             </div>
         </div>
 
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
-            <button class="nav-item active" data-page="home">
+            <div class="nav-item active" data-page="home">
                 <div class="nav-icon">🏠</div>
                 <div class="nav-label">Home</div>
-            </button>
-            <button class="nav-item" data-page="services">
-                <div class="nav-icon">🛠️</div>
+            </div>
+            <div class="nav-item" data-page="services">
+                <div class="nav-icon">🔧</div>
                 <div class="nav-label">Services</div>
-            </button>
-            <button class="nav-item" data-page="bookings">
-                <div class="nav-icon">📋</div>
-                <div class="nav-label">Bookings</div>
-            </button>
-            <button class="nav-item" data-page="chat">
-                <div class="nav-icon">💬</div>
-                <div class="nav-label">Chat</div>
-            </button>
-            <button class="nav-item" data-page="marketplace">
+            </div>
+            <div class="nav-item" data-page="marketplace">
                 <div class="nav-icon">🛍️</div>
                 <div class="nav-label">Shop</div>
-            </button>
+            </div>
+            <div class="nav-item" data-page="bookings">
+                <div class="nav-icon">📋</div>
+                <div class="nav-label">Bookings</div>
+            </div>
+            <div class="nav-item" data-page="chat">
+                <div class="nav-icon">💬</div>
+                <div class="nav-label">Chat</div>
+            </div>
         </nav>
     </div>
 
-    <!-- Emergency Services Modal -->
-    <div id="emergency-modal" class="emergency-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
-        <div style="background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px;">
-            <h3 style="text-align: center; margin-bottom: 8px; color: #ef4444;">🚨 Emergency Services</h3>
-            <p style="text-align: center; color: #64748b; margin-bottom: 20px;">Select the type of emergency help you need</p>
-            
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 20px;">
-                <div class="emergency-service" data-emergency="ambulance" style="background: #fef2f2; border: 2px solid #ef4444; padding: 20px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.2s;">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">🚑</div>
-                    <div>Ambulance</div>
-                </div>
-                <div class="emergency-service" data-emergency="fire" style="background: #fef2f2; border: 2px solid #ef4444; padding: 20px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.2s;">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">🚒</div>
-                    <div>Fire Service</div>
-                </div>
-                <div class="emergency-service" data-emergency="towing" style="background: #fef2f2; border: 2px solid #ef4444; padding: 20px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.2s;">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">🚛</div>
-                    <div>Towing Truck</div>
-                </div>
-                <div class="emergency-service" data-emergency="roadside" style="background: #fef2f2; border: 2px solid #ef4444; padding: 20px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.2s;">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">🔧</div>
-                    <div>Roadside Help</div>
-                </div>
+    <!-- Emergency Modal -->
+    <div id="emergency-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🚨 Emergency Services</h3>
+                <button onclick="closeEmergencyModal()" class="close-btn">×</button>
             </div>
             
-            <button onclick="closeEmergencyModal()" class="btn btn-secondary" style="margin-top: 20px;">Cancel</button>
+            <div style="display: grid; gap: 12px;">
+                <div class="emergency-service provider-card" data-emergency="ambulance" style="cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 2rem;">🚑</div>
+                        <div>
+                            <h4>Ambulance</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem;">Medical emergency response</p>
+                            <p style="color: var(--success); font-size: 0.75rem; font-weight: 600;">ETA: 8-12 minutes</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="emergency-service provider-card" data-emergency="fire" style="cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 2rem;">🚒</div>
+                        <div>
+                            <h4>Fire Department</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem;">Fire and rescue services</p>
+                            <p style="color: var(--success); font-size: 0.75rem; font-weight: 600;">ETA: 5-8 minutes</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="emergency-service provider-card" data-emergency="towing" style="cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 2rem;">🚛</div>
+                        <div>
+                            <h4>Towing Service</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem;">Vehicle towing and recovery</p>
+                            <p style="color: var(--success); font-size: 0.75rem; font-weight: 600;">ETA: 15-25 minutes</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="emergency-service provider-card" data-emergency="roadside" style="cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 2rem;">🔧</div>
+                        <div>
+                            <h4>Roadside Assistance</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem;">Flat tire, battery, fuel help</p>
+                            <p style="color: var(--success); font-size: 0.75rem; font-weight: 600;">ETA: 10-15 minutes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
+     <script>
         // App State
         let currentUser = null;
         let isAuthenticated = false;
@@ -1775,14 +1750,27 @@
         let currentLocation = null;
         let bookings = [];
         let deferredPrompt = null;
+        let userCurrency = '$';
+        let userCountry = 'US';
+        let isProvider = false;
+        let providerAvailable = true;
 
         // Mock user database for authentication
         const mockUsers = [
-            { email: 'demo@zippup.com', password: 'password123', name: 'Demo User', phone: '+1234567890' },
-            { email: 'test@example.com', password: 'test123', name: 'Test User', phone: '+0987654321' }
+            { email: 'demo@zippup.com', password: 'password123', name: 'Demo User', phone: '+1234567890', isProvider: false },
+            { email: 'provider@zippup.com', password: 'provider123', name: 'Provider Demo', phone: '+1987654321', isProvider: true },
+            { email: 'test@example.com', password: 'test123', name: 'Test User', phone: '+0987654321', isProvider: false }
         ];
 
-        // Enhanced Services Data with distances
+        // Currency mapping by country
+        const currencyMap = {
+            'US': '$', 'CA': 'CAD$', 'GB': '£', 'EU': '€', 'JP': '¥', 'AU': 'AUD$',
+            'NG': '₦', 'KE': 'KSh', 'ZA': 'R', 'GH': '₵', 'EG': 'E£',
+            'IN': '₹', 'CN': '¥', 'KR': '₩', 'TH': '฿', 'VN': '₫',
+            'MX': 'MX$', 'BR': 'R$', 'AR': 'AR$', 'CL': 'CL$', 'CO': 'COP$'
+        };
+
+        // Enhanced Services Data with "Others" category
         const services = [
             { 
                 id: 1, 
@@ -1792,7 +1780,6 @@
                 examples: ['Taxi', 'Bike rides', 'Moving trucks', 'Delivery', 'etc'],
                 price: 15,
                 type: 'transport',
-                distance: '0.5km',
                 hasInstant: true,
                 hasScheduled: true
             },
@@ -1804,7 +1791,6 @@
                 examples: ['Hair styling', 'Massage', 'Manicure', 'Spa treatments', 'etc'],
                 price: 30,
                 type: 'service',
-                distance: '1.2km',
                 hasInstant: false,
                 hasScheduled: true
             },
@@ -1816,7 +1802,6 @@
                 examples: ['Phone repair', 'Computer fixing', 'TV repair', 'Software help', 'etc'],
                 price: 40,
                 type: 'service',
-                distance: '0.8km',
                 hasInstant: true,
                 hasScheduled: true
             },
@@ -1828,7 +1813,6 @@
                 examples: ['Builders', 'Carpenters', 'Electricians', 'Plumbers', 'etc'],
                 price: 80,
                 type: 'service',
-                distance: '2.1km',
                 hasInstant: false,
                 hasScheduled: true
             },
@@ -1840,7 +1824,6 @@
                 examples: ['House cleaning', 'Gardening', 'Maintenance', 'Painting', 'etc'],
                 price: 35,
                 type: 'service',
-                distance: '0.9km',
                 hasInstant: true,
                 hasScheduled: true
             },
@@ -1852,7 +1835,6 @@
                 examples: ['Ambulance', 'Fire services', 'Roadside help', 'Towing', 'etc'],
                 price: 100,
                 type: 'emergency',
-                distance: '0.3km',
                 hasInstant: true,
                 hasScheduled: false
             },
@@ -1864,7 +1846,6 @@
                 examples: ['Restaurant delivery', 'Grocery shopping', 'Fast food', 'Catering', 'etc'],
                 price: 15,
                 type: 'food',
-                distance: '0.7km',
                 hasInstant: true,
                 hasScheduled: true
             },
@@ -1876,9 +1857,67 @@
                 examples: ['Buy airtime', 'Data bundles', 'Pay bills', 'Gift vouchers', 'etc'],
                 price: 5,
                 type: 'digital',
-                distance: 'Online',
                 hasInstant: true,
                 hasScheduled: false
+            },
+            { 
+                id: 9, 
+                name: 'Others', 
+                icon: '🎯', 
+                description: 'Events, tutoring & more', 
+                examples: ['Event planning', 'Tutoring', 'Legal services', 'Photography', 'etc'],
+                price: 50,
+                type: 'others',
+                hasInstant: false,
+                hasScheduled: true
+            }
+        ];
+
+        // Others category providers
+        const othersProviders = [
+            { 
+                id: 901, 
+                name: 'EventPro Planners', 
+                avatar: '🎪', 
+                rating: 4.9, 
+                events: 125, 
+                experience: '5 years', 
+                price: '$200-1500', 
+                description: 'Full-service event planning for weddings, parties, and corporate events',
+                distance: '1.2km'
+            },
+            { 
+                id: 902, 
+                name: 'Sarah Math Tutor', 
+                avatar: '📚', 
+                rating: 4.8, 
+                students: 89, 
+                experience: '3 years', 
+                price: '$25-40/hr', 
+                description: 'Mathematics and science tutoring for all grade levels',
+                distance: '0.8km'
+            },
+            { 
+                id: 903, 
+                name: 'Legal Aid Pro', 
+                avatar: '⚖️', 
+                rating: 4.7, 
+                cases: 67, 
+                experience: '8 years', 
+                price: '$100-300/hr', 
+                description: 'Legal consultation and document preparation services',
+                distance: '2.1km'
+            },
+            { 
+                id: 904, 
+                name: 'Focus Photography', 
+                avatar: '📸', 
+                rating: 4.9, 
+                shoots: 234, 
+                experience: '6 years', 
+                price: '$150-800', 
+                description: 'Professional photography for events, portraits, and commercial work',
+                distance: '1.5km'
             }
         ];
 
@@ -1890,6 +1929,10 @@
             { title: 'Phone repair', category: 'Tech', icon: '📱', action: () => showProviders(services.find(s => s.id === 3)) },
             { title: 'House cleaning', category: 'Home', icon: '🏠', action: () => showProviders(services.find(s => s.id === 5)) },
             { title: 'Buy airtime', category: 'Digital', icon: '📞', action: () => showDigitalService('airtime') },
+            { title: 'Event planning', category: 'Others', icon: '🎪', action: () => showOthersProviders() },
+            { title: 'Tutoring', category: 'Others', icon: '📚', action: () => showOthersProviders() },
+            { title: 'Legal services', category: 'Others', icon: '⚖️', action: () => showOthersProviders() },
+            { title: 'Photography', category: 'Others', icon: '📸', action: () => showOthersProviders() },
             { title: 'Burger', category: 'Food', icon: '🍔', action: () => showFoodItems('burger') },
             { title: 'Moving truck', category: 'Transport', icon: '🚛', action: () => showTransportCategory('moving') },
             { title: 'Marketplace', category: 'Shopping', icon: '🛍️', action: () => navigateToPage('marketplace') },
@@ -1899,40 +1942,40 @@
         // Food items data
         const foodItems = {
             pizza: [
-                { name: 'Margherita Pizza', restaurant: 'Pizza Palace', price: '$12.99', rating: '4.5', icon: '🍕' },
-                { name: 'Pepperoni Pizza', restaurant: 'Tony\'s Pizzeria', price: '$15.99', rating: '4.7', icon: '🍕' },
-                { name: 'BBQ Chicken Pizza', restaurant: 'Pizza House', price: '$18.99', rating: '4.6', icon: '🍕' },
-                { name: 'Veggie Supreme', restaurant: 'Green Pizza Co', price: '$16.99', rating: '4.4', icon: '🍕' }
+                { name: 'Margherita Pizza', restaurant: 'Pizza Palace', price: 12.99, rating: '4.5', icon: '🍕', distance: '0.7km' },
+                { name: 'Pepperoni Pizza', restaurant: 'Tony\'s Pizzeria', price: 15.99, rating: '4.7', icon: '🍕', distance: '1.2km' },
+                { name: 'BBQ Chicken Pizza', restaurant: 'Pizza House', price: 18.99, rating: '4.6', icon: '🍕', distance: '0.9km' },
+                { name: 'Veggie Supreme', restaurant: 'Green Pizza Co', price: 16.99, rating: '4.4', icon: '🍕', distance: '1.5km' }
             ],
             burger: [
-                { name: 'Classic Beef Burger', restaurant: 'Burger Haven', price: '$8.99', rating: '4.6', icon: '🍔' },
-                { name: 'Chicken Deluxe', restaurant: 'ChickBurger', price: '$10.99', rating: '4.5', icon: '🍔' },
-                { name: 'Veggie Burger', restaurant: 'Green Eats', price: '$9.99', rating: '4.3', icon: '🍔' },
-                { name: 'BBQ Bacon Burger', restaurant: 'Smoky Grill', price: '$12.99', rating: '4.8', icon: '🍔' }
+                { name: 'Classic Beef Burger', restaurant: 'Burger Haven', price: 8.99, rating: '4.6', icon: '🍔', distance: '0.5km' },
+                { name: 'Chicken Deluxe', restaurant: 'ChickBurger', price: 10.99, rating: '4.5', icon: '🍔', distance: '1.1km' },
+                { name: 'Veggie Burger', restaurant: 'Green Eats', price: 9.99, rating: '4.3', icon: '🍔', distance: '0.8km' },
+                { name: 'BBQ Bacon Burger', restaurant: 'Smoky Grill', price: 12.99, rating: '4.8', icon: '🍔', distance: '1.3km' }
             ],
             meat: [
-                { name: 'Grilled Steak', restaurant: 'Steakhouse Pro', price: '$24.99', rating: '4.9', icon: '🥩' },
-                { name: 'BBQ Ribs', restaurant: 'Smoky BBQ', price: '$19.99', rating: '4.7', icon: '🥩' },
-                { name: 'Lamb Chops', restaurant: 'Fine Dining', price: '$28.99', rating: '4.8', icon: '🥩' },
-                { name: 'Pork Tenderloin', restaurant: 'Grill Master', price: '$22.99', rating: '4.6', icon: '🥩' }
+                { name: 'Grilled Steak', restaurant: 'Steakhouse Pro', price: 24.99, rating: '4.9', icon: '🥩', distance: '2.1km' },
+                { name: 'BBQ Ribs', restaurant: 'Smoky BBQ', price: 19.99, rating: '4.7', icon: '🥩', distance: '1.8km' },
+                { name: 'Lamb Chops', restaurant: 'Fine Dining', price: 28.99, rating: '4.8', icon: '🥩', distance: '2.5km' },
+                { name: 'Pork Tenderloin', restaurant: 'Grill Master', price: 22.99, rating: '4.6', icon: '🥩', distance: '1.9km' }
             ],
             fries: [
-                { name: 'Classic Fries', restaurant: 'Fry House', price: '$4.99', rating: '4.4', icon: '🍟' },
-                { name: 'Loaded Fries', restaurant: 'Loaded Up', price: '$7.99', rating: '4.6', icon: '🍟' },
-                { name: 'Sweet Potato Fries', restaurant: 'Sweet Treats', price: '$6.99', rating: '4.5', icon: '🍟' },
-                { name: 'Cheese Fries', restaurant: 'Cheesy Delights', price: '$6.49', rating: '4.3', icon: '🍟' }
+                { name: 'Classic Fries', restaurant: 'Fry House', price: 4.99, rating: '4.4', icon: '🍟', distance: '0.3km' },
+                { name: 'Loaded Fries', restaurant: 'Loaded Up', price: 7.99, rating: '4.6', icon: '🍟', distance: '0.7km' },
+                { name: 'Sweet Potato Fries', restaurant: 'Sweet Treats', price: 6.99, rating: '4.5', icon: '🍟', distance: '0.9km' },
+                { name: 'Cheese Fries', restaurant: 'Cheesy Delights', price: 6.49, rating: '4.3', icon: '🍟', distance: '0.6km' }
             ],
             chicken: [
-                { name: 'Fried Chicken', restaurant: 'Crispy Chicken Co', price: '$11.99', rating: '4.7', icon: '🍗' },
-                { name: 'Grilled Chicken', restaurant: 'Healthy Bites', price: '$13.99', rating: '4.5', icon: '🍗' },
-                { name: 'Buffalo Wings', restaurant: 'Wing Stop', price: '$9.99', rating: '4.6', icon: '🍗' },
-                { name: 'Chicken Tenders', restaurant: 'Tender Love', price: '$10.99', rating: '4.4', icon: '🍗' }
+                { name: 'Fried Chicken', restaurant: 'Crispy Chicken Co', price: 11.99, rating: '4.7', icon: '🍗', distance: '1.0km' },
+                { name: 'Grilled Chicken', restaurant: 'Healthy Bites', price: 13.99, rating: '4.5', icon: '🍗', distance: '1.4km' },
+                { name: 'Buffalo Wings', restaurant: 'Wing Stop', price: 9.99, rating: '4.6', icon: '🍗', distance: '0.8km' },
+                { name: 'Chicken Tenders', restaurant: 'Tender Love', price: 10.99, rating: '4.4', icon: '🍗', distance: '1.1km' }
             ],
             drinks: [
-                { name: 'Fresh Orange Juice', restaurant: 'Juice Bar', price: '$3.99', rating: '4.5', icon: '🥤' },
-                { name: 'Coca Cola', restaurant: 'Refreshments', price: '$1.99', rating: '4.3', icon: '🥤' },
-                { name: 'Smoothie Bowl', restaurant: 'Smoothie King', price: '$6.99', rating: '4.7', icon: '🥤' },
-                { name: 'Coffee Latte', restaurant: 'Coffee Corner', price: '$4.49', rating: '4.8', icon: '☕' }
+                { name: 'Fresh Orange Juice', restaurant: 'Juice Bar', price: 3.99, rating: '4.5', icon: '🥤', distance: '0.4km' },
+                { name: 'Coca Cola', restaurant: 'Refreshments', price: 1.99, rating: '4.3', icon: '🥤', distance: '0.2km' },
+                { name: 'Smoothie Bowl', restaurant: 'Smoothie King', price: 6.99, rating: '4.7', icon: '🥤', distance: '1.2km' },
+                { name: 'Coffee Latte', restaurant: 'Coffee Corner', price: 4.49, rating: '4.8', icon: '☕', distance: '0.6km' }
             ]
         };
 
@@ -1946,7 +1989,8 @@
                 items: 5000, 
                 experience: '5 years', 
                 delivery: 'Free delivery', 
-                description: 'Fresh fruits, vegetables, dairy and household items'
+                description: 'Fresh fruits, vegetables, dairy and household items',
+                distance: '0.8km'
             },
             { 
                 id: 502, 
@@ -1955,8 +1999,9 @@
                 rating: 4.8, 
                 items: 8000, 
                 experience: '3 years', 
-                delivery: '$2.99 delivery', 
-                description: 'One-stop shop for all your grocery needs'
+                delivery: userCurrency + '2.99 delivery', 
+                description: 'One-stop shop for all your grocery needs',
+                distance: '1.2km'
             },
             { 
                 id: 503, 
@@ -1965,28 +2010,29 @@
                 rating: 4.9, 
                 items: 2000, 
                 experience: '7 years', 
-                delivery: 'Free over $50', 
-                description: 'Premium organic and health-focused products'
+                delivery: 'Free over ' + userCurrency + '50', 
+                description: 'Premium organic and health-focused products',
+                distance: '1.5km'
             }
         ];
 
         // Transport providers
         const transportProviders = {
             ride: [
-                { id: 101, name: 'John Driver', avatar: '🚗', rating: 4.8, trips: 1250, experience: '3 years', price: '$15-25', description: 'Professional driver with clean car and excellent service' },
-                { id: 102, name: 'Sarah Taxi', avatar: '🚕', rating: 4.9, trips: 890, experience: '5 years', price: '$18-30', description: 'Reliable taxi service available 24/7' },
-                { id: 103, name: 'Mike Bike', avatar: '🏍️', rating: 4.7, trips: 567, experience: '2 years', price: '$8-15', description: 'Fast motorcycle taxi for quick trips' }
+                { id: 101, name: 'John Driver', avatar: '🚗', rating: 4.8, trips: 1250, experience: '3 years', price: '15-25', description: 'Professional driver with clean car and excellent service', distance: '0.3km' },
+                { id: 102, name: 'Sarah Taxi', avatar: '🚕', rating: 4.9, trips: 890, experience: '5 years', price: '18-30', description: 'Reliable taxi service available 24/7', distance: '0.7km' },
+                { id: 103, name: 'Mike Bike', avatar: '🏍️', rating: 4.7, trips: 567, experience: '2 years', price: '8-15', description: 'Fast motorcycle taxi for quick trips', distance: '0.2km' }
             ],
             moving: [
-                { id: 201, name: 'Heavy Movers', avatar: '🚛', rating: 4.8, jobs: 450, experience: '6 years', price: '$50-150', description: 'Professional moving service with experienced team' },
-                { id: 202, name: 'Van Express', avatar: '🚐', rating: 4.6, jobs: 320, experience: '4 years', price: '$30-80', description: 'Van rental and delivery services' },
-                { id: 203, name: 'Pickup Pro', avatar: '🛻', rating: 4.7, jobs: 280, experience: '3 years', price: '$25-60', description: 'Pickup truck services for medium loads' }
+                { id: 201, name: 'Heavy Movers', avatar: '🚛', rating: 4.8, jobs: 450, experience: '6 years', price: '50-150', description: 'Professional moving service with experienced team', distance: '1.5km' },
+                { id: 202, name: 'Van Express', avatar: '🚐', rating: 4.6, jobs: 320, experience: '4 years', price: '30-80', description: 'Van rental and delivery services', distance: '2.1km' },
+                { id: 203, name: 'Pickup Pro', avatar: '🛻', rating: 4.7, jobs: 280, experience: '3 years', price: '25-60', description: 'Pickup truck services for medium loads', distance: '1.8km' }
             ]
         };
 
         // Initialize App
         function initApp() {
-            console.log('🚀 Initializing Enhanced ZippUp...');
+            console.log('🚀 Initializing Production ZippUp...');
             
             // Check saved login
             const savedUser = localStorage.getItem('zippup_user');
@@ -1994,6 +2040,7 @@
                 try {
                     currentUser = JSON.parse(savedUser);
                     isAuthenticated = true;
+                    isProvider = currentUser.isProvider || false;
                 } catch (error) {
                     localStorage.removeItem('zippup_user');
                 }
@@ -2018,34 +2065,90 @@
             loadBookings();
             initializeLocation();
             initializePWA();
+            detectUserCurrency();
         }
 
-        // PWA Functionality
+        // Currency Detection
+        async function detectUserCurrency() {
+            try {
+                // Try to get user's country from timezone
+                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const country = timezone.split('/')[0];
+                
+                // Fallback to geolocation API
+                if (!currencyMap[country]) {
+                    const response = await fetch('https://ipapi.co/json/');
+                    const data = await response.json();
+                    userCountry = data.country_code || 'US';
+                } else {
+                    userCountry = country;
+                }
+                
+                userCurrency = currencyMap[userCountry] || '$';
+                updateCurrencyDisplay();
+                
+            } catch (error) {
+                console.log('Using default currency');
+                userCurrency = '$';
+                userCountry = 'US';
+            }
+        }
+
+        function updateCurrencyDisplay() {
+            document.querySelectorAll('.currency').forEach(element => {
+                const amount = element.textContent.replace(/[^\d.-]/g, '');
+                if (amount) {
+                    element.textContent = userCurrency + amount;
+                }
+            });
+        }
+
+        // Enhanced PWA Functionality
         function initializePWA() {
             // Register service worker
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(registration => console.log('SW registered'))
-                    .catch(error => console.log('SW registration failed'));
+                    .then(registration => {
+                        console.log('✅ Service Worker registered');
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            showNotification('App update available! Refresh to get the latest version.', 'info');
+                        });
+                    })
+                    .catch(error => console.log('❌ SW registration failed:', error));
             }
 
-            // Handle install prompt
+            // Enhanced install prompt
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
-                showInstallPrompt();
+                
+                // Show install prompt after user interaction
+                setTimeout(() => {
+                    if (deferredPrompt) {
+                        showInstallPrompt();
+                    }
+                }, 3000);
             });
 
             // Handle app installed
             window.addEventListener('appinstalled', () => {
                 hideInstallPrompt();
-                showNotification('ZippUp installed successfully! 🎉', 'success');
+                showNotification('🎉 ZippUp installed! Launch from your home screen for the best experience.', 'success');
+                deferredPrompt = null;
             });
+
+            // Handle standalone mode
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log('✅ Running in standalone mode');
+                // Hide browser-specific UI elements
+                document.body.classList.add('standalone');
+            }
         }
 
         function showInstallPrompt() {
             const installPrompt = document.getElementById('install-prompt');
-            installPrompt.style.display = 'flex';
+            installPrompt.style.display = 'block';
             setTimeout(() => {
                 installPrompt.classList.add('show');
             }, 100);
@@ -2059,7 +2162,7 @@
             }, 300);
         }
 
-        // Location Services
+        // Enhanced Location Services
         async function initializeLocation() {
             if ('geolocation' in navigator) {
                 try {
@@ -2077,6 +2180,9 @@
                     // Get address from coordinates
                     const address = await reverseGeocode(latitude, longitude);
                     updateLocationUI(address, 'GPS accurate to 10m');
+                    
+                    // Update service distances based on location
+                    updateServiceDistances();
                     
                 } catch (error) {
                     console.error('Location error:', error);
@@ -2098,17 +2204,15 @@
         }
 
         function updateLocationUI(address, accuracy) {
-            document.getElementById('current-address').textContent = address;
-            document.getElementById('location-accuracy').textContent = accuracy;
             document.getElementById('user-location').textContent = `📍 ${address}`;
         }
 
-        function calculateDistance(service) {
-            if (!currentLocation) return Math.random() * 3 + 0.5; // Random 0.5-3.5km
-            
-            // Simulate distance calculation
+        function updateServiceDistances() {
+            // Simulate real distance calculations
             const distances = [0.3, 0.5, 0.7, 0.9, 1.2, 1.5, 2.1, 2.8];
-            return distances[Math.floor(Math.random() * distances.length)];
+            services.forEach((service, index) => {
+                service.distance = distances[index % distances.length];
+            });
         }
 
         function showAuthScreen() {
@@ -2121,8 +2225,32 @@
                 document.getElementById('user-name').textContent = currentUser.name;
                 document.getElementById('profile-name').textContent = currentUser.name;
                 document.getElementById('profile-email').textContent = currentUser.email;
+                document.getElementById('profile-phone').textContent = currentUser.phone || 'Not provided';
+                document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+                
+                // Show provider features if user is a provider
+                if (isProvider) {
+                    document.getElementById('provider-registration-card').style.display = 'none';
+                    document.getElementById('provider-status').classList.remove('hidden');
+                    updateProviderStatus();
+                }
             }
             showNotification('Welcome to ZippUp! 🚀', 'success');
+        }
+
+        function updateProviderStatus() {
+            const toggle = document.getElementById('availability-toggle');
+            const statusElement = document.querySelector('.provider-status');
+            
+            if (providerAvailable) {
+                toggle.classList.add('active');
+                statusElement.className = 'provider-status available';
+                statusElement.innerHTML = '<div class="status-indicator"></div><span>Available for bookings</span>';
+            } else {
+                toggle.classList.remove('active');
+                statusElement.className = 'provider-status unavailable';
+                statusElement.innerHTML = '<div class="status-indicator"></div><span>Currently unavailable</span>';
+            }
         }
 
         function setupEventListeners() {
@@ -2149,6 +2277,27 @@
             document.addEventListener('click', () => {
                 document.getElementById('dropdown-menu').classList.remove('active');
                 document.getElementById('search-suggestions').classList.remove('active');
+            });
+
+            // Provider registration
+            document.getElementById('provider-registration-card').addEventListener('click', () => {
+                handleProviderRegistration();
+            });
+
+            document.getElementById('provider-registration-nav').addEventListener('click', () => {
+                document.getElementById('dropdown-menu').classList.remove('active');
+                if (!isProvider) {
+                    handleProviderRegistration();
+                } else {
+                    navigateToPage('profile');
+                }
+            });
+
+            // Provider availability toggle
+            document.getElementById('availability-toggle').addEventListener('click', () => {
+                providerAvailable = !providerAvailable;
+                updateProviderStatus();
+                showNotification(`You are now ${providerAvailable ? 'available' : 'unavailable'} for bookings`, 'info');
             });
 
             // Dropdown navigation
@@ -2179,10 +2328,10 @@
                     deferredPrompt = null;
                     
                     if (outcome === 'dismissed') {
-                        showNotification('Install cancelled', 'info');
+                        showNotification('Install cancelled. You can install later from browser menu.', 'info');
                     }
                 } else {
-                    showNotification('App already installed or not available', 'info');
+                    showNotification('App already installed or install not available', 'info');
                 }
                 hideInstallPrompt();
             });
@@ -2192,21 +2341,20 @@
             });
 
             // Location change
-            document.getElementById('change-location').addEventListener('click', () => {
-                const newAddress = prompt('Enter your address:', document.getElementById('current-address').textContent);
+            document.getElementById('user-location').addEventListener('click', () => {
+                const newAddress = prompt('Enter your address:', document.getElementById('user-location').textContent.replace('📍 ', ''));
                 if (newAddress) {
                     updateLocationUI(newAddress, 'Manual address entered');
+                    updateServiceDistances();
+                    loadServices();
                 }
-            });
-
-            document.getElementById('user-location').addEventListener('click', () => {
-                document.getElementById('change-location').click();
             });
 
             // Demo login
             document.getElementById('demo-login-btn').addEventListener('click', () => {
-                currentUser = { name: 'Demo User', email: 'demo@zippup.com' };
+                currentUser = { name: 'Demo User', email: 'demo@zippup.com', isProvider: false };
                 isAuthenticated = true;
+                isProvider = false;
                 localStorage.setItem('zippup_user', JSON.stringify(currentUser));
                 
                 document.getElementById('auth-screen').style.display = 'none';
@@ -2250,15 +2398,33 @@
             document.getElementById('voice-btn').addEventListener('click', () => {
                 if ('webkitSpeechRecognition' in window) {
                     const recognition = new webkitSpeechRecognition();
-                    recognition.onstart = () => showNotification('🎤 Listening...', 'info');
+                    recognition.continuous = false;
+                    recognition.interimResults = false;
+                    recognition.lang = 'en-US';
+                    
+                    recognition.onstart = () => {
+                        document.getElementById('voice-btn').style.background = 'var(--error)';
+                        showNotification('🎤 Listening... Speak now!', 'info');
+                    };
+                    
                     recognition.onresult = (e) => {
                         const transcript = e.results[0][0].transcript;
                         document.getElementById('search-input').value = transcript;
                         handleSearchEnter(transcript);
                     };
+                    
+                    recognition.onend = () => {
+                        document.getElementById('voice-btn').style.background = 'var(--primary)';
+                    };
+                    
+                    recognition.onerror = () => {
+                        document.getElementById('voice-btn').style.background = 'var(--primary)';
+                        showNotification('Voice search failed. Please try again.', 'error');
+                    };
+                    
                     recognition.start();
                 } else {
-                    showNotification('Voice search not supported', 'error');
+                    showNotification('Voice search not supported on this device', 'error');
                 }
             });
 
@@ -2334,39 +2500,86 @@
             document.querySelectorAll('[data-marketplace]').forEach(card => {
                 card.addEventListener('click', (e) => {
                     const marketplaceType = e.currentTarget.dataset.marketplace;
-                    showNotification(`${marketplaceType} marketplace coming soon!`, 'info');
+                    showMarketplaceCategory(marketplaceType);
                 });
             });
 
             // Wallet actions
             document.getElementById('add-money').addEventListener('click', () => {
-                showNotification('💰 Add money: Enter amount $10-$500', 'info');
+                showWalletAction('add');
             });
 
             document.getElementById('send-money').addEventListener('click', () => {
-                showNotification('📤 Send money: Enter recipient details', 'info');
+                showWalletAction('send');
             });
 
             // Profile menu items with real functionality
             document.getElementById('edit-profile').addEventListener('click', () => {
-                showNotification('📝 Edit Profile: Update name, phone, photo', 'info');
+                showProfileAction('edit');
             });
 
             document.getElementById('payment-methods').addEventListener('click', () => {
-                showNotification('💳 Payment Methods: Add/remove cards & bank accounts', 'info');
+                showProfileAction('payment');
             });
 
             document.getElementById('notifications-settings').addEventListener('click', () => {
-                showNotification('🔔 Notifications: Push, SMS, Email preferences updated', 'info');
+                showProfileAction('notifications');
             });
 
             document.getElementById('help-support').addEventListener('click', () => {
-                showNotification('❓ Help: Chat support, FAQ, contact us available', 'info');
+                showProfileAction('help');
             });
 
             document.getElementById('settings').addEventListener('click', () => {
-                showNotification('⚙️ Settings: Language, privacy, app preferences', 'info');
+                showProfileAction('settings');
             });
+
+            // Food and grocery search
+            if (document.getElementById('food-search-input')) {
+                document.getElementById('food-search-input').addEventListener('input', (e) => {
+                    filterFoodItems(e.target.value);
+                });
+            }
+
+            if (document.getElementById('grocery-search-input')) {
+                document.getElementById('grocery-search-input').addEventListener('input', (e) => {
+                    filterGroceryStores(e.target.value);
+                });
+            }
+        }
+
+        // Provider Registration
+        function handleProviderRegistration() {
+            if (isProvider) {
+                showNotification('You are already a registered provider!', 'info');
+                return;
+            }
+
+            const confirmRegistration = confirm(
+                'Become a ZippUp Provider!\n\n' +
+                '✅ Start earning by offering your services\n' +
+                '✅ Get access to thousands of customers\n' +
+                '✅ Flexible schedule - work when you want\n' +
+                '✅ Secure payments and support\n\n' +
+                'Proceed with provider registration?'
+            );
+
+            if (confirmRegistration) {
+                // Simulate registration process
+                showNotification('🔄 Processing provider registration...', 'info');
+                
+                setTimeout(() => {
+                    isProvider = true;
+                    currentUser.isProvider = true;
+                    localStorage.setItem('zippup_user', JSON.stringify(currentUser));
+                    
+                    document.getElementById('provider-registration-card').style.display = 'none';
+                    document.getElementById('provider-status').classList.remove('hidden');
+                    updateProviderStatus();
+                    
+                    showNotification('🎉 Congratulations! You are now a verified ZippUp provider!', 'success');
+                }, 2000);
+            }
         }
 
         // Enhanced Search Functionality
@@ -2410,8 +2623,19 @@
                 return;
             }
 
+            // Search in services
+            const serviceMatch = services.find(service =>
+                service.name.toLowerCase().includes(query.toLowerCase()) ||
+                service.description.toLowerCase().includes(query.toLowerCase())
+            );
+
+            if (serviceMatch) {
+                handleServiceClick(serviceMatch);
+                return;
+            }
+
             // No matches found
-            showNotification(`No results found for "${query}"`, 'info');
+            showNotification(`🔍 No results found for "${query}". Try "taxi", "pizza", or "airtime"`, 'info');
         }
 
         function showSearchSuggestions(suggestions, query) {
@@ -2491,6 +2715,8 @@
                 loadAllServices();
             } else if (page === 'bookings') {
                 loadBookingsPage();
+            } else if (page === 'wallet') {
+                updateCurrencyDisplay();
             }
         }
 
@@ -2513,25 +2739,58 @@
             container.innerHTML = '';
             items.forEach(item => {
                 const card = document.createElement('div');
-                card.className = 'food-item';
+                card.className = 'provider-card';
                 card.innerHTML = `
-                    <div class="food-image">${item.icon}</div>
-                    <div class="food-rating">${item.rating}</div>
-                    <div class="food-info">
-                        <div class="food-name">${item.name}</div>
-                        <div class="food-restaurant">${item.restaurant}</div>
-                        <div class="food-price">${item.price}</div>
+                    <div class="provider-distance">${item.distance}</div>
+                    <div class="provider-header">
+                        <div class="provider-avatar">${item.icon}</div>
+                        <div class="provider-info">
+                            <h3>${item.name}</h3>
+                            <div class="provider-rating">⭐ ${item.rating}</div>
+                        </div>
                     </div>
+                    <div class="provider-description">${item.restaurant}</div>
+                    <div class="provider-price" style="background: var(--success);">${userCurrency}${item.price} • Add to Cart</div>
                 `;
                 
                 card.addEventListener('click', () => {
-                    showNotification(`Added ${item.name} to cart!`, 'success');
+                    addToCart(item);
                 });
                 
                 container.appendChild(card);
             });
             
             navigateToPage('food-items');
+        }
+
+        function addToCart(item) {
+            showNotification(`✅ Added ${item.name} to cart! (${userCurrency}${item.price})`, 'success');
+            
+            // Add booking entry
+            const booking = {
+                id: Date.now(),
+                service: 'Food Order',
+                providerName: item.restaurant,
+                status: 'confirmed',
+                timestamp: new Date().toISOString(),
+                price: userCurrency + item.price,
+                type: 'food'
+            };
+            
+            bookings.unshift(booking);
+            saveBookings();
+        }
+
+        function filterFoodItems(query) {
+            const cards = document.querySelectorAll('#food-items-grid .provider-card');
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (text.includes(query.toLowerCase())) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
         }
 
         function loadGroceryStores() {
@@ -2542,6 +2801,7 @@
                 const card = document.createElement('div');
                 card.className = 'provider-card';
                 card.innerHTML = `
+                    <div class="provider-distance">${store.distance}</div>
                     <div class="provider-header">
                         <div class="provider-avatar">${store.avatar}</div>
                         <div class="provider-info">
@@ -2564,14 +2824,42 @@
                         </div>
                     </div>
                     <div class="provider-description">${store.description}</div>
-                    <div class="provider-price">Shop Now</div>
+                    <div class="provider-price">🛒 Shop Now</div>
                 `;
                 
                 card.addEventListener('click', () => {
-                    showNotification(`Opening ${store.name} store...`, 'info');
+                    openGroceryStore(store);
                 });
                 
                 container.appendChild(card);
+            });
+        }
+
+        function openGroceryStore(store) {
+            showNotification(`🛒 Opening ${store.name}... Browse thousands of products!`, 'success');
+            
+            const booking = {
+                id: Date.now(),
+                service: 'Grocery Shopping',
+                providerName: store.name,
+                status: 'in_progress',
+                timestamp: new Date().toISOString(),
+                type: 'grocery'
+            };
+            
+            bookings.unshift(booking);
+            saveBookings();
+        }
+
+        function filterGroceryStores(query) {
+            const cards = document.querySelectorAll('#grocery-stores .provider-card');
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (text.includes(query.toLowerCase())) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
             });
         }
 
@@ -2592,6 +2880,7 @@
                 const card = document.createElement('div');
                 card.className = 'provider-card';
                 card.innerHTML = `
+                    <div class="provider-distance">${provider.distance}</div>
                     <div class="provider-header">
                         <div class="provider-avatar">${provider.avatar}</div>
                         <div class="provider-info">
@@ -2609,16 +2898,16 @@
                             <div class="provider-stat-label">Experience</div>
                         </div>
                         <div class="provider-stat">
-                            <div class="provider-stat-value">${provider.price}</div>
+                            <div class="provider-stat-value">${userCurrency}${provider.price}</div>
                             <div class="provider-stat-label">Price Range</div>
                         </div>
                     </div>
                     <div class="provider-description">${provider.description}</div>
-                    <div class="provider-price">Book Now</div>
+                    <div class="provider-price">📅 Book Now (Instant & Scheduled)</div>
                 `;
                 
                 card.addEventListener('click', () => {
-                    selectProvider(provider);
+                    selectTransportProvider(provider, transportType);
                 });
                 
                 container.appendChild(card);
@@ -2627,18 +2916,238 @@
             navigateToPage('providers');
         }
 
-        // Digital Services
-        function showDigitalService(serviceType) {
-            const serviceMap = {
-                airtime: 'Buy Airtime: Select network and amount',
-                data: 'Buy Data: Choose bundle size and network',
-                bills: 'Pay Bills: Electricity, water, cable TV',
-                vouchers: 'Gift Vouchers: Amazon, iTunes, Google Play',
-                gaming: 'Gaming Credits: PUBG, Fortnite, Mobile Legends',
-                streaming: 'Streaming: Netflix, Spotify, Disney+ subscriptions'
+        function selectTransportProvider(provider, type) {
+            const bookingType = confirm('Choose booking type:\n\nOK = Book Instantly\nCancel = Schedule for Later');
+            const timing = bookingType ? 'instant' : 'scheduled';
+            
+            showNotification(`✅ ${timing === 'instant' ? 'Instant' : 'Scheduled'} booking confirmed with ${provider.name}!`, 'success');
+            
+            const booking = {
+                id: Date.now(),
+                providerId: provider.id,
+                providerName: provider.name,
+                service: `${type === 'ride' ? 'Ride' : 'Moving'} Service`,
+                status: 'confirmed',
+                timestamp: new Date().toISOString(),
+                price: userCurrency + provider.price.split('-')[0],
+                type: 'transport',
+                timing: timing
             };
             
-            showNotification(serviceMap[serviceType] || 'Digital service coming soon!', 'info');
+            bookings.unshift(booking);
+            saveBookings();
+        }
+
+        // Others Category Functions
+        function showOthersProviders() {
+            document.getElementById('providers-title').textContent = 'Other Services';
+            
+            const container = document.getElementById('providers-list');
+            container.innerHTML = '';
+            
+            othersProviders.forEach(provider => {
+                const card = document.createElement('div');
+                card.className = 'provider-card';
+                card.innerHTML = `
+                    <div class="provider-distance">${provider.distance}</div>
+                    <div class="provider-header">
+                        <div class="provider-avatar">${provider.avatar}</div>
+                        <div class="provider-info">
+                            <h3>${provider.name}</h3>
+                            <div class="provider-rating">⭐ ${provider.rating}</div>
+                        </div>
+                    </div>
+                    <div class="provider-details">
+                        <div class="provider-stat">
+                            <div class="provider-stat-value">${provider.events || provider.students || provider.cases || provider.shoots}</div>
+                            <div class="provider-stat-label">${provider.events ? 'Events' : provider.students ? 'Students' : provider.cases ? 'Cases' : 'Shoots'}</div>
+                        </div>
+                        <div class="provider-stat">
+                            <div class="provider-stat-value">${provider.experience}</div>
+                            <div class="provider-stat-label">Experience</div>
+                        </div>
+                        <div class="provider-stat">
+                            <div class="provider-stat-value">${provider.price}</div>
+                            <div class="provider-stat-label">Price Range</div>
+                        </div>
+                    </div>
+                    <div class="provider-description">${provider.description}</div>
+                    <div class="provider-price">📞 Contact Provider</div>
+                `;
+                
+                card.addEventListener('click', () => {
+                    selectOthersProvider(provider);
+                });
+                
+                container.appendChild(card);
+            });
+            
+            navigateToPage('providers');
+        }
+
+        function selectOthersProvider(provider) {
+            showNotification(`📞 Contacting ${provider.name}... They will reach out within 30 minutes!`, 'success');
+            
+            const booking = {
+                id: Date.now(),
+                providerId: provider.id,
+                providerName: provider.name,
+                service: 'Other Services',
+                status: 'pending',
+                timestamp: new Date().toISOString(),
+                price: provider.price,
+                type: 'others'
+            };
+            
+            bookings.unshift(booking);
+            saveBookings();
+        }
+
+        // Digital Services Functions
+        function showDigitalService(serviceType) {
+            const services = {
+                airtime: {
+                    title: 'Buy Airtime',
+                    description: 'Select your network and amount',
+                    options: ['$5', '$10', '$20', '$50'],
+                    networks: ['Verizon', 'AT&T', 'T-Mobile', 'Sprint']
+                },
+                data: {
+                    title: 'Data Bundles',
+                    description: 'Choose your data plan',
+                    options: ['1GB - $10', '5GB - $25', '10GB - $45', 'Unlimited - $65'],
+                    networks: ['Verizon', 'AT&T', 'T-Mobile', 'Sprint']
+                },
+                bills: {
+                    title: 'Pay Bills',
+                    description: 'Select utility to pay',
+                    options: ['Electricity', 'Water', 'Internet', 'Cable TV'],
+                    networks: ['ConEd', 'Verizon', 'Spectrum', 'DirectTV']
+                },
+                vouchers: {
+                    title: 'Gift Vouchers',
+                    description: 'Choose your voucher',
+                    options: ['$10', '$25', '$50', '$100'],
+                    networks: ['Amazon', 'iTunes', 'Google Play', 'Netflix']
+                },
+                gaming: {
+                    title: 'Gaming Credits',
+                    description: 'Select your game',
+                    options: ['$5', '$10', '$25', '$50'],
+                    networks: ['PUBG', 'Fortnite', 'Mobile Legends', 'Free Fire']
+                },
+                streaming: {
+                    title: 'Streaming Services',
+                    description: 'Choose subscription',
+                    options: ['1 Month', '3 Months', '6 Months', '1 Year'],
+                    networks: ['Netflix', 'Spotify', 'Disney+', 'YouTube Premium']
+                }
+            };
+
+            const service = services[serviceType];
+            if (!service) return;
+
+            const selectedOption = prompt(
+                `${service.title}\n${service.description}\n\n` +
+                service.options.map((option, index) => `${index + 1}. ${option}`).join('\n') +
+                '\n\nEnter option number (1-4):'
+            );
+
+            if (selectedOption && selectedOption >= 1 && selectedOption <= 4) {
+                const option = service.options[selectedOption - 1];
+                const network = service.networks[selectedOption - 1];
+                
+                showNotification(`✅ ${service.title}: ${option} (${network}) - Processing payment...`, 'success');
+                
+                setTimeout(() => {
+                    showNotification(`🎉 ${service.title} completed successfully! Check your account.`, 'success');
+                    
+                    const booking = {
+                        id: Date.now(),
+                        service: service.title,
+                        providerName: network,
+                        status: 'completed',
+                        timestamp: new Date().toISOString(),
+                        price: option.includes('$') ? option.split(' ')[0] : '$' + (selectedOption * 10),
+                        type: 'digital'
+                    };
+                    
+                    bookings.unshift(booking);
+                    saveBookings();
+                }, 2000);
+            }
+        }
+
+        // Marketplace Functions
+        function showMarketplaceCategory(category) {
+            const categories = {
+                electronics: 'Electronics - Phones, laptops, and gadgets available!',
+                fashion: 'Fashion - Clothing, shoes, and accessories for everyone!',
+                home: 'Home & Garden - Furniture, appliances, and decor items!',
+                sports: 'Sports - Equipment, gear, and fitness accessories!'
+            };
+            
+            showNotification(`🛍️ ${categories[category] || 'Category coming soon!'}`, 'info');
+        }
+
+        // Wallet Functions
+        function showWalletAction(action) {
+            if (action === 'add') {
+                const amount = prompt('Enter amount to add to wallet:', '50');
+                if (amount && !isNaN(amount) && parseFloat(amount) > 0) {
+                    showNotification(`💰 Adding ${userCurrency}${amount} to wallet... Processing payment.`, 'info');
+                    setTimeout(() => {
+                        showNotification(`✅ ${userCurrency}${amount} added to wallet successfully!`, 'success');
+                    }, 2000);
+                }
+            } else if (action === 'send') {
+                const recipient = prompt('Enter recipient phone number or email:');
+                if (recipient) {
+                    const amount = prompt('Enter amount to send:', '20');
+                    if (amount && !isNaN(amount) && parseFloat(amount) > 0) {
+                        showNotification(`📤 Sending ${userCurrency}${amount} to ${recipient}... Processing.`, 'info');
+                        setTimeout(() => {
+                            showNotification(`✅ ${userCurrency}${amount} sent successfully!`, 'success');
+                        }, 2000);
+                    }
+                }
+            }
+        }
+
+        // Profile Functions
+        function showProfileAction(action) {
+            const actions = {
+                edit: {
+                    title: 'Edit Profile',
+                    message: 'Profile editing: Update name, photo, phone number, and personal details.',
+                    emoji: '✏️'
+                },
+                payment: {
+                    title: 'Payment Methods',
+                    message: 'Payment setup: Add credit cards, bank accounts, and set default payment method.',
+                    emoji: '💳'
+                },
+                notifications: {
+                    title: 'Notification Settings',
+                    message: 'Notifications updated: Push notifications, SMS alerts, and email preferences configured.',
+                    emoji: '🔔'
+                },
+                help: {
+                    title: 'Help & Support',
+                    message: 'Support available: Live chat, FAQ, email support, and phone assistance ready.',
+                    emoji: '❓'
+                },
+                settings: {
+                    title: 'App Settings',
+                    message: 'Settings configured: Language, currency, privacy, security, and app preferences.',
+                    emoji: '⚙️'
+                }
+            };
+
+            const actionData = actions[action];
+            if (actionData) {
+                showNotification(`${actionData.emoji} ${actionData.message}`, 'info');
+            }
         }
 
         // Working Authentication functions
@@ -2664,8 +3173,14 @@
                 );
 
                 if (user) {
-                    currentUser = { name: user.name, email: user.email, phone: user.phone };
+                    currentUser = { 
+                        name: user.name, 
+                        email: user.email, 
+                        phone: user.phone,
+                        isProvider: user.isProvider || false
+                    };
                     isAuthenticated = true;
+                    isProvider = user.isProvider || false;
                     localStorage.setItem('zippup_user', JSON.stringify(currentUser));
                     
                     document.getElementById('auth-screen').style.display = 'none';
@@ -2706,16 +3221,17 @@
                     return;
                 }
 
-                const newUser = { name, email, phone, password };
+                const newUser = { name, email, phone, password, isProvider: false };
                 mockUsers.push(newUser);
 
-                currentUser = { name, email, phone };
+                currentUser = { name, email, phone, isProvider: false };
                 isAuthenticated = true;
+                isProvider = false;
                 localStorage.setItem('zippup_user', JSON.stringify(currentUser));
                 
                 document.getElementById('auth-screen').style.display = 'none';
                 showMainApp();
-                showNotification('Account created successfully! 🎉', 'success');
+                showNotification('🎉 Account created successfully! Welcome to ZippUp!', 'success');
 
             } catch (error) {
                 showError('register-email', 'Registration failed. Please try again.');
@@ -2790,12 +3306,13 @@
             localStorage.removeItem('zippup_user');
             currentUser = null;
             isAuthenticated = false;
+            isProvider = false;
             bookings = [];
             
             document.getElementById('app').style.display = 'none';
             document.getElementById('dropdown-menu').classList.remove('active');
             showAuthScreen();
-            showNotification('Logged out successfully', 'info');
+            showNotification('👋 Logged out successfully', 'info');
         }
 
         function loadServices() {
@@ -2803,17 +3320,14 @@
             container.innerHTML = '';
             
             services.forEach(service => {
-                const distance = typeof service.distance === 'string' ? service.distance : `${calculateDistance(service).toFixed(1)}km`;
-                
                 const card = document.createElement('div');
                 card.className = 'service-card';
                 card.innerHTML = `
-                    <div class="service-distance">${distance}</div>
                     <div class="service-icon">${service.icon}</div>
                     <div class="service-name">${service.name}</div>
                     <div class="service-description">${service.description}</div>
                     <div class="service-examples">${service.examples.join(', ')}</div>
-                    <div class="service-price">From $${service.price}</div>
+                    <div class="service-price">From ${userCurrency}${service.price}</div>
                 `;
                 
                 card.addEventListener('click', () => {
@@ -2829,17 +3343,14 @@
             container.innerHTML = '';
             
             services.forEach(service => {
-                const distance = typeof service.distance === 'string' ? service.distance : `${calculateDistance(service).toFixed(1)}km`;
-                
                 const card = document.createElement('div');
                 card.className = 'service-card';
                 card.innerHTML = `
-                    <div class="service-distance">${distance}</div>
                     <div class="service-icon">${service.icon}</div>
                     <div class="service-name">${service.name}</div>
                     <div class="service-description">${service.description}</div>
                     <div class="service-examples">${service.examples.join(', ')}</div>
-                    <div class="service-price">From $${service.price}</div>
+                    <div class="service-price">From ${userCurrency}${service.price}</div>
                 `;
                 
                 card.addEventListener('click', () => {
@@ -2864,28 +3375,89 @@
                 case 'emergency':
                     document.getElementById('emergency-modal').style.display = 'flex';
                     break;
+                case 'others':
+                    showOthersProviders();
+                    break;
                 default:
-                    showProviders(service);
+                    showServiceProviders(service);
                     break;
             }
         }
 
-        function showProviders(service) {
-            // This would show service providers for non-categorized services
-            showNotification(`${service.name} providers coming soon!`, 'info');
+        function showServiceProviders(service) {
+            // Generate mock providers for other services
+            const mockProviders = [
+                { name: `${service.name} Expert`, rating: 4.8, experience: '5 years', price: `${service.price}-${service.price + 20}`, distance: '1.2km' },
+                { name: `Pro ${service.name}`, rating: 4.6, experience: '3 years', price: `${service.price + 5}-${service.price + 25}`, distance: '0.8km' },
+                { name: `${service.name} Master`, rating: 4.9, experience: '7 years', price: `${service.price + 10}-${service.price + 30}`, distance: '1.5km' }
+            ];
+
+            document.getElementById('providers-title').textContent = service.name + ' Providers';
+            
+            const container = document.getElementById('providers-list');
+            container.innerHTML = '';
+            
+            mockProviders.forEach((provider, index) => {
+                const card = document.createElement('div');
+                card.className = 'provider-card';
+                card.innerHTML = `
+                    <div class="provider-distance">${provider.distance}</div>
+                    <div class="provider-header">
+                        <div class="provider-avatar">${service.icon}</div>
+                        <div class="provider-info">
+                            <h3>${provider.name}</h3>
+                            <div class="provider-rating">⭐ ${provider.rating}</div>
+                        </div>
+                    </div>
+                    <div class="provider-details">
+                        <div class="provider-stat">
+                            <div class="provider-stat-value">${50 + index * 20}</div>
+                            <div class="provider-stat-label">Jobs</div>
+                        </div>
+                        <div class="provider-stat">
+                            <div class="provider-stat-value">${provider.experience}</div>
+                            <div class="provider-stat-label">Experience</div>
+                        </div>
+                        <div class="provider-stat">
+                            <div class="provider-stat-value">${userCurrency}${provider.price}</div>
+                            <div class="provider-stat-label">Price Range</div>
+                        </div>
+                    </div>
+                    <div class="provider-description">Professional ${service.name.toLowerCase()} service with excellent ratings</div>
+                    <div class="provider-price">📞 Book ${service.hasInstant && service.hasScheduled ? '(Instant & Scheduled)' : service.hasInstant ? '(Instant)' : '(Scheduled)'}</div>
+                `;
+                
+                card.addEventListener('click', () => {
+                    selectServiceProvider(provider, service);
+                });
+                
+                container.appendChild(card);
+            });
+            
+            navigateToPage('providers');
         }
 
-        function selectProvider(provider) {
-            showNotification(`Selected ${provider.name}! Instant & scheduled booking available.`, 'success');
+        function selectServiceProvider(provider, service) {
+            let bookingType = 'instant';
+            
+            if (service.hasInstant && service.hasScheduled) {
+                const instant = confirm('Choose booking type:\n\nOK = Book Instantly\nCancel = Schedule for Later');
+                bookingType = instant ? 'instant' : 'scheduled';
+            } else if (service.hasScheduled) {
+                bookingType = 'scheduled';
+            }
+            
+            showNotification(`✅ ${bookingType === 'instant' ? 'Instant' : 'Scheduled'} booking confirmed with ${provider.name}!`, 'success');
             
             const booking = {
                 id: Date.now(),
-                providerId: provider.id,
                 providerName: provider.name,
-                service: 'Transport Service',
+                service: service.name,
                 status: 'confirmed',
                 timestamp: new Date().toISOString(),
-                price: provider.price
+                price: userCurrency + provider.price.split('-')[0],
+                type: service.type,
+                timing: bookingType
             };
             
             bookings.unshift(booking);
@@ -2915,7 +3487,7 @@
                     <div style="text-align: center; padding: 60px 20px;">
                         <div style="font-size: 4rem; margin-bottom: 20px;">📋</div>
                         <h3>No bookings yet</h3>
-                        <p style="color: #64748b; margin-top: 8px;">
+                        <p style="color: var(--text-secondary); margin-top: 8px;">
                             Start booking services to see them here
                         </p>
                     </div>
@@ -2934,9 +3506,10 @@
                             ${booking.status.toUpperCase()}
                         </span>
                     </div>
-                    ${booking.providerName ? `<p style="color: #64748b; margin-bottom: 8px;">Provider: ${booking.providerName}</p>` : ''}
-                    <p style="color: #64748b; margin-bottom: 8px;">${new Date(booking.timestamp).toLocaleString()}</p>
-                    ${booking.price ? `<p style="font-weight: 600; color: #2563eb;">${booking.price}</p>` : ''}
+                    ${booking.providerName ? `<p style="color: var(--text-secondary); margin-bottom: 8px;">Provider: ${booking.providerName}</p>` : ''}
+                    ${booking.timing ? `<p style="color: var(--text-muted); margin-bottom: 8px; font-size: 0.875rem;">Booking: ${booking.timing}</p>` : ''}
+                    <p style="color: var(--text-secondary); margin-bottom: 8px; font-size: 0.875rem;">${new Date(booking.timestamp).toLocaleString()}</p>
+                    ${booking.price ? `<p style="font-weight: 600; color: var(--primary);">${booking.price}</p>` : ''}
                 `;
                 container.appendChild(bookingCard);
             });
@@ -2944,11 +3517,12 @@
 
         function getStatusColor(status) {
             switch (status) {
-                case 'completed': return '#10b981';
-                case 'confirmed': return '#06b6d4';
-                case 'pending': return '#f59e0b';
-                case 'cancelled': return '#ef4444';
-                default: return '#64748b';
+                case 'completed': return 'var(--success)';
+                case 'confirmed': return 'var(--info)';
+                case 'in_progress': return 'var(--warning)';
+                case 'pending': return 'var(--accent)';
+                case 'cancelled': return 'var(--error)';
+                default: return 'var(--text-secondary)';
             }
         }
 
@@ -2967,10 +3541,10 @@
 
         function handleEmergencyService(type) {
             const emergencyServices = {
-                ambulance: 'Ambulance dispatched! ETA: 8-12 minutes',
-                fire: 'Fire department notified! ETA: 5-8 minutes',
-                towing: 'Towing truck requested! ETA: 15-25 minutes',
-                roadside: 'Roadside assistance coming! ETA: 10-15 minutes'
+                ambulance: 'Ambulance dispatched! ETA: 8-12 minutes. Stay calm, help is on the way.',
+                fire: 'Fire department notified! ETA: 5-8 minutes. Evacuate if necessary.',
+                towing: 'Towing truck requested! ETA: 15-25 minutes. Stay with your vehicle.',
+                roadside: 'Roadside assistance coming! ETA: 10-15 minutes. Turn on hazard lights.'
             };
             
             closeEmergencyModal();
@@ -2982,7 +3556,8 @@
                 type: 'emergency',
                 status: 'active',
                 timestamp: new Date().toISOString(),
-                location: 'Current location'
+                location: 'Current location',
+                timing: 'instant'
             };
             
             bookings.unshift(emergencyBooking);
@@ -3005,7 +3580,7 @@
             setTimeout(() => {
                 notification.classList.remove('show');
                 setTimeout(() => notification.remove(), 300);
-            }, 4000);
+            }, 5000);
         }
 
         // Start app when page loads
