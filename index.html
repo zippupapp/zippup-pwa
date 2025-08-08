@@ -3,123 +3,435 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZippUp - Your All-in-One Service Platform</title>
-    <meta name="description" content="ZippUp: Rides, Services, Emergency Help, and More">
+    <title>ZippUp - Your Service Platform</title>
+    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#2563EB">
-    
-    <!-- PWA Meta Tags -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="ZippUp">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
-    
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
-    <!-- CSS -->
-    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563EB;
+            --primary-light: #3B82F6;
+            --background: #F9FAFB;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --success: #10B981;
+            --error: #EF4444;
+            --warning: #F59E0B;
+            --info: #06B6D4;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Splash Screen */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .app-logo {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            animation: bounce 1.5s infinite;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); }
+            40%, 43% { transform: translate3d(0,-30px,0); }
+            70% { transform: translate3d(0,-15px,0); }
+            90% { transform: translate3d(0,-4px,0); }
+        }
+
+        .splash-text {
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .splash-subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 1rem;
+        }
+
+        /* App Container */
+        .app {
+            display: none;
+            flex-direction: column;
+            min-height: 100vh;
+            background: var(--background);
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 16px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .user-info h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .user-location {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .profile-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            cursor: pointer;
+        }
+
+        /* Search */
+        .search-container {
+            position: relative;
+            margin-top: 16px;
+        }
+
+        .search-box {
+            display: flex;
+            background: var(--background);
+            border-radius: 12px;
+            padding: 4px;
+            border: 2px solid #E2E8F0;
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 12px 16px;
+            background: transparent;
+            font-size: 1rem;
+        }
+
+        .voice-search-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .voice-search-btn.recording {
+            background: var(--error);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Emergency Button */
+        .emergency-btn {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+            transition: all 0.2s;
+        }
+
+        .emergency-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 0 20px 100px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            margin: 20px 0;
+        }
+
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .quick-action-card {
+            background: white;
+            border: none;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .quick-action-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .quick-action-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .quick-action-name {
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        /* Services */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .service-card {
+            background: white;
+            border: none;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .service-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .service-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .service-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 0.875rem;
+        }
+
+        .service-description {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+        }
+
+        .service-price {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #E2E8F0;
+            display: flex;
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 4px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+
+        .nav-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            max-width: 300px;
+            z-index: 10000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success { background: var(--success); }
+        .notification.error { background: var(--error); }
+        .notification.warning { background: var(--warning); }
+        .notification.info { background: var(--info); }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .header { padding: 12px 16px; }
+            .main-content { padding: 0 16px 100px; }
+            .emergency-btn { margin: 16px; }
+            .services-grid { gap: 12px; }
+            .service-card { padding: 16px; }
+        }
+    </style>
 </head>
 <body>
     <!-- Splash Screen -->
     <div id="splash-screen" class="splash-screen">
-        <div class="splash-content">
-            <div class="logo-container">
-                <div class="logo">⚡</div>
-                <h1>ZippUp</h1>
-            </div>
-            <div class="loading-spinner"></div>
-        </div>
+        <div class="app-logo">🚀</div>
+        <div class="splash-text">ZippUp</div>
+        <div class="splash-subtitle">Your Service Platform</div>
     </div>
 
-    <!-- App Container -->
-    <div id="app" class="app-container" style="display: none;">
+    <!-- Main App -->
+    <div id="app" class="app">
         <!-- Header -->
         <header class="header">
-            <div class="header-content">
-                <div class="user-greeting">
-                    <span class="greeting-text">Hello, <span id="user-name">User</span>!</span>
-                    <span class="location-text">📍 <span id="user-location">Current Location</span></span>
+            <div class="header-top">
+                <div class="user-info">
+                    <h2>Hello, <span id="user-name">User</span>!</h2>
+                    <div id="user-location" class="user-location">Getting location...</div>
                 </div>
-                <div class="header-actions">
-                    <button class="icon-btn" id="notifications-btn">
-                        <span class="material-icons">notifications</span>
-                        <span class="badge">3</span>
-                    </button>
-                    <button class="icon-btn" id="profile-btn">
-                        <span class="material-icons">account_circle</span>
-                    </button>
+                <button id="profile-btn" class="profile-btn">👤</button>
+            </div>
+            
+            <!-- Search -->
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search for services...">
+                    <button id="voice-search-btn" class="voice-search-btn">🎤</button>
                 </div>
             </div>
         </header>
 
+        <!-- Emergency Button -->
+        <button id="emergency-btn" class="emergency-btn">🚨 Emergency Help</button>
+
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Search Section -->
-            <section class="search-section">
-                <div class="search-container">
-                    <div class="search-input-container">
-                        <span class="material-icons search-icon">search</span>
-                        <input type="text" id="search-input" placeholder="What service do you need?" autocomplete="off">
-                        <button class="voice-btn" id="voice-search-btn">
-                            <span class="material-icons">mic</span>
-                        </button>
-                    </div>
-                    <div id="search-suggestions" class="search-suggestions" style="display: none;">
-                        <!-- AI-powered suggestions will appear here -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Emergency Button -->
-            <section class="emergency-section">
-                <button class="emergency-btn" id="emergency-btn">
-                    <span class="emergency-icon">🚨</span>
-                    <span class="emergency-text">Emergency</span>
-                </button>
-            </section>
-
             <!-- Quick Actions -->
             <section class="quick-actions">
-                <h2>Quick Actions</h2>
+                <h3 class="section-title">Quick Actions</h3>
                 <div class="quick-actions-grid">
                     <button class="quick-action-card" data-action="ride">
-                        <span class="action-icon">🚗</span>
-                        <span class="action-text">Book Ride</span>
+                        <div class="quick-action-icon">🚗</div>
+                        <div class="quick-action-name">Book Ride</div>
                     </button>
                     <button class="quick-action-card" data-action="emergency">
-                        <span class="action-icon">🚨</span>
-                        <span class="action-text">Emergency</span>
+                        <div class="quick-action-icon">🚨</div>
+                        <div class="quick-action-name">Emergency</div>
                     </button>
                     <button class="quick-action-card" data-action="wallet">
-                        <span class="action-icon">💰</span>
-                        <span class="action-text">Wallet</span>
+                        <div class="quick-action-icon">💳</div>
+                        <div class="quick-action-name">Wallet</div>
                     </button>
                     <button class="quick-action-card" data-action="marketplace">
-                        <span class="action-icon">🛒</span>
-                        <span class="action-text">Shop</span>
+                        <div class="quick-action-icon">🛍️</div>
+                        <div class="quick-action-name">Shop</div>
                     </button>
                 </div>
             </section>
 
-            <!-- Services Categories -->
-            <section class="services-section">
-                <h2>All Services</h2>
-                <div class="services-grid" id="services-grid">
-                    <!-- Services will be populated dynamically -->
-                </div>
-            </section>
-
-            <!-- Recent Bookings -->
-            <section class="recent-section">
-                <h2>Recent Activity</h2>
-                <div class="recent-list" id="recent-list">
-                    <!-- Recent bookings will appear here -->
+            <!-- Services -->
+            <section class="services">
+                <h3 class="section-title">All Services</h3>
+                <div id="services-grid" class="services-grid">
+                    <!-- Services will be loaded here -->
                 </div>
             </section>
         </main>
@@ -127,157 +439,290 @@
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
             <button class="nav-item active" data-page="home">
-                <span class="material-icons">home</span>
-                <span class="nav-label">Home</span>
+                <div class="nav-icon">🏠</div>
+                <div class="nav-label">Home</div>
             </button>
             <button class="nav-item" data-page="services">
-                <span class="material-icons">grid_view</span>
-                <span class="nav-label">Services</span>
+                <div class="nav-icon">🛠️</div>
+                <div class="nav-label">Services</div>
             </button>
             <button class="nav-item" data-page="bookings">
-                <span class="material-icons">event_note</span>
-                <span class="nav-label">Bookings</span>
+                <div class="nav-icon">📋</div>
+                <div class="nav-label">Bookings</div>
             </button>
             <button class="nav-item" data-page="chat">
-                <span class="material-icons">chat</span>
-                <span class="nav-label">Chat</span>
+                <div class="nav-icon">💬</div>
+                <div class="nav-label">Chat</div>
             </button>
             <button class="nav-item" data-page="profile">
-                <span class="material-icons">person</span>
-                <span class="nav-label">Profile</span>
+                <div class="nav-icon">👤</div>
+                <div class="nav-label">Profile</div>
             </button>
         </nav>
     </div>
 
-    <!-- Modals -->
-    
-    <!-- Authentication Modal -->
-    <div id="auth-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="auth-title">Welcome to ZippUp</h3>
-                <button class="close-btn" id="close-auth-modal">
-                    <span class="material-icons">close</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <!-- Login Form -->
-                <form id="login-form" class="auth-form">
-                    <div class="form-group">
-                        <label for="login-email">Email or Phone</label>
-                        <input type="text" id="login-email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="login-password">Password</label>
-                        <input type="password" id="login-password" required>
-                    </div>
-                    <button type="submit" class="primary-btn">Login</button>
-                    <button type="button" class="secondary-btn" id="request-otp-btn">Login with OTP</button>
-                </form>
-
-                <!-- Register Form -->
-                <form id="register-form" class="auth-form" style="display: none;">
-                    <div class="form-group">
-                        <label for="register-name">Full Name</label>
-                        <input type="text" id="register-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="register-email">Email</label>
-                        <input type="email" id="register-email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="register-phone">Phone Number</label>
-                        <input type="tel" id="register-phone" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="register-password">Password</label>
-                        <input type="password" id="register-password" required>
-                    </div>
-                    <button type="submit" class="primary-btn">Register</button>
-                </form>
-
-                <!-- OTP Verification Form -->
-                <form id="otp-form" class="auth-form" style="display: none;">
-                    <div class="otp-info">
-                        <p>Enter the verification codes sent to your email and phone:</p>
-                    </div>
-                    <div class="form-group">
-                        <label for="email-otp">Email OTP</label>
-                        <input type="text" id="email-otp" maxlength="6" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone-otp">Phone OTP</label>
-                        <input type="text" id="phone-otp" maxlength="6" required>
-                    </div>
-                    <button type="submit" class="primary-btn">Verify</button>
-                </form>
-
-                <div class="auth-switch">
-                    <p id="auth-switch-text">Don't have an account? <a href="#" id="auth-switch-link">Register here</a></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Service Detail Modal -->
-    <div id="service-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="service-title">Service Details</h3>
-                <button class="close-btn" id="close-service-modal">
-                    <span class="material-icons">close</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div id="service-details">
-                    <!-- Service details will be populated here -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Emergency Modal -->
-    <div id="emergency-modal" class="modal">
-        <div class="modal-content emergency-modal-content">
-            <div class="emergency-header">
-                <h3>🚨 Emergency Alert</h3>
-                <p>Are you sure you want to send an emergency alert?</p>
-            </div>
-            <div class="emergency-actions">
-                <button class="emergency-confirm-btn" id="confirm-emergency">Yes, Send Alert</button>
-                <button class="emergency-cancel-btn" id="cancel-emergency">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Install Prompt -->
-    <div id="install-prompt" class="install-prompt" style="display: none;">
-        <div class="install-content">
-            <div class="install-info">
-                <span class="install-icon">📱</span>
-                <div class="install-text">
-                    <h4>Install ZippUp</h4>
-                    <p>Add to your home screen for easy access</p>
-                </div>
-            </div>
-            <div class="install-actions">
-                <button class="install-btn" id="install-btn">Install</button>
-                <button class="dismiss-btn" id="dismiss-install">Later</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="app.js"></script>
     <script>
-        // Register Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => console.log('SW registered'))
-                    .catch(error => console.log('SW registration failed'));
-            });
+        console.log('🚀 ZippUp Loading...');
+
+        class ZippUpApp {
+            constructor() {
+                this.baseUrl = 'https://zippup-backend-v3.onrender.com';
+                this.services = [];
+                this.currentUser = null;
+                this.init();
+            }
+
+            async init() {
+                console.log('📱 Initializing app...');
+                
+                // Show splash for 2 seconds
+                setTimeout(() => {
+                    this.hideSplashScreen();
+                }, 2000);
+
+                this.initializeEventListeners();
+                this.loadServices();
+                this.initializeLocation();
+            }
+
+            hideSplashScreen() {
+                const splash = document.getElementById('splash-screen');
+                const app = document.getElementById('app');
+                
+                splash.style.opacity = '0';
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                    app.style.display = 'flex';
+                    this.showNotification('Welcome to ZippUp! 🚀', 'success');
+                }, 500);
+            }
+
+            initializeEventListeners() {
+                // Emergency button
+                document.getElementById('emergency-btn').addEventListener('click', () => {
+                    this.handleEmergency();
+                });
+
+                // Voice search
+                document.getElementById('voice-search-btn').addEventListener('click', () => {
+                    this.handleVoiceSearch();
+                });
+
+                // Search input
+                document.getElementById('search-input').addEventListener('input', (e) => {
+                    this.handleSearch(e.target.value);
+                });
+
+                // Navigation
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        this.navigateToPage(e.currentTarget.dataset.page);
+                    });
+                });
+
+                // Quick actions
+                document.querySelectorAll('.quick-action-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        this.handleQuickAction(e.currentTarget.dataset.action);
+                    });
+                });
+
+                // Profile button
+                document.getElementById('profile-btn').addEventListener('click', () => {
+                    this.showNotification('Profile page coming soon!', 'info');
+                });
+            }
+
+            async loadServices() {
+                try {
+                    console.log('🌐 Loading services...');
+                    const response = await fetch(`${this.baseUrl}/api/services`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.services = data.services;
+                    } else {
+                        throw new Error('API returned error');
+                    }
+                } catch (error) {
+                    console.log('⚠️ Using demo services');
+                    this.services = this.getDemoServices();
+                }
+                
+                this.renderServices();
+            }
+
+            getDemoServices() {
+                return [
+                    { id: '1', name: 'Ride & Moving', icon: '🚗', description: 'Taxi, delivery, moving', basePrice: 50 },
+                    { id: '2', name: 'Personal Care', icon: '💅', description: 'Hair, massage, beauty', basePrice: 30 },
+                    { id: '3', name: 'Tech Services', icon: '🔧', description: 'Phone, computer repair', basePrice: 40 },
+                    { id: '4', name: 'Construction', icon: '🏗️', description: 'Builders, electricians', basePrice: 80 },
+                    { id: '5', name: 'Home Services', icon: '🏠', description: 'Cleaning, gardening', basePrice: 35 },
+                    { id: '6', name: 'Emergency', icon: '🚨', description: 'Ambulance, roadside help', basePrice: 100 },
+                    { id: '7', name: 'Automobile', icon: '🔧', description: 'Car repair, mechanics', basePrice: 60 },
+                    { id: '8', name: 'Others', icon: '🎉', description: 'Events, catering', basePrice: 45 }
+                ];
+            }
+
+            renderServices() {
+                const grid = document.getElementById('services-grid');
+                grid.innerHTML = '';
+
+                this.services.forEach(service => {
+                    const card = document.createElement('button');
+                    card.className = 'service-card';
+                    card.innerHTML = `
+                        <div class="service-icon">${service.icon}</div>
+                        <div class="service-name">${service.name}</div>
+                        <div class="service-description">${service.description}</div>
+                        <div class="service-price">From $${service.basePrice}</div>
+                    `;
+                    
+                    card.addEventListener('click', () => {
+                        this.handleServiceClick(service);
+                    });
+                    
+                    grid.appendChild(card);
+                });
+            }
+
+            async initializeLocation() {
+                if ('geolocation' in navigator) {
+                    try {
+                        const position = await new Promise((resolve, reject) => {
+                            navigator.geolocation.getCurrentPosition(resolve, reject);
+                        });
+                        
+                        document.getElementById('user-location').textContent = 'Location found ✓';
+                    } catch (error) {
+                        document.getElementById('user-location').textContent = 'Location unavailable';
+                    }
+                } else {
+                    document.getElementById('user-location').textContent = 'Location not supported';
+                }
+            }
+
+            handleEmergency() {
+                this.showNotification('🚨 Emergency alert sent! Help is on the way.', 'error');
+                
+                // Simulate emergency response
+                setTimeout(() => {
+                    this.showNotification('Emergency services have been notified', 'info');
+                }, 3000);
+            }
+
+            handleVoiceSearch() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    const recognition = new SpeechRecognition();
+                    
+                    recognition.onstart = () => {
+                        document.getElementById('voice-search-btn').classList.add('recording');
+                        this.showNotification('🎤 Listening...', 'info');
+                    };
+                    
+                    recognition.onresult = (event) => {
+                        const transcript = event.results[0][0].transcript;
+                        document.getElementById('search-input').value = transcript;
+                        this.handleSearch(transcript);
+                    };
+                    
+                    recognition.onend = () => {
+                        document.getElementById('voice-search-btn').classList.remove('recording');
+                    };
+                    
+                    recognition.start();
+                } else {
+                    this.showNotification('Voice search not supported in this browser', 'warning');
+                }
+            }
+
+            handleSearch(query) {
+                if (!query.trim()) return;
+                
+                const results = this.services.filter(service => 
+                    service.name.toLowerCase().includes(query.toLowerCase()) ||
+                    service.description.toLowerCase().includes(query.toLowerCase())
+                );
+                
+                if (results.length > 0) {
+                    this.showNotification(`Found ${results.length} service(s) for "${query}"`, 'success');
+                } else {
+                    this.showNotification(`No services found for "${query}"`, 'warning');
+                }
+            }
+
+            handleServiceClick(service) {
+                this.showNotification(`Opening ${service.name} booking...`, 'info');
+                
+                // Simulate booking flow
+                setTimeout(() => {
+                    this.showNotification(`${service.name} booking created! (Demo mode)`, 'success');
+                }, 1500);
+            }
+
+            handleQuickAction(action) {
+                const actions = {
+                    ride: 'Book Ride',
+                    emergency: 'Emergency Help',
+                    wallet: 'Wallet',
+                    marketplace: 'Marketplace'
+                };
+                
+                this.showNotification(`Opening ${actions[action]}...`, 'info');
+                
+                if (action === 'emergency') {
+                    this.handleEmergency();
+                }
+            }
+
+            navigateToPage(page) {
+                // Update active nav
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                document.querySelector(`[data-page="${page}"]`).classList.add('active');
+                
+                const pages = {
+                    home: 'Home',
+                    services: 'Services',
+                    bookings: 'Bookings',
+                    chat: 'Chat',
+                    profile: 'Profile'
+                };
+                
+                this.showNotification(`Navigated to ${pages[page]}`, 'info');
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 100);
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 4000);
+            }
         }
+
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new ZippUpApp();
+        });
+
+        console.log('✅ ZippUp script loaded');
     </script>
 </body>
 </html>
