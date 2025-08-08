@@ -17,6 +17,8 @@
             color: #1e293b;
         }
 
+        .hidden { display: none !important; }
+
         /* Splash Screen */
         .splash-screen {
             position: fixed;
@@ -66,20 +68,222 @@
             font-size: 1rem;
         }
 
+        /* Auth Screen */
+        .auth-screen {
+            display: none;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-container {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .auth-logo .logo {
+            width: 80px;
+            height: 80px;
+            background: #2563eb;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 16px;
+        }
+
+        .auth-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            margin-bottom: 16px;
+        }
+
+        .input:focus {
+            border-color: #2563eb;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #2563eb;
+            border: 2px solid #2563eb;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 24px;
+            color: #64748b;
+        }
+
+        .auth-switch a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
         /* Main App */
         .app {
             display: none;
             min-height: 100vh;
-            padding: 20px;
+            padding-bottom: 80px;
         }
 
         .header {
             background: white;
             padding: 20px;
-            border-radius: 16px;
-            margin-bottom: 20px;
+            margin: 0 0 20px 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .user-info h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .user-location {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .search-box {
+            display: flex;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 4px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 12px 16px;
+            background: transparent;
+            font-size: 1rem;
+        }
+
+        .voice-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            cursor: pointer;
+        }
+
+        .emergency-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin: 0 20px 20px 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+        }
+
+        .content {
+            padding: 0 20px;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .quick-action {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
             text-align: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+
+        .quick-action:hover {
+            transform: translateY(-2px);
+        }
+
+        .quick-action-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
         }
 
         .services {
@@ -112,30 +316,157 @@
             margin-bottom: 8px;
         }
 
+        .service-description {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-bottom: 8px;
+        }
+
         .service-price {
             color: #2563eb;
             font-weight: 600;
         }
 
-        .debug {
+        /* Booking Modal */
+        .modal {
+            display: none;
             position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            background: #10b981;
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
             z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        .error {
-            background: #ef4444 !important;
+        .modal.active {
+            display: flex;
         }
 
-        .warning {
-            background: #f59e0b !important;
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-icon {
+            font-size: 3rem;
+            margin-right: 16px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #64748b;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 4px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+        }
+
+        .nav-item.active {
+            color: #2563eb;
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+
+        .nav-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            max-width: 300px;
+            z-index: 10000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success { background: #10b981; }
+        .notification.error { background: #ef4444; }
+        .notification.info { background: #06b6d4; }
+
+        @media (max-width: 480px) {
+            .content { padding: 0 16px; }
+            .emergency-btn { margin: 0 16px 20px 16px; }
         }
     </style>
 </head>
@@ -147,137 +478,406 @@
         <div class="splash-subtitle">Service Platform</div>
     </div>
 
-    <!-- Main App -->
-    <div id="app" class="app">
-        <div class="header">
-            <h1>🚀 ZippUp Services</h1>
-            <p>Choose a service to get started</p>
-        </div>
-        
-        <div class="services" id="services">
-            <!-- Services will be added here -->
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="auth-screen">
+        <div class="auth-container">
+            <div class="auth-logo">
+                <div class="logo">🚀</div>
+            </div>
+            
+            <div id="login-form">
+                <h2 class="auth-title">Welcome to ZippUp</h2>
+                <p class="auth-subtitle">Sign in to continue</p>
+                
+                <input type="text" id="login-email" class="input" placeholder="Email or Phone">
+                <input type="password" id="login-password" class="input" placeholder="Password">
+                
+                <button id="login-btn" class="btn btn-primary">Sign In</button>
+                <button id="demo-login-btn" class="btn btn-secondary">Demo Login (Skip)</button>
+                
+                <div class="auth-switch">
+                    Don't have an account? <a href="#" id="show-register">Create Account</a>
+                </div>
+            </div>
+
+            <div id="register-form" class="hidden">
+                <h2 class="auth-title">Create Account</h2>
+                <p class="auth-subtitle">Join ZippUp today</p>
+                
+                <input type="text" id="register-name" class="input" placeholder="Full Name">
+                <input type="email" id="register-email" class="input" placeholder="Email">
+                <input type="tel" id="register-phone" class="input" placeholder="Phone Number">
+                <input type="password" id="register-password" class="input" placeholder="Password">
+                
+                <button id="register-btn" class="btn btn-primary">Create Account</button>
+                
+                <div class="auth-switch">
+                    Already have an account? <a href="#" id="show-login">Sign In</a>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Debug Info -->
-    <div id="debug" class="debug">Starting app...</div>
+    <!-- Main App -->
+    <div id="app" class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-top">
+                <div class="user-info">
+                    <h2>Hello, <span id="user-name">Guest</span>!</h2>
+                    <div class="user-location">📍 Your Location</div>
+                </div>
+                <button id="logout-btn" class="logout-btn">Logout</button>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" id="search-input" class="search-input" placeholder="Search for services...">
+                <button id="voice-btn" class="voice-btn">🎤</button>
+            </div>
+        </header>
+
+        <!-- Emergency Button -->
+        <button id="emergency-btn" class="emergency-btn">🚨 Emergency Help</button>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Quick Actions -->
+            <section>
+                <h3 class="section-title">Quick Actions</h3>
+                <div class="quick-actions">
+                    <div class="quick-action" data-action="ride">
+                        <div class="quick-action-icon">🚗</div>
+                        <div>Book Ride</div>
+                    </div>
+                    <div class="quick-action" data-action="food">
+                        <div class="quick-action-icon">🍔</div>
+                        <div>Order Food</div>
+                    </div>
+                    <div class="quick-action" data-action="emergency">
+                        <div class="quick-action-icon">🚨</div>
+                        <div>Emergency</div>
+                    </div>
+                    <div class="quick-action" data-action="wallet">
+                        <div class="quick-action-icon">💳</div>
+                        <div>Wallet</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Services -->
+            <section>
+                <h3 class="section-title">All Services</h3>
+                <div class="services" id="services">
+                    <!-- Services loaded by JavaScript -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-label">Home</div>
+            </button>
+            <button class="nav-item">
+                <div class="nav-icon">🛠️</div>
+                <div class="nav-label">Services</div>
+            </button>
+            <button class="nav-item">
+                <div class="nav-icon">📋</div>
+                <div class="nav-label">Bookings</div>
+            </button>
+            <button class="nav-item">
+                <div class="nav-icon">💬</div>
+                <div class="nav-label">Chat</div>
+            </button>
+            <button class="nav-item">
+                <div class="nav-icon">👤</div>
+                <div class="nav-label">Profile</div>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn">&times;</button>
+            <div class="modal-header">
+                <div id="modal-icon" class="modal-icon">🚗</div>
+                <div>
+                    <h3 id="modal-title">Book Service</h3>
+                    <p id="modal-subtitle">Fill in the details</p>
+                </div>
+            </div>
+            
+            <form id="booking-form">
+                <div class="form-group">
+                    <label class="form-label">Date & Time</label>
+                    <input type="datetime-local" class="input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Pickup/Service Address</label>
+                    <input type="text" class="input" placeholder="Enter address" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Additional Notes</label>
+                    <textarea class="textarea" placeholder="Any special instructions..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Book Now</button>
+            </form>
+        </div>
+    </div>
 
     <script>
-        // Simple debug logger
-        function debug(message, type = 'info') {
-            console.log('DEBUG:', message);
-            const debugEl = document.getElementById('debug');
-            debugEl.textContent = message;
-            debugEl.className = 'debug';
-            if (type === 'error') debugEl.classList.add('error');
-            if (type === 'warning') debugEl.classList.add('warning');
-        }
+        // App State
+        let currentUser = null;
+        let isAuthenticated = false;
 
-        debug('Script loaded successfully');
-
-        // Simple services data
+        // Services Data
         const services = [
-            { id: 1, name: 'Taxi', icon: '🚗', price: 50 },
-            { id: 2, name: 'Food', icon: '🍔', price: 25 },
-            { id: 3, name: 'Emergency', icon: '🚨', price: 100 },
-            { id: 4, name: 'Cleaning', icon: '🏠', price: 40 }
+            { id: 1, name: 'Ride & Moving', icon: '🚗', description: 'Taxi, delivery, moving', price: 50 },
+            { id: 2, name: 'Personal Care', icon: '💅', description: 'Hair, massage, beauty', price: 30 },
+            { id: 3, name: 'Tech Services', icon: '🔧', description: 'Phone, computer repair', price: 40 },
+            { id: 4, name: 'Construction', icon: '🏗️', description: 'Builders, electricians', price: 80 },
+            { id: 5, name: 'Home Services', icon: '🏠', description: 'Cleaning, gardening', price: 35 },
+            { id: 6, name: 'Emergency', icon: '🚨', description: 'Ambulance, roadside help', price: 100 },
+            { id: 7, name: 'Food Delivery', icon: '🍔', description: 'Restaurant delivery', price: 15 },
+            { id: 8, name: 'Others', icon: '🎉', description: 'Events, catering', price: 45 }
         ];
 
-        debug('Services data loaded');
-
-        // Initialize app
+        // Initialize App
         function initApp() {
-            debug('Initializing app...');
+            console.log('🚀 Initializing ZippUp...');
             
-            try {
-                // Show splash for 3 seconds
-                setTimeout(() => {
-                    debug('Hiding splash screen...');
-                    hideSplash();
-                }, 3000);
-                
-                // Load services
-                loadServices();
-                
-                debug('App initialized successfully');
-                
-            } catch (error) {
-                debug('Error in initApp: ' + error.message, 'error');
+            // Check saved login
+            const savedUser = localStorage.getItem('zippup_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                isAuthenticated = true;
             }
+            
+            // Hide splash after 2 seconds
+            setTimeout(() => {
+                document.getElementById('splash-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('splash-screen').style.display = 'none';
+                    
+                    if (isAuthenticated) {
+                        showMainApp();
+                    } else {
+                        showAuthScreen();
+                    }
+                }, 500);
+            }, 2000);
+            
+            setupEventListeners();
+            loadServices();
         }
 
-        function hideSplash() {
-            try {
-                const splash = document.getElementById('splash-screen');
-                const app = document.getElementById('app');
+        function showAuthScreen() {
+            document.getElementById('auth-screen').style.display = 'flex';
+        }
+
+        function showMainApp() {
+            document.getElementById('app').style.display = 'block';
+            if (currentUser) {
+                document.getElementById('user-name').textContent = currentUser.name;
+            }
+            showNotification('Welcome to ZippUp! 🚀', 'success');
+        }
+
+        function setupEventListeners() {
+            // Auth switches
+            document.getElementById('show-register').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('login-form').classList.add('hidden');
+                document.getElementById('register-form').classList.remove('hidden');
+            });
+
+            document.getElementById('show-login').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('register-form').classList.add('hidden');
+                document.getElementById('login-form').classList.remove('hidden');
+            });
+
+            // Auth buttons
+            document.getElementById('demo-login-btn').addEventListener('click', () => {
+                // Demo login - skip authentication
+                currentUser = { name: 'Demo User', email: 'demo@zippup.com' };
+                isAuthenticated = true;
+                localStorage.setItem('zippup_user', JSON.stringify(currentUser));
                 
-                if (!splash || !app) {
-                    debug('Missing splash or app element!', 'error');
+                document.getElementById('auth-screen').style.display = 'none';
+                showMainApp();
+            });
+
+            document.getElementById('login-btn').addEventListener('click', () => {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                if (!email || !password) {
+                    showNotification('Please fill in all fields', 'error');
                     return;
                 }
                 
-                debug('Elements found, hiding splash...');
+                // Simulate login
+                currentUser = { name: email.split('@')[0], email: email };
+                isAuthenticated = true;
+                localStorage.setItem('zippup_user', JSON.stringify(currentUser));
                 
-                splash.style.opacity = '0';
-                setTimeout(() => {
-                    splash.style.display = 'none';
-                    app.style.display = 'block';
-                    debug('✅ App is now visible!');
-                }, 500);
+                document.getElementById('auth-screen').style.display = 'none';
+                showMainApp();
+            });
+
+            document.getElementById('register-btn').addEventListener('click', () => {
+                const name = document.getElementById('register-name').value;
+                const email = document.getElementById('register-email').value;
+                const phone = document.getElementById('register-phone').value;
+                const password = document.getElementById('register-password').value;
                 
-            } catch (error) {
-                debug('Error hiding splash: ' + error.message, 'error');
-            }
+                if (!name || !email || !phone || !password) {
+                    showNotification('Please fill in all fields', 'error');
+                    return;
+                }
+                
+                // Simulate registration
+                currentUser = { name: name, email: email, phone: phone };
+                isAuthenticated = true;
+                localStorage.setItem('zippup_user', JSON.stringify(currentUser));
+                
+                document.getElementById('auth-screen').style.display = 'none';
+                showMainApp();
+                showNotification('Account created successfully! 🎉', 'success');
+            });
+
+            // Logout
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.removeItem('zippup_user');
+                currentUser = null;
+                isAuthenticated = false;
+                
+                document.getElementById('app').style.display = 'none';
+                showAuthScreen();
+                showNotification('Logged out successfully', 'info');
+            });
+
+            // Emergency button
+            document.getElementById('emergency-btn').addEventListener('click', () => {
+                showNotification('🚨 Emergency alert sent! Help is on the way.', 'error');
+            });
+
+            // Voice search
+            document.getElementById('voice-btn').addEventListener('click', () => {
+                if ('webkitSpeechRecognition' in window) {
+                    const recognition = new webkitSpeechRecognition();
+                    recognition.onstart = () => showNotification('🎤 Listening...', 'info');
+                    recognition.onresult = (e) => {
+                        const transcript = e.results[0][0].transcript;
+                        document.getElementById('search-input').value = transcript;
+                        showNotification(`Voice search: "${transcript}"`, 'success');
+                    };
+                    recognition.start();
+                } else {
+                    showNotification('Voice search not supported', 'error');
+                }
+            });
+
+            // Quick actions
+            document.querySelectorAll('.quick-action').forEach(action => {
+                action.addEventListener('click', (e) => {
+                    const actionType = e.currentTarget.dataset.action;
+                    handleQuickAction(actionType);
+                });
+            });
+
+            // Search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                if (query) {
+                    const results = services.filter(s => 
+                        s.name.toLowerCase().includes(query) || 
+                        s.description.toLowerCase().includes(query)
+                    );
+                    showNotification(`Found ${results.length} services for "${query}"`, 'success');
+                }
+            });
+
+            // Modal close
+            document.querySelector('.close-btn').addEventListener('click', () => {
+                document.getElementById('booking-modal').classList.remove('active');
+            });
+
+            // Booking form
+            document.getElementById('booking-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                showNotification('Booking created successfully! 🎉', 'success');
+                document.getElementById('booking-modal').classList.remove('active');
+            });
         }
 
         function loadServices() {
-            try {
-                debug('Loading services...');
+            const container = document.getElementById('services');
+            container.innerHTML = '';
+            
+            services.forEach(service => {
+                const card = document.createElement('div');
+                card.className = 'service-card';
+                card.innerHTML = `
+                    <div class="service-icon">${service.icon}</div>
+                    <div class="service-name">${service.name}</div>
+                    <div class="service-description">${service.description}</div>
+                    <div class="service-price">From $${service.price}</div>
+                `;
                 
-                const container = document.getElementById('services');
-                if (!container) {
-                    debug('Services container not found!', 'error');
-                    return;
-                }
-                
-                container.innerHTML = '';
-                
-                services.forEach(service => {
-                    const card = document.createElement('div');
-                    card.className = 'service-card';
-                    card.innerHTML = `
-                        <div class="service-icon">${service.icon}</div>
-                        <div class="service-name">${service.name}</div>
-                        <div class="service-price">$${service.price}</div>
-                    `;
-                    
-                    card.addEventListener('click', () => {
-                        debug(`Clicked ${service.name} service`);
-                        alert(`Booking ${service.name} for $${service.price}`);
-                    });
-                    
-                    container.appendChild(card);
+                card.addEventListener('click', () => {
+                    openBookingModal(service);
                 });
                 
-                debug(`✅ Loaded ${services.length} services`);
-                
-            } catch (error) {
-                debug('Error loading services: ' + error.message, 'error');
+                container.appendChild(card);
+            });
+        }
+
+        function handleQuickAction(action) {
+            const actions = {
+                ride: () => openBookingModal(services.find(s => s.name.includes('Ride'))),
+                food: () => openBookingModal(services.find(s => s.name.includes('Food'))),
+                emergency: () => showNotification('🚨 Emergency services contacted!', 'error'),
+                wallet: () => showNotification('💳 Wallet feature coming soon!', 'info')
+            };
+            
+            if (actions[action]) {
+                actions[action]();
             }
         }
 
-        // Handle errors
-        window.addEventListener('error', (e) => {
-            debug(`JavaScript Error: ${e.message} (Line: ${e.lineno})`, 'error');
-        });
+        function openBookingModal(service) {
+            document.getElementById('modal-icon').textContent = service.icon;
+            document.getElementById('modal-title').textContent = `Book ${service.name}`;
+            document.getElementById('modal-subtitle').textContent = `Starting from $${service.price}`;
+            
+            document.getElementById('booking-modal').classList.add('active');
+        }
 
-        // Start the app when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            debug('DOM loaded, starting app...');
-            initApp();
-        });
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
 
-        debug('All scripts loaded');
+        // Start app when page loads
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
