@@ -141,6 +141,7 @@
             cursor: pointer;
             font-size: 1rem;
             margin-bottom: 12px;
+            transition: all 0.2s;
         }
 
         .btn-primary {
@@ -148,10 +149,24 @@
             color: white;
         }
 
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
         .btn-secondary {
             background: white;
             color: #2563eb;
             border: 2px solid #2563eb;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
         }
 
         .auth-switch {
@@ -354,6 +369,7 @@
             max-width: 400px;
             max-height: 80vh;
             overflow-y: auto;
+            position: relative;
         }
 
         .modal-header {
@@ -380,6 +396,45 @@
             color: #64748b;
         }
 
+        /* Booking Type Selection */
+        .booking-type-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .booking-type-btn {
+            flex: 1;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .booking-type-btn.active {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .booking-type-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .booking-type-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .booking-type-desc {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
         .form-group {
             margin-bottom: 16px;
         }
@@ -390,6 +445,12 @@
             font-weight: 500;
         }
 
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
         .textarea {
             width: 100%;
             padding: 12px 16px;
@@ -397,9 +458,52 @@
             border-radius: 12px;
             font-size: 1rem;
             outline: none;
-            min-height: 100px;
+            min-height: 80px;
             resize: vertical;
             font-family: inherit;
+        }
+
+        /* Transport-specific styles */
+        .location-inputs {
+            margin-bottom: 20px;
+        }
+
+        .location-input-group {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .location-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+        }
+
+        .location-input {
+            padding-left: 44px;
+        }
+
+        .price-estimate {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .price-range {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0ea5e9;
+            margin-bottom: 4px;
+        }
+
+        .price-note {
+            font-size: 0.875rem;
+            color: #64748b;
         }
 
         /* Bottom Navigation */
@@ -467,6 +571,7 @@
         @media (max-width: 480px) {
             .content { padding: 0 16px; }
             .emergency-btn { margin: 0 16px 20px 16px; }
+            .form-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -609,24 +714,60 @@
                     <p id="modal-subtitle">Fill in the details</p>
                 </div>
             </div>
+
+            <!-- Booking Type Selection -->
+            <div class="booking-type-selector">
+                <div class="booking-type-btn active" data-type="instant">
+                    <div class="booking-type-icon">⚡</div>
+                    <div class="booking-type-title">Instant</div>
+                    <div class="booking-type-desc">Book now</div>
+                </div>
+                <div class="booking-type-btn" data-type="scheduled">
+                    <div class="booking-type-icon">📅</div>
+                    <div class="booking-type-title">Schedule</div>
+                    <div class="booking-type-desc">Book for later</div>
+                </div>
+            </div>
             
             <form id="booking-form">
-                <div class="form-group">
-                    <label class="form-label">Date & Time</label>
-                    <input type="datetime-local" class="input" required>
+                <!-- Transport-specific fields -->
+                <div id="transport-fields" class="hidden">
+                    <div class="location-inputs">
+                        <div class="location-input-group">
+                            <span class="location-icon">📍</span>
+                            <input type="text" class="input location-input" placeholder="Pickup location" required>
+                        </div>
+                        <div class="location-input-group">
+                            <span class="location-icon">🎯</span>
+                            <input type="text" class="input location-input" placeholder="Destination" required>
+                        </div>
+                    </div>
+
+                    <div id="price-estimate" class="price-estimate">
+                        <div class="price-range">$15 - $25</div>
+                        <div class="price-note">Estimated fare • 5-10 min away</div>
+                    </div>
+                </div>
+
+                <!-- General service fields -->
+                <div id="general-fields">
+                    <div id="datetime-group" class="form-group hidden">
+                        <label class="form-label">Date & Time</label>
+                        <input type="datetime-local" id="datetime-input" class="input">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Service Address</label>
+                        <input type="text" id="address-input" class="input" placeholder="Enter address" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Additional Notes</label>
+                        <textarea id="notes-input" class="textarea" placeholder="Any special instructions..."></textarea>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label">Pickup/Service Address</label>
-                    <input type="text" class="input" placeholder="Enter address" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Additional Notes</label>
-                    <textarea class="textarea" placeholder="Any special instructions..."></textarea>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">Book Now</button>
+                <button type="submit" id="submit-btn" class="btn btn-primary">Book Now</button>
             </form>
         </div>
     </div>
@@ -635,17 +776,91 @@
         // App State
         let currentUser = null;
         let isAuthenticated = false;
+        let currentService = null;
+        let bookingType = 'instant';
 
         // Services Data
         const services = [
-            { id: 1, name: 'Ride & Moving', icon: '🚗', description: 'Taxi, delivery, moving', price: 50 },
-            { id: 2, name: 'Personal Care', icon: '💅', description: 'Hair, massage, beauty', price: 30 },
-            { id: 3, name: 'Tech Services', icon: '🔧', description: 'Phone, computer repair', price: 40 },
-            { id: 4, name: 'Construction', icon: '🏗️', description: 'Builders, electricians', price: 80 },
-            { id: 5, name: 'Home Services', icon: '🏠', description: 'Cleaning, gardening', price: 35 },
-            { id: 6, name: 'Emergency', icon: '🚨', description: 'Ambulance, roadside help', price: 100 },
-            { id: 7, name: 'Food Delivery', icon: '🍔', description: 'Restaurant delivery', price: 15 },
-            { id: 8, name: 'Others', icon: '🎉', description: 'Events, catering', price: 45 }
+            { 
+                id: 1, 
+                name: 'Ride & Moving', 
+                icon: '🚗', 
+                description: 'Taxi, delivery, moving', 
+                price: 15,
+                type: 'transport',
+                hasInstant: true,
+                hasScheduled: true
+            },
+            { 
+                id: 2, 
+                name: 'Personal Care', 
+                icon: '💅', 
+                description: 'Hair, massage, beauty', 
+                price: 30,
+                type: 'service',
+                hasInstant: false,
+                hasScheduled: true
+            },
+            { 
+                id: 3, 
+                name: 'Tech Services', 
+                icon: '🔧', 
+                description: 'Phone, computer repair', 
+                price: 40,
+                type: 'service',
+                hasInstant: true,
+                hasScheduled: true
+            },
+            { 
+                id: 4, 
+                name: 'Construction', 
+                icon: '🏗️', 
+                description: 'Builders, electricians', 
+                price: 80,
+                type: 'service',
+                hasInstant: false,
+                hasScheduled: true
+            },
+            { 
+                id: 5, 
+                name: 'Home Services', 
+                icon: '🏠', 
+                description: 'Cleaning, gardening', 
+                price: 35,
+                type: 'service',
+                hasInstant: true,
+                hasScheduled: true
+            },
+            { 
+                id: 6, 
+                name: 'Emergency', 
+                icon: '🚨', 
+                description: 'Ambulance, roadside help', 
+                price: 100,
+                type: 'emergency',
+                hasInstant: true,
+                hasScheduled: false
+            },
+            { 
+                id: 7, 
+                name: 'Food Delivery', 
+                icon: '🍔', 
+                description: 'Restaurant delivery', 
+                price: 15,
+                type: 'transport',
+                hasInstant: true,
+                hasScheduled: true
+            },
+            { 
+                id: 8, 
+                name: 'Others', 
+                icon: '🎉', 
+                description: 'Events, catering', 
+                price: 45,
+                type: 'service',
+                hasInstant: false,
+                hasScheduled: true
+            }
         ];
 
         // Initialize App
@@ -705,7 +920,6 @@
 
             // Auth buttons
             document.getElementById('demo-login-btn').addEventListener('click', () => {
-                // Demo login - skip authentication
                 currentUser = { name: 'Demo User', email: 'demo@zippup.com' };
                 isAuthenticated = true;
                 localStorage.setItem('zippup_user', JSON.stringify(currentUser));
@@ -723,7 +937,6 @@
                     return;
                 }
                 
-                // Simulate login
                 currentUser = { name: email.split('@')[0], email: email };
                 isAuthenticated = true;
                 localStorage.setItem('zippup_user', JSON.stringify(currentUser));
@@ -743,7 +956,6 @@
                     return;
                 }
                 
-                // Simulate registration
                 currentUser = { name: name, email: email, phone: phone };
                 isAuthenticated = true;
                 localStorage.setItem('zippup_user', JSON.stringify(currentUser));
@@ -810,11 +1022,20 @@
                 document.getElementById('booking-modal').classList.remove('active');
             });
 
+            // Booking type selection
+            document.querySelectorAll('.booking-type-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.booking-type-btn').forEach(b => b.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    bookingType = e.currentTarget.dataset.type;
+                    updateBookingForm();
+                });
+            });
+
             // Booking form
             document.getElementById('booking-form').addEventListener('submit', (e) => {
                 e.preventDefault();
-                showNotification('Booking created successfully! 🎉', 'success');
-                document.getElementById('booking-modal').classList.remove('active');
+                handleBookingSubmit();
             });
         }
 
@@ -854,11 +1075,122 @@
         }
 
         function openBookingModal(service) {
+            currentService = service;
+            
             document.getElementById('modal-icon').textContent = service.icon;
             document.getElementById('modal-title').textContent = `Book ${service.name}`;
             document.getElementById('modal-subtitle').textContent = `Starting from $${service.price}`;
             
+            // Setup booking type options
+            const instantBtn = document.querySelector('[data-type="instant"]');
+            const scheduledBtn = document.querySelector('[data-type="scheduled"]');
+            
+            if (!service.hasInstant) {
+                instantBtn.style.display = 'none';
+                scheduledBtn.classList.add('active');
+                bookingType = 'scheduled';
+            } else if (!service.hasScheduled) {
+                scheduledBtn.style.display = 'none';
+                instantBtn.classList.add('active');
+                bookingType = 'instant';
+            } else {
+                instantBtn.style.display = 'block';
+                scheduledBtn.style.display = 'block';
+                instantBtn.classList.add('active');
+                scheduledBtn.classList.remove('active');
+                bookingType = 'instant';
+            }
+            
+            // Show/hide transport fields
+            const transportFields = document.getElementById('transport-fields');
+            const generalFields = document.getElementById('general-fields');
+            
+            if (service.type === 'transport') {
+                transportFields.classList.remove('hidden');
+                document.getElementById('address-input').style.display = 'none';
+                updatePriceEstimate();
+            } else {
+                transportFields.classList.add('hidden');
+                document.getElementById('address-input').style.display = 'block';
+            }
+            
+            updateBookingForm();
             document.getElementById('booking-modal').classList.add('active');
+        }
+
+        function updateBookingForm() {
+            const datetimeGroup = document.getElementById('datetime-group');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            if (bookingType === 'scheduled') {
+                datetimeGroup.classList.remove('hidden');
+                datetimeGroup.querySelector('input').required = true;
+                submitBtn.textContent = 'Schedule Booking';
+            } else {
+                datetimeGroup.classList.add('hidden');
+                datetimeGroup.querySelector('input').required = false;
+                
+                if (currentService && currentService.type === 'transport') {
+                    submitBtn.textContent = 'Book Ride Now';
+                } else if (currentService && currentService.type === 'emergency') {
+                    submitBtn.textContent = 'Request Emergency Help';
+                } else {
+                    submitBtn.textContent = 'Book Now';
+                }
+            }
+        }
+
+        function updatePriceEstimate() {
+            // Simulate dynamic pricing like Uber
+            const basePrice = currentService ? currentService.price : 15;
+            const variation = Math.random() * 10 - 5; // ±5 variation
+            const minPrice = Math.max(basePrice + variation - 5, basePrice * 0.7);
+            const maxPrice = basePrice + variation + 10;
+            
+            document.querySelector('.price-range').textContent = 
+                `$${Math.round(minPrice)} - $${Math.round(maxPrice)}`;
+            
+            // Random driver availability
+            const driverTimes = ['2-5 min', '5-10 min', '3-8 min', '1-4 min'];
+            const randomTime = driverTimes[Math.floor(Math.random() * driverTimes.length)];
+            
+            document.querySelector('.price-note').textContent = 
+                `Estimated fare • ${randomTime} away`;
+        }
+
+        function handleBookingSubmit() {
+            const serviceType = currentService ? currentService.type : 'service';
+            const serviceName = currentService ? currentService.name : 'Service';
+            
+            if (bookingType === 'instant') {
+                if (serviceType === 'transport') {
+                    showNotification('🚗 Finding nearby drivers...', 'info');
+                    setTimeout(() => {
+                        showNotification('Driver found! John is 3 minutes away.', 'success');
+                    }, 2000);
+                } else if (serviceType === 'emergency') {
+                    showNotification('🚨 Emergency request sent! Help dispatched.', 'error');
+                } else {
+                    showNotification(`📞 Connecting you with ${serviceName} providers...`, 'info');
+                    setTimeout(() => {
+                        showNotification('Provider found! They will contact you shortly.', 'success');
+                    }, 1500);
+                }
+            } else {
+                const datetime = document.getElementById('datetime-input').value;
+                if (datetime) {
+                    const date = new Date(datetime).toLocaleString();
+                    showNotification(`📅 ${serviceName} scheduled for ${date}`, 'success');
+                } else {
+                    showNotification('Please select date and time', 'error');
+                    return;
+                }
+            }
+            
+            document.getElementById('booking-modal').classList.remove('active');
+            
+            // Reset form
+            document.getElementById('booking-form').reset();
         }
 
         function showNotification(message, type = 'info') {
