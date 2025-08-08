@@ -132,6 +132,18 @@
             border-color: #2563eb;
         }
 
+        .input.error {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: -12px;
+            margin-bottom: 16px;
+        }
+
         .btn {
             width: 100%;
             padding: 12px 24px;
@@ -144,12 +156,17 @@
             transition: all 0.2s;
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .btn-primary {
             background: #2563eb;
             color: white;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: #1d4ed8;
         }
 
@@ -157,16 +174,6 @@
             background: white;
             color: #2563eb;
             border: 2px solid #2563eb;
-        }
-
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-warning {
-            background: #f59e0b;
-            color: white;
         }
 
         .auth-switch {
@@ -212,14 +219,62 @@
             font-size: 0.875rem;
         }
 
-        .logout-btn {
-            background: #ef4444;
+        /* Profile Dropdown */
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #2563eb;
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
             cursor: pointer;
-            font-weight: 600;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 12px 0;
+            min-width: 180px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-menu.active {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .dropdown-item.logout:hover {
+            background-color: #fef2f2;
+            color: #ef4444;
+        }
+
+        .dropdown-icon {
+            margin-right: 12px;
+            font-size: 1.2rem;
         }
 
         .search-box {
@@ -337,9 +392,70 @@
             margin-bottom: 8px;
         }
 
+        .service-examples {
+            color: #64748b;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
         .service-price {
             color: #2563eb;
             font-weight: 600;
+        }
+
+        /* Emergency Services Modal */
+        .emergency-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .emergency-modal.active {
+            display: flex;
+        }
+
+        .emergency-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .emergency-services {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .emergency-service {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .emergency-service:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .emergency-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
         }
 
         /* Booking Modal */
@@ -568,10 +684,36 @@
         .notification.error { background: #ef4444; }
         .notification.info { background: #06b6d4; }
 
+        /* Loading spinner */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid transparent;
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @media (max-width: 480px) {
             .content { padding: 0 16px; }
             .emergency-btn { margin: 0 16px 20px 16px; }
             .form-row { grid-template-columns: 1fr; }
+            .emergency-services { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -594,8 +736,11 @@
                 <h2 class="auth-title">Welcome to ZippUp</h2>
                 <p class="auth-subtitle">Sign in to continue</p>
                 
-                <input type="text" id="login-email" class="input" placeholder="Email or Phone">
-                <input type="password" id="login-password" class="input" placeholder="Password">
+                <input type="text" id="login-email" class="input" placeholder="Email or Phone" required>
+                <div id="login-email-error" class="error-message hidden"></div>
+                
+                <input type="password" id="login-password" class="input" placeholder="Password" required>
+                <div id="login-password-error" class="error-message hidden"></div>
                 
                 <button id="login-btn" class="btn btn-primary">Sign In</button>
                 <button id="demo-login-btn" class="btn btn-secondary">Demo Login (Skip)</button>
@@ -609,10 +754,17 @@
                 <h2 class="auth-title">Create Account</h2>
                 <p class="auth-subtitle">Join ZippUp today</p>
                 
-                <input type="text" id="register-name" class="input" placeholder="Full Name">
-                <input type="email" id="register-email" class="input" placeholder="Email">
-                <input type="tel" id="register-phone" class="input" placeholder="Phone Number">
-                <input type="password" id="register-password" class="input" placeholder="Password">
+                <input type="text" id="register-name" class="input" placeholder="Full Name" required>
+                <div id="register-name-error" class="error-message hidden"></div>
+                
+                <input type="email" id="register-email" class="input" placeholder="Email" required>
+                <div id="register-email-error" class="error-message hidden"></div>
+                
+                <input type="tel" id="register-phone" class="input" placeholder="Phone Number" required>
+                <div id="register-phone-error" class="error-message hidden"></div>
+                
+                <input type="password" id="register-password" class="input" placeholder="Password (min 6 characters)" required>
+                <div id="register-password-error" class="error-message hidden"></div>
                 
                 <button id="register-btn" class="btn btn-primary">Create Account</button>
                 
@@ -632,7 +784,24 @@
                     <h2>Hello, <span id="user-name">Guest</span>!</h2>
                     <div class="user-location">📍 Your Location</div>
                 </div>
-                <button id="logout-btn" class="logout-btn">Logout</button>
+                
+                <div class="profile-dropdown">
+                    <button id="profile-btn" class="profile-btn">👤</button>
+                    <div id="dropdown-menu" class="dropdown-menu">
+                        <div class="dropdown-item" id="wallet-btn">
+                            <span class="dropdown-icon">💳</span>
+                            <span>Wallet</span>
+                        </div>
+                        <div class="dropdown-item" id="profile-settings-btn">
+                            <span class="dropdown-icon">⚙️</span>
+                            <span>Profile</span>
+                        </div>
+                        <div class="dropdown-item logout" id="logout-btn">
+                            <span class="dropdown-icon">🚪</span>
+                            <span>Logout</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="search-box">
@@ -703,6 +872,35 @@
         </nav>
     </div>
 
+    <!-- Emergency Services Modal -->
+    <div id="emergency-modal" class="emergency-modal">
+        <div class="emergency-content">
+            <h3 style="text-align: center; margin-bottom: 8px; color: #ef4444;">🚨 Emergency Services</h3>
+            <p style="text-align: center; color: #64748b; margin-bottom: 20px;">Select the type of emergency help you need</p>
+            
+            <div class="emergency-services">
+                <div class="emergency-service" data-emergency="ambulance">
+                    <div class="emergency-icon">🚑</div>
+                    <div>Ambulance</div>
+                </div>
+                <div class="emergency-service" data-emergency="fire">
+                    <div class="emergency-icon">🚒</div>
+                    <div>Fire Service</div>
+                </div>
+                <div class="emergency-service" data-emergency="towing">
+                    <div class="emergency-icon">🚛</div>
+                    <div>Towing Truck</div>
+                </div>
+                <div class="emergency-service" data-emergency="roadside">
+                    <div class="emergency-icon">🔧</div>
+                    <div>Roadside Help</div>
+                </div>
+            </div>
+            
+            <button onclick="closeEmergencyModal()" class="btn btn-secondary" style="margin-top: 20px;">Cancel</button>
+        </div>
+    </div>
+
     <!-- Booking Modal -->
     <div id="booking-modal" class="modal">
         <div class="modal-content">
@@ -735,11 +933,11 @@
                     <div class="location-inputs">
                         <div class="location-input-group">
                             <span class="location-icon">📍</span>
-                            <input type="text" class="input location-input" placeholder="Pickup location" required>
+                            <input type="text" id="pickup-location" class="input location-input" placeholder="Pickup location" required>
                         </div>
                         <div class="location-input-group">
                             <span class="location-icon">🎯</span>
-                            <input type="text" class="input location-input" placeholder="Destination" required>
+                            <input type="text" id="destination" class="input location-input" placeholder="Destination" required>
                         </div>
                     </div>
 
@@ -778,14 +976,16 @@
         let isAuthenticated = false;
         let currentService = null;
         let bookingType = 'instant';
+        let bookings = [];
 
-        // Services Data
+        // Services Data with expanded categories and examples
         const services = [
             { 
                 id: 1, 
                 name: 'Ride & Moving', 
                 icon: '🚗', 
-                description: 'Taxi, delivery, moving', 
+                description: 'Transportation & delivery', 
+                examples: ['Taxi', 'Bike rides', 'Delivery', 'Moving trucks', 'etc'],
                 price: 15,
                 type: 'transport',
                 hasInstant: true,
@@ -795,7 +995,8 @@
                 id: 2, 
                 name: 'Personal Care', 
                 icon: '💅', 
-                description: 'Hair, massage, beauty', 
+                description: 'Beauty & wellness', 
+                examples: ['Hair styling', 'Massage', 'Manicure', 'Spa treatments', 'etc'],
                 price: 30,
                 type: 'service',
                 hasInstant: false,
@@ -805,7 +1006,8 @@
                 id: 3, 
                 name: 'Tech Services', 
                 icon: '🔧', 
-                description: 'Phone, computer repair', 
+                description: 'Device repair & support', 
+                examples: ['Phone repair', 'Computer fixing', 'TV repair', 'Software help', 'etc'],
                 price: 40,
                 type: 'service',
                 hasInstant: true,
@@ -815,7 +1017,8 @@
                 id: 4, 
                 name: 'Construction', 
                 icon: '🏗️', 
-                description: 'Builders, electricians', 
+                description: 'Building & repairs', 
+                examples: ['Builders', 'Carpenters', 'Electricians', 'Plumbers', 'etc'],
                 price: 80,
                 type: 'service',
                 hasInstant: false,
@@ -825,7 +1028,8 @@
                 id: 5, 
                 name: 'Home Services', 
                 icon: '🏠', 
-                description: 'Cleaning, gardening', 
+                description: 'Household maintenance', 
+                examples: ['House cleaning', 'Gardening', 'Maintenance', 'Painting', 'etc'],
                 price: 35,
                 type: 'service',
                 hasInstant: true,
@@ -835,7 +1039,8 @@
                 id: 6, 
                 name: 'Emergency', 
                 icon: '🚨', 
-                description: 'Ambulance, roadside help', 
+                description: 'Urgent help services', 
+                examples: ['Ambulance', 'Fire services', 'Roadside help', 'Towing', 'etc'],
                 price: 100,
                 type: 'emergency',
                 hasInstant: true,
@@ -845,7 +1050,8 @@
                 id: 7, 
                 name: 'Food Delivery', 
                 icon: '🍔', 
-                description: 'Restaurant delivery', 
+                description: 'Restaurant & grocery', 
+                examples: ['Restaurant delivery', 'Grocery shopping', 'Fast food', 'Catering', 'etc'],
                 price: 15,
                 type: 'transport',
                 hasInstant: true,
@@ -855,7 +1061,8 @@
                 id: 8, 
                 name: 'Others', 
                 icon: '🎉', 
-                description: 'Events, catering', 
+                description: 'Events & more', 
+                examples: ['Events planning', 'Catering', 'Photography', 'DJ services', 'etc'],
                 price: 45,
                 type: 'service',
                 hasInstant: false,
@@ -870,8 +1077,12 @@
             // Check saved login
             const savedUser = localStorage.getItem('zippup_user');
             if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                isAuthenticated = true;
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    isAuthenticated = true;
+                } catch (error) {
+                    localStorage.removeItem('zippup_user');
+                }
             }
             
             // Hide splash after 2 seconds
@@ -890,6 +1101,7 @@
             
             setupEventListeners();
             loadServices();
+            loadBookings();
         }
 
         function showAuthScreen() {
@@ -918,7 +1130,33 @@
                 document.getElementById('login-form').classList.remove('hidden');
             });
 
-            // Auth buttons
+            // Profile dropdown
+            document.getElementById('profile-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('dropdown-menu').classList.toggle('active');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                document.getElementById('dropdown-menu').classList.remove('active');
+            });
+
+            // Dropdown items
+            document.getElementById('wallet-btn').addEventListener('click', () => {
+                showNotification('💳 Wallet: $125.50 available', 'info');
+                document.getElementById('dropdown-menu').classList.remove('active');
+            });
+
+            document.getElementById('profile-settings-btn').addEventListener('click', () => {
+                showNotification('⚙️ Profile settings coming soon!', 'info');
+                document.getElementById('dropdown-menu').classList.remove('active');
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                logout();
+            });
+
+            // Demo login
             document.getElementById('demo-login-btn').addEventListener('click', () => {
                 currentUser = { name: 'Demo User', email: 'demo@zippup.com' };
                 isAuthenticated = true;
@@ -928,57 +1166,26 @@
                 showMainApp();
             });
 
-            document.getElementById('login-btn').addEventListener('click', () => {
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-                
-                if (!email || !password) {
-                    showNotification('Please fill in all fields', 'error');
-                    return;
-                }
-                
-                currentUser = { name: email.split('@')[0], email: email };
-                isAuthenticated = true;
-                localStorage.setItem('zippup_user', JSON.stringify(currentUser));
-                
-                document.getElementById('auth-screen').style.display = 'none';
-                showMainApp();
+            // Real authentication
+            document.getElementById('login-btn').addEventListener('click', async () => {
+                await handleLogin();
             });
 
-            document.getElementById('register-btn').addEventListener('click', () => {
-                const name = document.getElementById('register-name').value;
-                const email = document.getElementById('register-email').value;
-                const phone = document.getElementById('register-phone').value;
-                const password = document.getElementById('register-password').value;
-                
-                if (!name || !email || !phone || !password) {
-                    showNotification('Please fill in all fields', 'error');
-                    return;
-                }
-                
-                currentUser = { name: name, email: email, phone: phone };
-                isAuthenticated = true;
-                localStorage.setItem('zippup_user', JSON.stringify(currentUser));
-                
-                document.getElementById('auth-screen').style.display = 'none';
-                showMainApp();
-                showNotification('Account created successfully! 🎉', 'success');
-            });
-
-            // Logout
-            document.getElementById('logout-btn').addEventListener('click', () => {
-                localStorage.removeItem('zippup_user');
-                currentUser = null;
-                isAuthenticated = false;
-                
-                document.getElementById('app').style.display = 'none';
-                showAuthScreen();
-                showNotification('Logged out successfully', 'info');
+            document.getElementById('register-btn').addEventListener('click', async () => {
+                await handleRegister();
             });
 
             // Emergency button
             document.getElementById('emergency-btn').addEventListener('click', () => {
-                showNotification('🚨 Emergency alert sent! Help is on the way.', 'error');
+                document.getElementById('emergency-modal').classList.add('active');
+            });
+
+            // Emergency services
+            document.querySelectorAll('.emergency-service').forEach(service => {
+                service.addEventListener('click', (e) => {
+                    const emergencyType = e.currentTarget.dataset.emergency;
+                    handleEmergencyService(emergencyType);
+                });
             });
 
             // Voice search
@@ -1011,7 +1218,8 @@
                 if (query) {
                     const results = services.filter(s => 
                         s.name.toLowerCase().includes(query) || 
-                        s.description.toLowerCase().includes(query)
+                        s.description.toLowerCase().includes(query) ||
+                        s.examples.some(ex => ex.toLowerCase().includes(query))
                     );
                     showNotification(`Found ${results.length} services for "${query}"`, 'success');
                 }
@@ -1033,10 +1241,181 @@
             });
 
             // Booking form
-            document.getElementById('booking-form').addEventListener('submit', (e) => {
+            document.getElementById('booking-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                handleBookingSubmit();
+                await handleBookingSubmit();
             });
+        }
+
+        // Authentication functions
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            clearErrors();
+
+            if (!validateLogin(email, password)) {
+                return;
+            }
+
+            const loginBtn = document.getElementById('login-btn');
+            loginBtn.classList.add('loading');
+            loginBtn.disabled = true;
+
+            try {
+                // Simulate API call to real backend
+                const response = await fetch('https://zippup-backend-v3.onrender.com/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email.includes('@') ? email : null,
+                        phone: !email.includes('@') ? email : null,
+                        password,
+                        loginType: 'password'
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentUser = data.user;
+                    isAuthenticated = true;
+                    localStorage.setItem('zippup_user', JSON.stringify(currentUser));
+                    
+                    document.getElementById('auth-screen').style.display = 'none';
+                    showMainApp();
+                } else {
+                    showError('login-password', data.error || 'Invalid credentials');
+                }
+            } catch (error) {
+                showError('login-password', 'Network error. Please try again.');
+            } finally {
+                loginBtn.classList.remove('loading');
+                loginBtn.disabled = false;
+            }
+        }
+
+        async function handleRegister() {
+            const name = document.getElementById('register-name').value.trim();
+            const email = document.getElementById('register-email').value.trim();
+            const phone = document.getElementById('register-phone').value.trim();
+            const password = document.getElementById('register-password').value;
+
+            clearErrors();
+
+            if (!validateRegistration(name, email, phone, password)) {
+                return;
+            }
+
+            const registerBtn = document.getElementById('register-btn');
+            registerBtn.classList.add('loading');
+            registerBtn.disabled = true;
+
+            try {
+                // Simulate API call to real backend
+                const response = await fetch('https://zippup-backend-v3.onrender.com/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email, phone, password }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Account created! Please check your email/phone for verification.', 'success');
+                    // For demo, auto-login after registration
+                    currentUser = { name, email, phone };
+                    isAuthenticated = true;
+                    localStorage.setItem('zippup_user', JSON.stringify(currentUser));
+                    
+                    document.getElementById('auth-screen').style.display = 'none';
+                    showMainApp();
+                } else {
+                    showError('register-email', data.error || 'Registration failed');
+                }
+            } catch (error) {
+                showError('register-email', 'Network error. Please try again.');
+            } finally {
+                registerBtn.classList.remove('loading');
+                registerBtn.disabled = false;
+            }
+        }
+
+        function validateLogin(email, password) {
+            let isValid = true;
+
+            if (!email) {
+                showError('login-email', 'Email or phone is required');
+                isValid = false;
+            }
+
+            if (!password) {
+                showError('login-password', 'Password is required');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function validateRegistration(name, email, phone, password) {
+            let isValid = true;
+
+            if (!name || name.length < 2) {
+                showError('register-name', 'Name must be at least 2 characters');
+                isValid = false;
+            }
+
+            if (!email || !email.includes('@')) {
+                showError('register-email', 'Valid email is required');
+                isValid = false;
+            }
+
+            if (!phone || phone.length < 10) {
+                showError('register-phone', 'Valid phone number is required');
+                isValid = false;
+            }
+
+            if (!password || password.length < 6) {
+                showError('register-password', 'Password must be at least 6 characters');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function showError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorDiv = document.getElementById(fieldId + '-error');
+            
+            field.classList.add('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.input').forEach(input => {
+                input.classList.remove('error');
+            });
+            document.querySelectorAll('.error-message').forEach(error => {
+                error.classList.add('hidden');
+                error.textContent = '';
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('zippup_user');
+            currentUser = null;
+            isAuthenticated = false;
+            bookings = [];
+            
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('dropdown-menu').classList.remove('active');
+            showAuthScreen();
+            showNotification('Logged out successfully', 'info');
         }
 
         function loadServices() {
@@ -1050,6 +1429,7 @@
                     <div class="service-icon">${service.icon}</div>
                     <div class="service-name">${service.name}</div>
                     <div class="service-description">${service.description}</div>
+                    <div class="service-examples">${service.examples.join(', ')}</div>
                     <div class="service-price">From $${service.price}</div>
                 `;
                 
@@ -1061,17 +1441,61 @@
             });
         }
 
+        function loadBookings() {
+            const savedBookings = localStorage.getItem('zippup_bookings');
+            if (savedBookings) {
+                try {
+                    bookings = JSON.parse(savedBookings);
+                } catch (error) {
+                    bookings = [];
+                }
+            }
+        }
+
+        function saveBookings() {
+            localStorage.setItem('zippup_bookings', JSON.stringify(bookings));
+        }
+
         function handleQuickAction(action) {
             const actions = {
                 ride: () => openBookingModal(services.find(s => s.name.includes('Ride'))),
                 food: () => openBookingModal(services.find(s => s.name.includes('Food'))),
-                emergency: () => showNotification('🚨 Emergency services contacted!', 'error'),
-                wallet: () => showNotification('💳 Wallet feature coming soon!', 'info')
+                emergency: () => document.getElementById('emergency-modal').classList.add('active'),
+                wallet: () => showNotification('💳 Wallet: $125.50 available', 'info')
             };
             
             if (actions[action]) {
                 actions[action]();
             }
+        }
+
+        function handleEmergencyService(type) {
+            const services = {
+                ambulance: 'Ambulance dispatched! ETA: 8-12 minutes',
+                fire: 'Fire department notified! ETA: 5-8 minutes',
+                towing: 'Towing truck requested! ETA: 15-25 minutes',
+                roadside: 'Roadside assistance coming! ETA: 10-15 minutes'
+            };
+            
+            closeEmergencyModal();
+            showNotification(`🚨 ${services[type]}`, 'error');
+            
+            // Create emergency booking
+            const emergencyBooking = {
+                id: Date.now(),
+                service: type,
+                type: 'emergency',
+                status: 'active',
+                timestamp: new Date().toISOString(),
+                location: 'Current location'
+            };
+            
+            bookings.unshift(emergencyBooking);
+            saveBookings();
+        }
+
+        function closeEmergencyModal() {
+            document.getElementById('emergency-modal').classList.remove('active');
         }
 
         function openBookingModal(service) {
@@ -1103,15 +1527,15 @@
             
             // Show/hide transport fields
             const transportFields = document.getElementById('transport-fields');
-            const generalFields = document.getElementById('general-fields');
+            const addressInput = document.getElementById('address-input');
             
             if (service.type === 'transport') {
                 transportFields.classList.remove('hidden');
-                document.getElementById('address-input').style.display = 'none';
+                addressInput.style.display = 'none';
                 updatePriceEstimate();
             } else {
                 transportFields.classList.add('hidden');
-                document.getElementById('address-input').style.display = 'block';
+                addressInput.style.display = 'block';
             }
             
             updateBookingForm();
@@ -1158,39 +1582,103 @@
                 `Estimated fare • ${randomTime} away`;
         }
 
-        function handleBookingSubmit() {
+        async function handleBookingSubmit() {
             const serviceType = currentService ? currentService.type : 'service';
             const serviceName = currentService ? currentService.name : 'Service';
             
-            if (bookingType === 'instant') {
-                if (serviceType === 'transport') {
-                    showNotification('🚗 Finding nearby drivers...', 'info');
-                    setTimeout(() => {
-                        showNotification('Driver found! John is 3 minutes away.', 'success');
-                    }, 2000);
-                } else if (serviceType === 'emergency') {
-                    showNotification('🚨 Emergency request sent! Help dispatched.', 'error');
-                } else {
-                    showNotification(`📞 Connecting you with ${serviceName} providers...`, 'info');
-                    setTimeout(() => {
-                        showNotification('Provider found! They will contact you shortly.', 'success');
-                    }, 1500);
+            // Collect form data
+            const bookingData = {
+                id: Date.now(),
+                service: serviceName,
+                serviceId: currentService?.id,
+                type: bookingType,
+                serviceType: serviceType,
+                status: 'pending',
+                timestamp: new Date().toISOString(),
+                userId: currentUser?.email || 'demo'
+            };
+
+            if (serviceType === 'transport') {
+                bookingData.pickup = document.getElementById('pickup-location').value;
+                bookingData.destination = document.getElementById('destination').value;
+                
+                if (!bookingData.pickup || !bookingData.destination) {
+                    showNotification('Please enter pickup and destination', 'error');
+                    return;
                 }
             } else {
-                const datetime = document.getElementById('datetime-input').value;
-                if (datetime) {
-                    const date = new Date(datetime).toLocaleString();
-                    showNotification(`📅 ${serviceName} scheduled for ${date}`, 'success');
-                } else {
-                    showNotification('Please select date and time', 'error');
+                bookingData.address = document.getElementById('address-input').value;
+                
+                if (!bookingData.address) {
+                    showNotification('Please enter service address', 'error');
                     return;
                 }
             }
-            
-            document.getElementById('booking-modal').classList.remove('active');
-            
-            // Reset form
-            document.getElementById('booking-form').reset();
+
+            if (bookingType === 'scheduled') {
+                const datetime = document.getElementById('datetime-input').value;
+                if (!datetime) {
+                    showNotification('Please select date and time', 'error');
+                    return;
+                }
+                bookingData.scheduledTime = datetime;
+            }
+
+            bookingData.notes = document.getElementById('notes-input').value;
+
+            // Simulate booking submission to backend
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+
+            try {
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Add to local bookings
+                bookings.unshift(bookingData);
+                saveBookings();
+
+                // Show appropriate success message
+                if (bookingType === 'instant') {
+                    if (serviceType === 'transport') {
+                        showNotification('🚗 Finding nearby drivers...', 'info');
+                        setTimeout(() => {
+                            showNotification('Driver found! John is 3 minutes away.', 'success');
+                            bookingData.status = 'active';
+                            bookingData.driverName = 'John';
+                            bookingData.eta = '3 minutes';
+                            saveBookings();
+                        }, 2000);
+                    } else if (serviceType === 'emergency') {
+                        showNotification('🚨 Emergency request sent! Help dispatched.', 'error');
+                        bookingData.status = 'active';
+                    } else {
+                        showNotification(`📞 Connecting you with ${serviceName} providers...`, 'info');
+                        setTimeout(() => {
+                            showNotification('Provider found! They will contact you shortly.', 'success');
+                            bookingData.status = 'confirmed';
+                            saveBookings();
+                        }, 1500);
+                    }
+                } else {
+                    const date = new Date(bookingData.scheduledTime).toLocaleString();
+                    showNotification(`📅 ${serviceName} scheduled for ${date}`, 'success');
+                    bookingData.status = 'scheduled';
+                }
+
+                saveBookings();
+                document.getElementById('booking-modal').classList.remove('active');
+                
+                // Reset form
+                document.getElementById('booking-form').reset();
+
+            } catch (error) {
+                showNotification('Booking failed. Please try again.', 'error');
+            } finally {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+            }
         }
 
         function showNotification(message, type = 'info') {
@@ -1205,7 +1693,7 @@
             setTimeout(() => {
                 notification.classList.remove('show');
                 setTimeout(() => notification.remove(), 300);
-            }, 3000);
+            }, 4000);
         }
 
         // Start app when page loads
