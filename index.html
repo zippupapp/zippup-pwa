@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZippUp - Your All-in-One Service Platform</title>
+    <meta name="description" content="ZippUp: Rides, Services, Emergency Help, and More">
+    <meta name="theme-color" content="#2563EB">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ZippUp">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="logo-container">
+                <div class="logo">⚡</div>
+                <h1>ZippUp</h1>
+            </div>
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app" class="app-container" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="user-greeting">
+                    <span class="greeting-text">Hello, <span id="user-name">User</span>!</span>
+                    <span class="location-text">📍 <span id="user-location">Current Location</span></span>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" id="notifications-btn">
+                        <span class="material-icons">notifications</span>
+                        <span class="badge">3</span>
+                    </button>
+                    <button class="icon-btn" id="profile-btn">
+                        <span class="material-icons">account_circle</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Search Section -->
+            <section class="search-section">
+                <div class="search-container">
+                    <div class="search-input-container">
+                        <span class="material-icons search-icon">search</span>
+                        <input type="text" id="search-input" placeholder="What service do you need?" autocomplete="off">
+                        <button class="voice-btn" id="voice-search-btn">
+                            <span class="material-icons">mic</span>
+                        </button>
+                    </div>
+                    <div id="search-suggestions" class="search-suggestions" style="display: none;">
+                        <!-- AI-powered suggestions will appear here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Emergency Button -->
+            <section class="emergency-section">
+                <button class="emergency-btn" id="emergency-btn">
+                    <span class="emergency-icon">🚨</span>
+                    <span class="emergency-text">Emergency</span>
+                </button>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="quick-actions">
+                <h2>Quick Actions</h2>
+                <div class="quick-actions-grid">
+                    <button class="quick-action-card" data-action="ride">
+                        <span class="action-icon">🚗</span>
+                        <span class="action-text">Book Ride</span>
+                    </button>
+                    <button class="quick-action-card" data-action="emergency">
+                        <span class="action-icon">🚨</span>
+                        <span class="action-text">Emergency</span>
+                    </button>
+                    <button class="quick-action-card" data-action="wallet">
+                        <span class="action-icon">💰</span>
+                        <span class="action-text">Wallet</span>
+                    </button>
+                    <button class="quick-action-card" data-action="marketplace">
+                        <span class="action-icon">🛒</span>
+                        <span class="action-text">Shop</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Services Categories -->
+            <section class="services-section">
+                <h2>All Services</h2>
+                <div class="services-grid" id="services-grid">
+                    <!-- Services will be populated dynamically -->
+                </div>
+            </section>
+
+            <!-- Recent Bookings -->
+            <section class="recent-section">
+                <h2>Recent Activity</h2>
+                <div class="recent-list" id="recent-list">
+                    <!-- Recent bookings will appear here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-page="home">
+                <span class="material-icons">home</span>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" data-page="services">
+                <span class="material-icons">grid_view</span>
+                <span class="nav-label">Services</span>
+            </button>
+            <button class="nav-item" data-page="bookings">
+                <span class="material-icons">event_note</span>
+                <span class="nav-label">Bookings</span>
+            </button>
+            <button class="nav-item" data-page="chat">
+                <span class="material-icons">chat</span>
+                <span class="nav-label">Chat</span>
+            </button>
+            <button class="nav-item" data-page="profile">
+                <span class="material-icons">person</span>
+                <span class="nav-label">Profile</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modals -->
+    
+    <!-- Authentication Modal -->
+    <div id="auth-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="auth-title">Welcome to ZippUp</h3>
+                <button class="close-btn" id="close-auth-modal">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="login-email">Email or Phone</label>
+                        <input type="text" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit" class="primary-btn">Login</button>
+                    <button type="button" class="secondary-btn" id="request-otp-btn">Login with OTP</button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" class="auth-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="register-name">Full Name</label>
+                        <input type="text" id="register-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-phone">Phone Number</label>
+                        <input type="tel" id="register-phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" required>
+                    </div>
+                    <button type="submit" class="primary-btn">Register</button>
+                </form>
+
+                <!-- OTP Verification Form -->
+                <form id="otp-form" class="auth-form" style="display: none;">
+                    <div class="otp-info">
+                        <p>Enter the verification codes sent to your email and phone:</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="email-otp">Email OTP</label>
+                        <input type="text" id="email-otp" maxlength="6" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone-otp">Phone OTP</label>
+                        <input type="text" id="phone-otp" maxlength="6" required>
+                    </div>
+                    <button type="submit" class="primary-btn">Verify</button>
+                </form>
+
+                <div class="auth-switch">
+                    <p id="auth-switch-text">Don't have an account? <a href="#" id="auth-switch-link">Register here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Detail Modal -->
+    <div id="service-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="service-title">Service Details</h3>
+                <button class="close-btn" id="close-service-modal">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="service-details">
+                    <!-- Service details will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Modal -->
+    <div id="emergency-modal" class="modal">
+        <div class="modal-content emergency-modal-content">
+            <div class="emergency-header">
+                <h3>🚨 Emergency Alert</h3>
+                <p>Are you sure you want to send an emergency alert?</p>
+            </div>
+            <div class="emergency-actions">
+                <button class="emergency-confirm-btn" id="confirm-emergency">Yes, Send Alert</button>
+                <button class="emergency-cancel-btn" id="cancel-emergency">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Install Prompt -->
+    <div id="install-prompt" class="install-prompt" style="display: none;">
+        <div class="install-content">
+            <div class="install-info">
+                <span class="install-icon">📱</span>
+                <div class="install-text">
+                    <h4>Install ZippUp</h4>
+                    <p>Add to your home screen for easy access</p>
+                </div>
+            </div>
+            <div class="install-actions">
+                <button class="install-btn" id="install-btn">Install</button>
+                <button class="dismiss-btn" id="dismiss-install">Later</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</body>
+</html>
