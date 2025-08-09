@@ -1,5 +1,5 @@
-const CACHE_NAME = 'zippup-pwa-v2025-08-09-02';
-const PRECACHE = [
+const CACHE_NAME = 'zippup-pwa-v2025-08-10-07';
+const PRECACHE = '/app.js?v=2025-08-10-07',
   '/',
   '/index.html',
   '/styles.css',
