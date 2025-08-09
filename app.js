@@ -1,3 +1,5 @@
+const FUNCTIONS_BASE = 'https://<https://xxrtlkyqjqdhkenpkwll>.functions.supabase.co';
+
 // ZippUp PWA - Main Application Logic (updated)
 class ZippUpApp {
   constructor() {
@@ -264,15 +266,22 @@ class ZippUpApp {
   }
 
   async fetchProvidersForCategory(categoryKey, lat, lng) {
-    const url = `/api/providers?category=${encodeURIComponent(categoryKey)}${lat!=null && lng!=null ? `&lat=${lat}&lng=${lng}` : ''}&limit=10`;
-    try {
-      const res = await this.api(url, { method: 'GET' });
-      const data = await res.json();
-      return Array.isArray(data) ? data : Array.isArray(data.providers) ? data.providers : [];
-    } catch {
-      return [];
-    }
+  const params = new URLSearchParams({
+    category: categoryKey || '',
+    ...(lat != null && lng != null ? { lat: String(lat), lng: String(lng) } : {}),
+  });
+  try {
+    const resp = await fetch(`${FUNCTIONS_BASE}/providers-nearby?` + params.toString(), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const out = await resp.json().catch(() => ({}));
+    const list = Array.isArray(out?.providers) ? out.providers : (Array.isArray(out) ? out : []);
+    return list;
+  } catch {
+    return [];
   }
+}
 
   // Panic only
   showEmergencyModal() {
@@ -313,12 +322,13 @@ class ZippUpApp {
         contacts,
         country
       };
-      const data = await this.apiJson('/api/emergency/alert', { method: 'POST', body: JSON.stringify(body) });
-      this.showNotification('🚨 Emergency alert sent! Help is on the way.', 'error');
-      const trackingPath = data.trackingUrl || (data.alertId ? `/emergency/track/${data.alertId}` : null);
-      if (trackingPath) {
-        const full = `${this.baseUrl}${trackingPath.startsWith('/') ? trackingPath : `/${trackingPath}`}`;
-        setTimeout(() => { window.location.href = full; }, 500);
+      const resp = await fetch(`${FUNCTIONS_BASE}/emergency-alert`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});
+const data = await resp.json();
+if (!resp.ok || !data?.success) throw new Error(data?.error || 'alert_failed');
       }
     } catch {
       this.showNotification('Failed to send emergency alert. Please call local services.', 'error');
