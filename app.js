@@ -1,98 +1,3 @@
-github
-Perfect! Let me help you create a GitHub repository and deploy your ZippUp PWA. I'll guide you through the entire process.
-
-Updated todo list
-🐙 GitHub Deployment - Step by Step
-Let me create all the files you need for GitHub deployment. I'll prepare everything so you can simply copy-paste to your GitHub repository.
-
-Edited file
-Now let me provide you with the main files you'll need. Due to size limitations, I'll give you the essential files and a strategy to get the complete codebase:
-
-Ran terminal command and listed 12 items in current directory
-Ran: cd /workspace/zippup-pwa && wc -l *.html *.js *.cs...
-Listed zippup-pwa
-Let me provide you with the immediate GitHub deployment strategy:
-
-🐙 GitHub Deployment - Quick Start
-STEP 1: Create GitHub Repository
-Go to: https://github.com/new
-Repository name: zippup-pwa
-Description: ZippUp - Complete Service Platform PWA
-Make it Public
-Click: "Create repository"
-STEP 2: Upload Key Files (Priority Order)
-Upload these files in this order to your GitHub repository:
-
-1. README.md (Copy from the deployment guide above)
-2. index.html (Essential - Main App)
-This is your main application file
-Contains all the HTML structure, forms, and UI
-File size: ~12KB, ~283 lines
-3. app.js (Essential - App Logic)
-Contains all JavaScript functionality
-Authentication, search, voice recognition, PWA features
-File size: ~32KB, ~873 lines
-4. styles.css (Essential - Styling)
-Complete mobile-responsive CSS
-All animations, layouts, and themes
-File size: ~21KB, ~1092 lines
-5. manifest.json (PWA Config)
-Makes the app installable on phones
-File size: ~3KB, ~151 lines
-6. sw.js (Service Worker)
-Enables offline functionality
-File size: ~12KB, ~448 lines
-STEP 3: Deploy to Netlify (Easiest)
-After uploading files to GitHub:
-
-Go to: https://netlify.com
-Sign up/Login with GitHub
-New site from Git → GitHub
-Choose your zippup-pwa repository
-Deploy settings:
-Build command: (leave empty)
-Publish directory: / (root)
-Click: "Deploy site"
-Get your live URL!
-📱 Alternative: Quick File Access Method
-If you want to get all files quickly, here's the fastest approach:
-
-GitHub Import Method:
-Create repository as above
-Clone this repository: git clone [your-repo-url]
-Contact me and I'll help you get the complete file contents
-Copy files to your local repository
-Push to GitHub: git add . && git commit -m "ZippUp PWA" && git push
-🎯 What You'll Get:
-Once deployed, your live PWA will have:
-
-✅ Live URL like: https://amazing-zippup-123.netlify.app
-✅ Mobile installation - Add to home screen
-✅ Authentication with your live backend
-✅ Voice search and AI suggestions
-✅ 8 service categories with booking
-✅ Emergency features with GPS
-✅ Offline functionality
-✅ Professional PWA experience
-
-🚀 Ready to Start?
-Create GitHub repo now: https://github.com/new
-Tell me when it's created
-I'll help you get all the file contents
-Deploy to Netlify in minutes
-Test on your phone!
-Your ZippUp platform will be live and ready for real-world testing!
-
-Go ahead and create the GitHub repository, then let me know when it's ready and I'll help you populate it with all the files! 🎉
-
-Updated todo list
-i have created the repo. please get all the files
-Perfect! Now I'll help you get all the files for your GitHub repository. Let me provide you with the complete file contents in the right order.
-
-Read index.html
-📁 FILE 1: index.html
-Great! Here's your first file. Copy this entire content and create index.html in your GitHub repository:
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -108,7 +13,25 @@ Great! Here's your first file. Copy this entire content and create index.html in
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="ZippUp">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    
+
+    // API helpers
+  api(path, init = {}) {
+    const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {}),
+      ...(init.headers || {}),
+    };
+    return fetch(url, { ...init, headers });
+  }
+
+  async apiJson(path, init = {}) {
+    const res = await this.api(path, init);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || 'Request failed');
+    return data;
+  }
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
@@ -377,12 +300,6 @@ Great! Here's your first file. Copy this entire content and create index.html in
 </body>
 </html>
 Now let me get the next essential file - the CSS:
-
-Read styles.css
-The CSS file is quite large (1092 lines). Let me provide you with a more manageable approach - I'll create smaller, focused files that you can easily copy-paste to GitHub:
-
-📁 FILE 2: styles.css (Part 1 - Core Styles)
-Create styles.css in your GitHub repository and copy this:
 
 /* Reset and Base Styles */
 * {
@@ -1039,16 +956,6 @@ body {
 .no-scroll {
     overflow: hidden;
 }
-Upload this as your styles.css file. This includes all the essential styling for your PWA.
-
-Would you like me to continue with the next file (app.js) or would you prefer to upload this CSS first and test it?
-
-yesc continue 
-Perfect! Let me continue with the JavaScript file. This is the main app logic:
-
-Read app.js
-📁 FILE 3: app.js (Complete JavaScript)
-Due to the large size, I'll provide the complete JavaScript in a consolidated format. Create app.js in your GitHub repository and copy this:
 
 // ZippUp PWA - Main Application Logic
 class ZippUpApp {
@@ -1660,55 +1567,53 @@ class ZippUpApp {
     }
 
     // Search Methods
-    async handleSearch(query) {
-        if (!query.trim()) {
-            this.hideSuggestions();
-            return;
-        }
-
-        // Filter services based on query
-        const suggestions = this.services.filter(service => 
-            service.name.toLowerCase().includes(query.toLowerCase()) ||
-            service.description.toLowerCase().includes(query.toLowerCase()) ||
-            (service.examples && service.examples.some(example => 
-                example.toLowerCase().includes(query.toLowerCase())
-            ))
-        );
-
-        this.showSuggestions(suggestions);
+  async handleSearch(query) {
+    if (!query.trim()) {
+      this.hideSuggestions();
+      return;
     }
 
-    showSuggestions(suggestions) {
-        const suggestionsContainer = document.getElementById('search-suggestions');
-        suggestionsContainer.innerHTML = '';
+    // Local filtering first
+    const localSuggestions = this.services.filter(service =>
+      service.name.toLowerCase().includes(query.toLowerCase()) ||
+      service.description.toLowerCase().includes(query.toLowerCase()) ||
+      (service.examples && service.examples.some(example =>
+        example.toLowerCase().includes(query.toLowerCase())
+      ))
+    );
 
-        if (suggestions.length === 0) {
-            suggestionsContainer.innerHTML = '<div class="suggestion-item">No services found</div>';
-        } else {
-            suggestions.forEach(service => {
-                const suggestionItem = document.createElement('div');
-                suggestionItem.className = 'suggestion-item';
-                suggestionItem.innerHTML = `
-                    <div class="suggestion-title">${service.icon} ${service.name}</div>
-                    <div class="suggestion-description">${service.description}</div>
-                    <div class="suggestion-price">From $${service.basePrice}</div>
-                `;
-                
-                suggestionItem.addEventListener('click', () => {
-                    this.showServiceDetail(service);
-                    this.hideSuggestions();
-                });
-                
-                suggestionsContainer.appendChild(suggestionItem);
-            });
-        }
+    // Show local suggestions immediately
+    this.showSuggestions(localSuggestions);
 
-        suggestionsContainer.style.display = 'block';
+    // Try to fetch AI suggestions from backend and merge
+    try {
+      const resp = await this.api('/api/search/suggestions', {
+        method: 'POST',
+        body: JSON.stringify({ query }),
+      });
+      const apiData = await resp.json();
+      const apiSuggestions = Array.isArray(apiData?.suggestions) ? apiData.suggestions : [];
+
+      if (apiSuggestions.length > 0) {
+        const aiList = apiSuggestions.map((text) => ({
+          id: `sugg-${text}`,
+          name: text,
+          icon: '🔎',
+          description: 'Suggested',
+          examples: [],
+          basePrice: '',
+        }));
+
+        // AI suggestions first, then local
+        this.showSuggestions([
+          ...aiList,
+          ...localSuggestions
+        ]);
+      }
+    } catch {
+      // If backend suggestions fail, local suggestions are already shown
     }
-
-    hideSuggestions() {
-        document.getElementById('search-suggestions').style.display = 'none';
-    }
+  }
 
     // Voice Search Methods
     toggleVoiceSearch() {
@@ -1750,32 +1655,47 @@ class ZippUpApp {
     }
 
     async triggerEmergency() {
-        this.hideEmergencyModal();
-        
-        if ('geolocation' in navigator) {
-            try {
-                const position = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject);
-                });
-                
-                const { latitude, longitude } = position.coords;
-                
-                // In a real app, this would send emergency alert to backend
-                this.showNotification('🚨 Emergency alert sent! Help is on the way.', 'error');
-                
-                // Simulate emergency response
-                setTimeout(() => {
-                    this.showNotification('Emergency services have been notified of your location', 'info');
-                }, 2000);
-                
-            } catch (error) {
-                console.error('Location error:', error);
-                this.showNotification('Emergency alert sent without location', 'error');
-            }
-        } else {
-            this.showNotification('Emergency alert sent!', 'error');
+    this.hideEmergencyModal();
+
+    try {
+      let latitude = null, longitude = null;
+
+      if ('geolocation' in navigator) {
+        try {
+          const position = await new Promise((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
+          );
+          latitude = position.coords.latitude;
+          longitude = position.coords.longitude;
+        } catch {
+          // continue without location
         }
+      }
+
+      const body = {
+        latitude,
+        longitude,
+        message: 'Emergency alert from ZippUp PWA',
+        userId: this.currentUser?.id || null,
+      };
+
+      const data = await this.apiJson('/api/emergency/alert', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+
+      this.showNotification('🚨 Emergency alert sent! Help is on the way.', 'error');
+
+      const trackingPath = data.trackingUrl || (data.alertId ? `/emergency/track/${data.alertId}` : null);
+      if (trackingPath) {
+        const full = `${this.baseUrl}${trackingPath.startsWith('/') ? trackingPath : `/${trackingPath}`}`;
+        setTimeout(() => { window.location.href = full; }, 500);
+      }
+    } catch (error) {
+      console.error('Emergency error:', error);
+      this.showNotification('Failed to send emergency alert. Please call local services.', 'error');
     }
+  }
 
     // Navigation Methods
     navigateToPage(page) {
@@ -1787,7 +1707,7 @@ class ZippUpApp {
         
         this.currentPage = page;
         
-        // In a real app, this would show different page content
+        
         switch (page) {
             case 'home':
                 this.showNotification('Home page', 'info');
@@ -1807,23 +1727,45 @@ class ZippUpApp {
         }
     }
 
-    handleQuickAction(action) {
-        switch (action) {
-            case 'ride':
-                this.showNotification('Opening ride booking...', 'info');
-                break;
-            case 'emergency':
-                this.showEmergencyModal();
-                break;
-            case 'wallet':
-                this.showNotification('Opening wallet...', 'info');
-                break;
-            case 'marketplace':
-                this.showNotification('Opening marketplace...', 'info');
-                break;
-        }
+   handleQuickAction(action) {
+    switch (action) {
+      case 'ride':
+        this.showNotification('Opening ride booking...', 'info');
+        break;
+      case 'emergency':
+        this.showEmergencyModal();
+        break;
+      case 'wallet':
+        this.showWallet();
+        break;
+      case 'marketplace':
+        this.showNotification('Opening marketplace...', 'info');
+        break;
     }
+  }
 
+async showWallet() {
+    if (!this.currentUser?.id) {
+      this.showAuthModal();
+      return;
+    }
+    try {
+      const wallet = await this.apiJson(`/api/wallet/${this.currentUser.id}`);
+      const amount = wallet.balance?.toFixed ? wallet.balance.toFixed(2) : wallet.balance;
+      this.showNotification(`Wallet: ${wallet.currency || 'USD'} ${amount}`, 'info');
+
+      // Optional: fetch transactions
+      try {
+        const tx = await this.apiJson(`/api/wallet/${this.currentUser.id}/transactions`);
+        if (Array.isArray(tx) && tx.length) {
+          this.showNotification(`Recent transactions: ${tx.length}`, 'info');
+        }
+      } catch {}
+    } catch {
+      this.showNotification('Unable to load wallet. Please try again.', 'error');
+    }
+  }
+    
     // PWA Methods
     showInstallPrompt() {
         document.getElementById('install-prompt').style.display = 'block';
@@ -1920,11 +1862,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // Global functions for inline event handlers
 window.bookService = (serviceId) => window.app.bookService(serviceId);
 window.hideServiceModal = () => window.app.hideServiceModal();
-Now let me provide the remaining essential files:
-
-Read manifest.json
-📁 FILE 4: manifest.json (PWA Configuration)
-Create manifest.json in your GitHub repository and copy this:
 
 {
   "name": "ZippUp - Your All-in-One Service Platform",
