@@ -14,23 +14,103 @@
     <meta name="apple-mobile-web-app-title" content="ZippUp">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
 
-    // API helpers
-  api(path, init = {}) {
-    const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {}),
-      ...(init.headers || {}),
-    };
-    return fetch(url, { ...init, headers });
-  }
+ // API helpers
+api(path, init = {}) {
+  const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {}),
+    ...(init.headers || {}),
+  };
+  return fetch(url, { ...init, headers });
+}
 
-  async apiJson(path, init = {}) {
-    const res = await this.api(path, init);
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || 'Request failed');
-    return data;
+async apiJson(path, init = {}) {
+  const res = await this.api(path, init);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || 'Request failed');
+  return data;
+}
+
+// Geolocation safe getter
+async getCurrentPositionSafe() {
+  if (!('geolocation' in navigator)) return { lat: null, lng: null };
+  try {
+    const pos = await new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
+    );
+    return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+  } catch {
+    return { lat: null, lng: null };
   }
+}
+
+// Haversine distance (km)
+computeDistanceKm(lat1, lon1, lat2, lon2) {
+  if ([lat1, lon1, lat2, lon2].some(v => v == null)) return null;
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+            Math.sin(dLon/2)**2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return Math.round(R * c * 10) / 10;
+}
+
+// Local currency formatting (placeholder)
+formatCurrency(amount, currency = 'USD') {
+  try {
+    return new Intl.NumberFormat(navigator.language || 'en-US', {
+      style: 'currency',
+      currency,
+    }).format(amount);
+  } catch {
+    return `$${amount}`;
+  }
+}
+
+// Country code for default emergency line
+async getUserCountry(lat, lng) {
+  try {
+    if (lat != null && lng != null) {
+      const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+      const d = await r.json();
+      return d.countryCode || 'US';
+    }
+    return 'US';
+  } catch {
+    return 'US';
+  }
+}
+
+// Up to 5 registered emergency contacts
+async fetchEmergencyContacts() {
+  try {
+    if (Array.isArray(this.currentUser?.emergencyContacts)) {
+      return this.currentUser.emergencyContacts.slice(0, 5);
+    }
+    // Fallback: try profile endpoint if available
+    const res = await this.api('/api/profile', { method: 'GET' });
+    const data = await res.json().catch(() => ({}));
+    const contacts = Array.isArray(data?.emergencyContacts) ? data.emergencyContacts : [];
+    return contacts.slice(0, 5);
+  } catch {
+    return [];
+  }
+}
+
+// Fetch providers by category near user
+async fetchProvidersForCategory(categoryKey, lat, lng) {
+  const url = `/api/providers?category=${encodeURIComponent(categoryKey)}${lat!=null && lng!=null ? `&lat=${lat}&lng=${lng}` : ''}&limit=10`;
+  try {
+    const res = await this.api(url, { method: 'GET' });
+    const data = await res.json();
+    return Array.isArray(data) ? data : Array.isArray(data.providers) ? data.providers : [];
+  } catch {
+    return [];
+  }
+}
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
@@ -1426,20 +1506,26 @@ class ZippUpApp {
     }
 
     // Services Methods
-    async loadServices() {
-        try {
-            const response = await fetch(`${this.baseUrl}/api/services`);
-            const data = await response.json();
-            
-            if (data.success) {
-                this.services = data.services;
-                this.renderServices();
-            }
-        } catch (error) {
-            console.error('Error loading services:', error);
-            this.loadDemoServices();
-        }
+   async loadServices() {
+  try {
+    const response = await fetch(`${this.baseUrl}/api/services`);
+    const data = await response.json();
+    if (data.success) {
+      this.services = data.services || [];
+      this.ensureEmergencyTypes();
+      this.renderServices();
+    } else {
+      this.loadDemoServices();
+      this.ensureEmergencyTypes();
+      this.renderServices();
     }
+  } catch (error) {
+    console.error('Error loading services:', error);
+    this.loadDemoServices();
+    this.ensureEmergencyTypes();
+    this.renderServices();
+  }
+}
 
     loadDemoServices() {
         this.services = [
@@ -1508,38 +1594,209 @@ class ZippUpApp {
     }
 
     showServiceDetail(service) {
-        const modal = document.getElementById('service-modal');
-        const title = document.getElementById('service-title');
-        const details = document.getElementById('service-details');
-        
-        title.textContent = service.name;
-        details.innerHTML = `
-            <div style="text-align: center; margin-bottom: 24px;">
-                <div style="font-size: 4rem; margin-bottom: 16px;">${service.icon}</div>
-                <h3>${service.name}</h3>
-                <p style="color: var(--text-secondary); margin: 8px 0;">${service.description}</p>
-                <p style="color: var(--primary); font-weight: 600;">Starting from $${service.basePrice}</p>
-            </div>
-            
-            <div style="margin-bottom: 24px;">
-                <h4 style="margin-bottom: 12px;">Available Services:</h4>
-                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                    ${service.examples ? service.examples.map(example => 
-                        `<span style="background: var(--background-secondary); padding: 4px 8px; border-radius: 6px; font-size: 0.875rem;">${example}</span>`
-                    ).join('') : ''}
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 12px;">
-                <button class="primary-btn" onclick="app.bookService('${service.id}')" style="flex: 1;">Book Now</button>
-                <button class="secondary-btn" onclick="app.hideServiceModal()" style="flex: 1;">Close</button>
-            </div>
-        `;
-        
-        modal.classList.add('active');
-        document.body.classList.add('no-scroll');
-    }
+  const modal = document.getElementById('service-modal');
+  const title = document.getElementById('service-title');
+  const details = document.getElementById('service-details');
 
+  title.textContent = service.name;
+
+  const isEmergencyType = ['POLICE', 'FIRE', 'AMBULANCE', 'ROADSIDE'].includes(service.category);
+
+  if (isEmergencyType) {
+    details.innerHTML = `
+      <div style="text-align: center; margin-bottom: 16px;">
+        <div style="font-size: 3rem; margin-bottom: 8px;">${service.icon}</div>
+        <h3>${service.name}</h3>
+        <p style="color: var(--text-secondary); margin: 8px 0;">
+          ${service.description || 'Emergency service'}
+        </p>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <p>We’ll find the nearest available provider to assist you. You can request instantly or schedule for an event.</p>
+      </div>
+      <div style="display:flex; gap: 12px;">
+        <button class="primary-btn" id="find-providers-btn" style="flex:1;">Find Nearest Providers</button>
+        <button class="secondary-btn" id="close-service-btn" style="flex:1;">Close</button>
+      </div>
+    `;
+    modal.classList.add('active');
+    document.body.classList.add('no-scroll');
+
+    document.getElementById('find-providers-btn').onclick = async () => {
+      const { lat, lng } = await this.getCurrentPositionSafe();
+      const providers = await this.fetchProvidersForCategory(service.category, lat, lng);
+      this.showProvidersModal(service, providers, lat, lng);
+    };
+    document.getElementById('close-service-btn').onclick = () => this.hideServiceModal();
+
+    return;
+  }
+
+  // Non-emergency service view
+  details.innerHTML = `
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="font-size: 4rem; margin-bottom: 16px;">${service.icon}</div>
+      <h3>${service.name}</h3>
+      <p style="color: var(--text-secondary); margin: 8px 0;">${service.description || ''}</p>
+      <p style="color: var(--primary); font-weight: 600;">
+        ${this.formatCurrency(service.basePrice || 0, service.currency || 'USD')}
+      </p>
+    </div>
+    <div style="margin-bottom: 24px;">
+      <h4 style="margin-bottom: 12px;">Available Services:</h4>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        ${service.examples ? service.examples.map(example => 
+          `<span style="background: var(--background-secondary); padding: 4px 8px; border-radius: 6px; font-size: 0.875rem;">${example}</span>`
+        ).join('') : ''}
+      </div>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <button class="primary-btn" onclick="app.bookService('${service.id}')" style="flex: 1;">Book Now</button>
+      <button class="secondary-btn" id="close-service-btn2" style="flex: 1;">Close</button>
+    </div>
+  `;
+  modal.classList.add('active');
+  document.body.classList.add('no-scroll');
+
+  document.getElementById('close-service-btn2').onclick = () => this.hideServiceModal();
+}
+
+showProvidersModal(service, providers, userLat, userLng) {
+  const modal = document.getElementById('service-modal');
+  const title = document.getElementById('service-title');
+  const details = document.getElementById('service-details');
+
+  title.textContent = `${service.name} - Providers`;
+
+  if (!providers.length) {
+    details.innerHTML = `
+      <p>No providers found near you right now. Please try again or schedule for later.</p>
+      <div style="display:flex; gap:12px; margin-top:12px;">
+        <button class="secondary-btn" onclick="app.hideServiceModal()">Close</button>
+      </div>
+    `;
+    return;
+  }
+
+  const sorted = providers
+    .map(p => ({ ...p, distance: this.computeDistanceKm(userLat, userLng, p.lat, p.lng) }))
+    .sort((a, b) => (a.distance ?? 9999) - (b.distance ?? 9999))
+    .slice(0, 10);
+
+  const rows = sorted.map(p => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid var(--border); border-radius:8px;">
+      <div>
+        <div style="font-weight:600;">${p.name || 'Provider'}</div>
+        <div style="font-size:0.9rem; color:var(--text-secondary);">
+          ${p.distance != null ? `${p.distance} km` : ''} • ⭐ ${p.rating || '—'} • ${p.jobs || 0} jobs
+        </div>
+        <div style="font-size:0.9rem; color:var(--primary);">
+          ${this.formatCurrency(p.basePrice || 0, p.currency || 'USD')}
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="secondary-btn" onclick="app.requestProvider('${p.id}','${service.category}','instant')">Request Now</button>
+        <button class="secondary-btn" onclick="app.requestProvider('${p.id}','${service.category}','schedule')">Schedule</button>
+      </div>
+    </div>
+  `).join('');
+
+  details.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:12px; max-height:50vh; overflow:auto;">
+      ${rows}
+    </div>
+    <div style="display:flex; gap:12px; margin-top:12px;">
+      <button class="secondary-btn" onclick="app.hideServiceModal()">Close</button>
+    </div>
+  `;
+  modal.classList.add('active');
+  document.body.classList.add('no-scroll');
+}
+
+async requestProvider(providerId, category, mode) {
+  try {
+    const { lat, lng } = await this.getCurrentPositionSafe();
+    let when = null;
+    let address = '';
+    let notes = '';
+
+    if (mode === 'schedule') {
+      when = prompt('Enter date/time (e.g., 2025-08-09 18:00):', '');
+      address = prompt('Enter address (optional):', '') || '';
+    } else {
+      address = prompt('Enter address (optional, leave blank to use current location):', '') || '';
+    }
+    notes = prompt('Notes for provider (optional):', '') || '';
+
+    const payload = {
+      providerId,
+      category,         // 'POLICE' | 'FIRE' | 'AMBULANCE' | 'ROADSIDE' | others
+      when,             // null for instant
+      address: address || null,
+      latitude: lat,
+      longitude: lng,
+      notes,
+    };
+
+    const data = await this.apiJson('/api/bookings', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    this.showNotification('Request sent. Waiting for provider response...', 'info');
+    if (data?.bookingId) {
+      this.pollBookingStatus(data.bookingId);
+    }
+  } catch (e) {
+    console.error('Booking request error:', e);
+    this.showNotification('Failed to create request. Please try again.', 'error');
+  }
+}
+
+async pollBookingStatus(bookingId) {
+  const startedAt = Date.now();
+  const interval = setInterval(async () => {
+    if (Date.now() - startedAt > 2 * 60 * 1000) {
+      clearInterval(interval);
+      this.showNotification('No response yet. We’ll notify you when a provider responds.', 'info');
+      return;
+    }
+    try {
+      const res = await this.api(`/api/bookings/${bookingId}`, { method: 'GET' });
+      const data = await res.json();
+      if (data?.status === 'ACCEPTED') {
+        clearInterval(interval);
+        this.showNotification('Provider accepted your request. They are on the way!', 'success');
+        if (data.trackingUrl) window.location.href = data.trackingUrl;
+        setTimeout(() => this.promptRating(bookingId), 30 * 60 * 1000); // placeholder
+      } else if (data?.status === 'DECLINED') {
+        clearInterval(interval);
+        this.showNotification('Provider declined. Showing similar options...', 'error');
+        // TODO: show similar providers
+      }
+    } catch {
+      // ignore transient errors
+    }
+  }, 5000);
+}
+
+async promptRating(bookingId) {
+  const r = prompt('Rate your provider (1-5):', '');
+  if (!r) return;
+  const rating = Number(r);
+  if (!(rating >= 1 && rating <= 5)) return;
+  const comment = prompt('Comments (optional):', '') || '';
+  try {
+    await this.apiJson('/api/reviews', {
+      method: 'POST',
+      body: JSON.stringify({ bookingId, rating, comment }),
+    });
+    this.showNotification('Thanks for your rating!', 'success');
+  } catch {
+    this.showNotification('Failed to submit rating.', 'error');
+  }
+}
+    
     hideServiceModal() {
         document.getElementById('service-modal').classList.remove('active');
         document.body.classList.remove('no-scroll');
@@ -1567,54 +1824,45 @@ class ZippUpApp {
     }
 
     // Search Methods
-  async handleSearch(query) {
-    if (!query.trim()) {
-      this.hideSuggestions();
-      return;
-    }
-
-    // Local filtering first
-    const localSuggestions = this.services.filter(service =>
-      service.name.toLowerCase().includes(query.toLowerCase()) ||
-      service.description.toLowerCase().includes(query.toLowerCase()) ||
-      (service.examples && service.examples.some(example =>
-        example.toLowerCase().includes(query.toLowerCase())
-      ))
-    );
-
-    // Show local suggestions immediately
-    this.showSuggestions(localSuggestions);
-
-    // Try to fetch AI suggestions from backend and merge
-    try {
-      const resp = await this.api('/api/search/suggestions', {
-        method: 'POST',
-        body: JSON.stringify({ query }),
-      });
-      const apiData = await resp.json();
-      const apiSuggestions = Array.isArray(apiData?.suggestions) ? apiData.suggestions : [];
-
-      if (apiSuggestions.length > 0) {
-        const aiList = apiSuggestions.map((text) => ({
-          id: `sugg-${text}`,
-          name: text,
-          icon: '🔎',
-          description: 'Suggested',
-          examples: [],
-          basePrice: '',
-        }));
-
-        // AI suggestions first, then local
-        this.showSuggestions([
-          ...aiList,
-          ...localSuggestions
-        ]);
-      }
-    } catch {
-      // If backend suggestions fail, local suggestions are already shown
-    }
+ async handleSearch(query) {
+  if (!query.trim()) {
+    this.hideSuggestions();
+    return;
   }
 
+  // Local filtering first
+  const localSuggestions = this.services.filter(service =>
+    service.name.toLowerCase().includes(query.toLowerCase()) ||
+    service.description.toLowerCase().includes(query.toLowerCase()) ||
+    (service.examples && service.examples.some(example =>
+      example.toLowerCase().includes(query.toLowerCase())
+    ))
+  );
+
+  this.showSuggestions(localSuggestions);
+
+  // Try backend AI suggestions and merge
+  try {
+    const resp = await this.api('/api/search/suggestions', {
+      method: 'POST',
+      body: JSON.stringify({ query }),
+    });
+    const apiData = await resp.json();
+    const apiSuggestions = Array.isArray(apiData?.suggestions) ? apiData.suggestions : [];
+
+    if (apiSuggestions.length > 0) {
+      const aiList = apiSuggestions.map((text) => ({
+        id: `sugg-${text}`,
+        name: text,
+        icon: '🔎',
+        description: 'Suggested',
+        examples: [],
+        basePrice: '',
+      }));
+      this.showSuggestions([...aiList, ...localSuggestions]);
+    }
+  } catch {}
+}
     // Voice Search Methods
     toggleVoiceSearch() {
         if (!this.recognition) {
@@ -1655,48 +1903,76 @@ class ZippUpApp {
     }
 
     async triggerEmergency() {
-    this.hideEmergencyModal();
+  this.hideEmergencyModal();
 
-    try {
-      let latitude = null, longitude = null;
+  try {
+    // Always treat PANIC as special alert (not a provider request)
+    const emergencyType = 'PANIC';
 
-      if ('geolocation' in navigator) {
-        try {
-          const position = await new Promise((resolve, reject) =>
-            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
-          );
-          latitude = position.coords.latitude;
-          longitude = position.coords.longitude;
-        } catch {
-          // continue without location
-        }
-      }
-
-      const body = {
-        latitude,
-        longitude,
-        message: 'Emergency alert from ZippUp PWA',
-        userId: this.currentUser?.id || null,
-      };
-
-      const data = await this.apiJson('/api/emergency/alert', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
-
-      this.showNotification('🚨 Emergency alert sent! Help is on the way.', 'error');
-
-      const trackingPath = data.trackingUrl || (data.alertId ? `/emergency/track/${data.alertId}` : null);
-      if (trackingPath) {
-        const full = `${this.baseUrl}${trackingPath.startsWith('/') ? trackingPath : `/${trackingPath}`}`;
-        setTimeout(() => { window.location.href = full; }, 500);
-      }
-    } catch (error) {
-      console.error('Emergency error:', error);
-      this.showNotification('Failed to send emergency alert. Please call local services.', 'error');
+    let latitude = null, longitude = null;
+    if ('geolocation' in navigator) {
+      try {
+        const position = await new Promise((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
+        );
+        latitude = position.coords.latitude;
+        longitude = position.coords.longitude;
+      } catch {}
     }
-  }
 
+    const contacts = await this.fetchEmergencyContacts();
+    const country = await this.getUserCountry(latitude, longitude);
+
+    const body = {
+      emergencyType,         // 'PANIC'
+      latitude,
+      longitude,
+      message: 'Emergency alert from ZippUp PWA',
+      userId: this.currentUser?.id || null,
+      notifyContacts: true,  // backend should broadcast to contacts
+      contacts,              // up to 5
+      country                // backend maps to default emergency line
+    };
+
+    const data = await this.apiJson('/api/emergency/alert', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+
+    this.showNotification('🚨 Emergency alert sent! Help is on the way.', 'error');
+
+    const trackingPath = data.trackingUrl || (data.alertId ? `/emergency/track/${data.alertId}` : null);
+    if (trackingPath) {
+      const full = `${this.baseUrl}${trackingPath.startsWith('/') ? trackingPath : `/${trackingPath}`}`;
+      setTimeout(() => { window.location.href = full; }, 500);
+    }
+  } catch (error) {
+    console.error('Emergency error:', error);
+    this.showNotification('Failed to send emergency alert. Please call local services.', 'error');
+  }
+}
+
+ensureEmergencyTypes() {
+  const names = this.services.map(s => s.name);
+  const add = (svc) => { this.services.push(svc); };
+
+  if (!names.includes('Police Service')) {
+    add({ id: 'emg-police', name: 'Police Service', category: 'POLICE', icon: '🚔', description: 'Security and law enforcement', examples: ['Police'], basePrice: 0 });
+  }
+  if (!names.includes('Fire Service')) {
+    add({ id: 'emg-fire', name: 'Fire Service', category: 'FIRE', icon: '🔥', description: 'Fire and rescue services', examples: ['Fire response'], basePrice: 0 });
+  }
+  if (!names.includes('Ambulance Service')) {
+    add({ id: 'emg-ambulance', name: 'Ambulance Service', category: 'AMBULANCE', icon: '🚑', description: 'Medical emergency transport', examples: ['Ambulance'], basePrice: 0 });
+  }
+  if (!names.includes('Roadside Assistance')) {
+    add({ id: 'emg-roadside', name: 'Roadside Assistance', category: 'ROADSIDE', icon: '🛞', description: 'Breakdown & towing support', examples: ['Tow', 'Battery', 'Tire'], basePrice: 0 });
+  }
+  if (!names.includes('Automobile Repair')) {
+    add({ id: 'auto-repair', name: 'Automobile Repair', category: 'AUTOMOBILE_REPAIR', icon: '🔧', description: 'Car repair & maintenance', examples: ['Mechanic', 'Diagnostics'], basePrice: 60 });
+  }
+}
+    
     // Navigation Methods
     navigateToPage(page) {
         // Update active nav item
@@ -1728,43 +2004,41 @@ class ZippUpApp {
     }
 
    handleQuickAction(action) {
-    switch (action) {
-      case 'ride':
-        this.showNotification('Opening ride booking...', 'info');
-        break;
-      case 'emergency':
-        this.showEmergencyModal();
-        break;
-      case 'wallet':
-        this.showWallet();
-        break;
-      case 'marketplace':
-        this.showNotification('Opening marketplace...', 'info');
-        break;
-    }
+  switch (action) {
+    case 'ride':
+      this.showNotification('Opening ride booking...', 'info');
+      break;
+    case 'emergency':
+      this.showEmergencyModal(); // PANIC confirm -> triggerEmergency (not providers)
+      break;
+    case 'wallet':
+      this.showWallet();
+      break;
+    case 'marketplace':
+      this.showNotification('Opening marketplace...', 'info');
+      break;
   }
+}
 
 async showWallet() {
-    if (!this.currentUser?.id) {
-      this.showAuthModal();
-      return;
-    }
-    try {
-      const wallet = await this.apiJson(`/api/wallet/${this.currentUser.id}`);
-      const amount = wallet.balance?.toFixed ? wallet.balance.toFixed(2) : wallet.balance;
-      this.showNotification(`Wallet: ${wallet.currency || 'USD'} ${amount}`, 'info');
-
-      // Optional: fetch transactions
-      try {
-        const tx = await this.apiJson(`/api/wallet/${this.currentUser.id}/transactions`);
-        if (Array.isArray(tx) && tx.length) {
-          this.showNotification(`Recent transactions: ${tx.length}`, 'info');
-        }
-      } catch {}
-    } catch {
-      this.showNotification('Unable to load wallet. Please try again.', 'error');
-    }
+  if (!this.currentUser?.id) {
+    this.showAuthModal();
+    return;
   }
+  try {
+    const wallet = await this.apiJson(`/api/wallet/${this.currentUser.id}`);
+    const amount = wallet.balance?.toFixed ? wallet.balance.toFixed(2) : wallet.balance;
+    this.showNotification(`Wallet: ${wallet.currency || 'USD'} ${amount}`, 'info');
+    try {
+      const tx = await this.apiJson(`/api/wallet/${this.currentUser.id}/transactions`);
+      if (Array.isArray(tx) && tx.length) {
+        this.showNotification(`Recent transactions: ${tx.length}`, 'info');
+      }
+    } catch {}
+  } catch {
+    this.showNotification('Unable to load wallet. Please try again.', 'error');
+  }
+}
     
     // PWA Methods
     showInstallPrompt() {
