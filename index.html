@@ -1058,9 +1058,12 @@
       saveCart(); updateCartCount();
     }
     function updateCartCount(){
-      const count = cart.items.reduce((a,b)=>a+b.qty,0);
-      cartCountEl.textContent = String(count);
-    }
+  const count = cart.items.reduce((a,b)=>a+b.qty,0);
+  const cartCountEl = document.getElementById('cartCount');      // marketplace FAB
+  const headerBadge = document.getElementById('headerCartBadge'); // header badge
+  if (cartCountEl) cartCountEl.textContent = String(count);
+  if (headerBadge) headerBadge.textContent = String(count);
+}
     function loadCart(){
       try{ return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{ return { items:[] }; }
     }
