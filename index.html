@@ -1371,5 +1371,145 @@
   });
 })();
 </script>
+  <script>
+// Checkout fix (delegated, non-destructive)
+(function () {
+  const get = (id) => document.getElementById(id);
+  const FALLBACK = (typeof FALLBACK_PAYMENT_LINK === 'string') ? FALLBACK_PAYMENT_LINK : '';
+  const API = (typeof BASE_API === 'string' && BASE_API) ? BASE_API : '';
+
+  // Helpers
+  function readCart() {
+    try { return JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); }
+    catch { return { items: [] }; }
+  }
+  function writeCart(cart) {
+    localStorage.setItem('mp_cart', JSON.stringify(cart));
+  }
+  function updateCount(cart) {
+    const count = cart.items.reduce((a,b)=>a+b.qty,0);
+    const badge = get('headerCartBadge'); const cnt = get('cartCount');
+    if (badge) badge.textContent = String(count);
+    if (cnt)   cnt.textContent   = String(count);
+  }
+  async function createStripeSession(payload) {
+    const res = await fetch(`${API}/api/payments/checkout-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      mode: 'cors',
+      credentials: 'omit',
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || 'Failed to create checkout session');
+    return data;
+  }
+  async function createCashOrder(payload) {
+    try {
+      const res = await fetch(`${API}/api/marketplace/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, paymentMethod: 'cash' }),
+        mode: 'cors',
+        credentials: 'omit',
+      });
+      return await res.json().catch(() => ({}));
+    } catch {
+      return {};
+    }
+  }
+
+  // Open Checkout modal from Cart (reliable)
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'checkoutBtn') {
+      e.preventDefault();
+      const cartModal = get('cartModal');
+      const checkoutModal = get('checkoutModal');
+      if (cartModal) cartModal.classList.remove('open');
+      if (checkoutModal) checkoutModal.classList.add('open');
+    }
+  });
+
+  // Place Order (Card -> Stripe; Cash -> Order + code)
+  document.addEventListener('click', async (e) => {
+    if (!(e.target && e.target.id === 'placeOrderBtn')) return;
+    e.preventDefault();
+
+    const cart = readCart();
+    const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+    const name    = get('chkName')?.value?.trim();
+    const phone   = get('chkPhone')?.value?.trim();
+    const address = get('chkAddress')?.value?.trim();
+    const unit    = get('chkUnit')?.value?.trim() || '';
+    const notes   = get('chkNotes')?.value?.trim() || '';
+    const termsOk = !!get('chkTerms')?.checked;
+
+    if (!cart.items.length)         return alert('Cart is empty');
+    if (!termsOk)                   return alert('Please accept the Terms');
+    if (!name || !phone || !address)return alert('Enter name, phone and address');
+
+    const payload = {
+      items: cart.items.map(i => ({ id:i.id, title:i.title, qty:i.qty, price:i.price })),
+      name, phone, address, unit, notes,
+      successUrl: window.location.origin + '/?checkout=success',
+      cancelUrl:  window.location.origin + '/?checkout=cancel',
+    };
+
+    try {
+      if (method === 'card') {
+        const data = await createStripeSession(payload);
+        // Redirect preference order
+        if (data?.url) {
+          cart.items = []; writeCart(cart); updateCount(cart);
+          return (window.location.href = data.url);
+        }
+        if ((data?.id || data?.sessionId) && window.Stripe && typeof STRIPE_PK === 'string' && STRIPE_PK) {
+          const stripe = window.Stripe(STRIPE_PK);
+          cart.items = []; writeCart(cart); updateCount(cart);
+          const sid = data.id || data.sessionId;
+          const { error } = await stripe.redirectToCheckout({ sessionId: sid });
+          if (error) throw error;
+          return;
+        }
+        if (FALLBACK) {
+          cart.items = []; writeCart(cart); updateCount(cart);
+          return (window.location.href = FALLBACK);
+        }
+        throw new Error('Stripe session not returned. Try Cash or contact support.');
+      } else {
+        const data = await createCashOrder(payload);
+        const orderId = data?.orderId || ('demo-' + Date.now());
+        const code    = data?.deliveryCode || String(Math.floor(100000 + Math.random()*900000));
+        const checkoutModal = get('checkoutModal');
+        if (checkoutModal) checkoutModal.classList.remove('open');
+        if (typeof window.showOrderStatus === 'function') {
+          window.showOrderStatus(orderId, code, 'cash');
+        } else {
+          alert(`Order created (${orderId}). Delivery code: ${code}`);
+        }
+        cart.items = []; writeCart(cart); updateCount(cart);
+      }
+    } catch (err) {
+      if (FALLBACK && method === 'card') {
+        cart.items = []; writeCart(cart); updateCount(cart);
+        return (window.location.href = FALLBACK);
+      }
+      alert((err && err.message) ? err.message : 'Checkout error. Please try again.');
+    }
+  });
+
+  // Ensure header cart opens cart + stays on marketplace
+  const headerCart = document.getElementById('cartBtn');
+  if (headerCart) {
+    headerCart.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      try { showPage('marketplace'); } catch {}
+      try { window.renderCart && window.renderCart(); } catch {}
+      const cartModal = get('cartModal');
+      if (cartModal) setTimeout(() => cartModal.classList.add('open'), 0);
+    });
+  }
+})();
+</script>
 </body>
 </html>
