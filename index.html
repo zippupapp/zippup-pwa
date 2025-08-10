@@ -77,18 +77,18 @@
         <span class="small">📍 <span id="userLoc">Detecting location…</span></span>
       </div>
       <div class="row">
-        <button class="btn ghost" id="notifBtn">🔔</button>
+        <button class="btn ghost" id="notifBtn" type="button">🔔</button>
         <div style="position:relative">
-          <button class="btn ghost" id="cartBtn">🛒</button>
+          <button class="btn ghost" id="cartBtn" type="button">🛒</button>
           <span id="headerCartBadge" style="position:absolute; top:-6px; right:-6px; background:#DC2626; color:#fff; border-radius:999px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">0</span>
         </div>
         <div style="position:relative">
-          <button class="btn ghost" id="profileBtn">👤 Account</button>
+          <button class="btn ghost" id="profileBtn" type="button">👤 Account</button>
           <div id="profileMenu">
-            <button class="btn ghost" id="menuProfile">👤 Profile</button>
-            <button class="btn ghost" id="menuWallet">💰 Wallet</button>
-            <button class="btn ghost" id="menuTopup">⚡ Top‑up</button>
-            <button class="btn ghost" id="menuLogout">🚪 Logout</button>
+            <button class="btn ghost" id="menuProfile" type="button">👤 Profile</button>
+            <button class="btn ghost" id="menuWallet" type="button">💰 Wallet</button>
+            <button class="btn ghost" id="menuTopup" type="button">⚡ Top‑up</button>
+            <button class="btn ghost" id="menuLogout" type="button">🚪 Logout</button>
           </div>
         </div>
       </div>
@@ -100,8 +100,8 @@
     <section class="search">
       <div class="box">
         <input id="search" placeholder="Search transport, food, services, emergency…"/>
-        <button class="btn ghost" id="voiceBtn">🎤</button>
-        <button class="btn primary" id="searchBtn">Search</button>
+        <button class="btn ghost" id="voiceBtn" type="button">🎤</button>
+        <button class="btn primary" id="searchBtn" type="button">Search</button>
       </div>
     </section>
 
@@ -142,8 +142,8 @@
     <section class="search">
       <div class="box">
         <input id="mpSearch" placeholder="Search products (e.g., phone, shoes, blender)…"/>
-        <button class="btn ghost" id="mpVoice">🎤</button>
-        <button class="btn primary" id="mpSearchBtn">Search</button>
+        <button class="btn ghost" id="mpVoice" type="button">🎤</button>
+        <button class="btn primary" id="mpSearchBtn" type="button">Search</button>
       </div>
     </section>
     <section class="section">
@@ -154,7 +154,7 @@
       <div class="grid" id="mpGrid"></div>
     </section>
     <div class="cart-fab">
-      <button class="btn primary" id="openCartBtn">🛒 Cart (<span id="cartCount">0</span>)</button>
+      <button class="btn primary" id="openCartBtn" type="button">🛒 Cart (<span id="cartCount">0</span>)</button>
     </div>
   </main>
 
@@ -171,15 +171,15 @@
               <div class="small" id="profEmail">demo@zippup.com</div>
             </div>
           </div>
-          <button class="btn primary" id="editProfileBtn">Edit</button>
+          <button class="btn primary" id="editProfileBtn" type="button">Edit</button>
         </div>
       </div>
       <div class="list" style="margin-top:12px">
-        <button class="btn ghost" id="manageServicesBtn">Manage Services</button>
-        <button class="btn ghost" id="manageProductsBtn">Manage Products</button>
-        <button class="btn ghost" id="emergencyContactsBtn">Emergency Contacts</button>
-        <button class="btn ghost" id="providerVerifyBtn">Become Verified Provider</button>
-        <button class="btn ghost" id="availToggleBtn">Go Offline / Available</button>
+        <button class="btn ghost" id="manageServicesBtn" type="button">Manage Services</button>
+        <button class="btn ghost" id="manageProductsBtn" type="button">Manage Products</button>
+        <button class="btn ghost" id="emergencyContactsBtn" type="button">Emergency Contacts</button>
+        <button class="btn ghost" id="providerVerifyBtn" type="button">Become Verified Provider</button>
+        <button class="btn ghost" id="availToggleBtn" type="button">Go Offline / Available</button>
       </div>
     </section>
   </main>
@@ -204,13 +204,13 @@
     </section>
   </main>
 
-  <button class="floating-panic" id="panicBtn">🚨</button>
+  <button class="floating-panic" id="panicBtn" type="button">🚨</button>
 
   <nav class="nav">
-    <button data-page="home" class="active">🏠 Home</button>
-    <button data-page="services">🔧 Services</button>
-    <button data-page="bookings">📋 Bookings</button>
-    <button data-page="marketplace">🛍️ Marketplace</button>
+    <button data-page="home" class="active" type="button">🏠 Home</button>
+    <button data-page="services" type="button">🔧 Services</button>
+    <button data-page="bookings" type="button">📋 Bookings</button>
+    <button data-page="marketplace" type="button">🛍️ Marketplace</button>
   </nav>
 
   <!-- Providers Modal -->
@@ -218,7 +218,7 @@
     <div class="sheet">
       <div class="head">
         <strong id="providersTitle">Providers</strong>
-        <button class="btn ghost" id="closeProviders">✖</button>
+        <button class="btn ghost" id="closeProviders" type="button">✖</button>
       </div>
       <div class="body">
         <div class="list" id="providersList"></div>
@@ -231,7 +231,7 @@
     <div class="sheet">
       <div class="head">
         <strong>Book Service</strong>
-        <button class="btn ghost" id="closeBooking">✖</button>
+        <button class="btn ghost" id="closeBooking" type="button">✖</button>
       </div>
       <div class="body">
         <form id="bookingForm" class="list">
@@ -264,7 +264,7 @@
     <div class="sheet">
       <div class="head">
         <strong id="instantTitle">Contacting provider…</strong>
-        <button class="btn ghost" id="cancelInstant">Cancel</button>
+        <button class="btn ghost" id="cancelInstant" type="button">Cancel</button>
       </div>
       <div class="body">
         <div class="card">
@@ -272,7 +272,7 @@
           <div class="small muted" id="instantHint">Waiting for provider to accept…</div>
         </div>
         <div class="controls" style="margin-top:10px">
-          <button class="btn ghost" id="findOthers">Find other providers</button>
+          <button class="btn ghost" id="findOthers" type="button">Find other providers</button>
         </div>
       </div>
     </div>
@@ -283,7 +283,7 @@
     <div class="sheet">
       <div class="head">
         <strong>Live Tracking</strong>
-        <button class="btn ghost" id="closeTrack">✖</button>
+        <button class="btn ghost" id="closeTrack" type="button">✖</button>
       </div>
       <div class="body">
         <div id="trackStatus" class="small muted">Provider accepted. En route…</div>
@@ -297,7 +297,7 @@
     <div class="sheet">
       <div class="head">
         <strong id="categoryOptionsTitle">Options</strong>
-        <button class="btn ghost" id="closeCategoryOptions">✖</button>
+        <button class="btn ghost" id="closeCategoryOptions" type="button">✖</button>
       </div>
       <div class="body">
         <div id="categoryOptionsList" class="list"></div>
@@ -310,13 +310,13 @@
     <div class="sheet">
       <div class="head">
         <strong id="itemsTitle">Find Items</strong>
-        <button class="btn ghost" id="closeItems">✖</button>
+        <button class="btn ghost" id="closeItems" type="button">✖</button>
       </div>
       <div class="body">
         <div class="row" style="gap:8px;margin-bottom:10px">
           <input id="itemSearch" placeholder="Say or type what you need (e.g., pizza, plumber, tire)…" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px"/>
-          <button class="btn ghost" id="itemVoice">🎤</button>
-          <button class="btn primary" id="itemGo">Search</button>
+          <button class="btn ghost" id="itemVoice" type="button">🎤</button>
+          <button class="btn primary" id="itemGo" type="button">Search</button>
         </div>
         <div id="itemChips" class="controls"></div>
       </div>
@@ -328,13 +328,13 @@
     <div class="sheet">
       <div class="head">
         <strong>My Cart</strong>
-        <button class="btn ghost" id="closeCart">✖</button>
+        <button class="btn ghost" id="closeCart" type="button">✖</button>
       </div>
       <div class="body">
         <div id="cartList" class="list"></div>
         <div class="row" style="justify-content:space-between;margin-top:10px">
           <div class="price">Total: $<span id="cartTotal">0.00</span></div>
-          <button class="btn primary" id="checkoutBtn">Checkout</button>
+          <button class="btn primary" id="checkoutBtn" type="button">Checkout</button>
         </div>
       </div>
     </div>
@@ -345,7 +345,7 @@
     <div class="sheet">
       <div class="head">
         <strong>Checkout</strong>
-        <button class="btn ghost" id="closeCheckout">✖</button>
+        <button class="btn ghost" id="closeCheckout" type="button">✖</button>
       </div>
       <div class="body">
         <div class="list">
@@ -384,7 +384,7 @@
             <input type="checkbox" id="chkTerms"/>
             <span>I accept the Terms. Cash is at your own risk. For card, funds are held until seller enters the delivery code. Disputes up to 7 days. 5% platform fee on non‑cash; unpaid cash fees limit selling to one more item.</span>
           </label>
-          <button class="btn primary" id="placeOrderBtn">Place Order</button>
+          <button class="btn primary" id="placeOrderBtn" type="button">Place Order</button>
         </div>
       </div>
     </div>
@@ -395,7 +395,7 @@
     <div class="sheet">
       <div class="head">
         <strong>Order Status</strong>
-        <button class="btn ghost" id="closeOrder">✖</button>
+        <button class="btn ghost" id="closeOrder" type="button">✖</button>
       </div>
       <div class="body">
         <div id="orderInfo" class="list"></div>
@@ -407,7 +407,7 @@
     // Config
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
     const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
-    const FALLBACK_PAYMENT_LINK = ''; // optional: set a Stripe Payment Link here if desired
+    const FALLBACK_PAYMENT_LINK = ''; // optional
 
     let user = { name:'Guest', email:'demo@zippup.com' };
     let coords = null;
@@ -462,7 +462,6 @@
     const profileBtn = document.getElementById('profileBtn');
     const profileMenu= document.getElementById('profileMenu');
     notifBtn.onclick = () => alert('Notifications (coming soon)');
-    cartBtn.onclick  = (e) => { e.preventDefault(); e.stopPropagation(); showPage('marketplace'); renderCart(); setTimeout(()=>cartModal.classList.add('open'),0); };
     profileBtn.onclick = (e) => { e.stopPropagation(); profileMenu.style.display = profileMenu.style.display==='block' ? 'none' : 'block'; };
     document.addEventListener('click', () => profileMenu.style.display='none');
     document.getElementById('menuProfile').onclick = () => { profileMenu.style.display='none'; showPage('profile'); };
@@ -470,6 +469,7 @@
     document.getElementById('menuTopup').onclick   = () => { profileMenu.style.display='none'; showPage('topup'); };
     document.getElementById('menuLogout').onclick  = () => { profileMenu.style.display='none'; alert('Logged out'); };
 
+    // Footer nav
     document.querySelectorAll('.nav button').forEach(b=>{
       b.onclick = () => {
         document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
@@ -478,15 +478,59 @@
       };
     });
 
+    // Home search
     const voiceBtn = document.getElementById('voiceBtn');
     const searchInp= document.getElementById('search');
     voiceBtn.onclick = () => voiceToInput(searchInp, () => runHomeSearch());
     document.getElementById('searchBtn').onclick = runHomeSearch;
 
+    // Top-up
     document.querySelectorAll('[data-topup]').forEach(el=>{
       el.onclick = () => alert('Top-up: ' + el.dataset.topup);
     });
 
+    // Cart / checkout elements
+    const mpSearch = document.getElementById('mpSearch');
+    const mpVoice  = document.getElementById('mpVoice');
+    const mpSearchBtn = document.getElementById('mpSearchBtn');
+    const mpChips  = document.getElementById('mpChips');
+    const mpGrid   = document.getElementById('mpGrid');
+    const openCartBtn = document.getElementById('openCartBtn');
+    const cartModal = document.getElementById('cartModal');
+    const closeCart = document.getElementById('closeCart');
+    const cartList  = document.getElementById('cartList');
+    const cartTotalEl = document.getElementById('cartTotal');
+    const cartCountEl = document.getElementById('cartCount');
+    const checkoutModal = document.getElementById('checkoutModal');
+    const closeCheckout = document.getElementById('closeCheckout');
+    const chkTerms = document.getElementById('chkTerms');
+    const chkAddress = document.getElementById('chkAddress');
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const orderModal = document.getElementById('orderModal');
+    const closeOrder = document.getElementById('closeOrder');
+    const orderInfo = document.getElementById('orderInfo');
+    const chkName  = document.getElementById('chkName');
+    const chkPhone = document.getElementById('chkPhone');
+    const chkUnit  = document.getElementById('chkUnit');
+    const chkNotes = document.getElementById('chkNotes');
+
+    // Header cart opens modal and goes to marketplace
+    cartBtn.onclick  = (e) => { e.preventDefault(); e.stopPropagation(); showPage('marketplace'); renderCart(); setTimeout(()=>cartModal.classList.add('open'),0); };
+    closeCart.onclick = () => cartModal.classList.remove('open');
+    openCartBtn.onclick = () => { renderCart(); cartModal.classList.add('open'); };
+    checkoutBtn.onclick = () => { cartModal.classList.remove('open'); checkoutModal.classList.add('open'); };
+    closeCheckout.onclick = () => checkoutModal.classList.remove('open');
+    closeOrder.onclick = () => orderModal.classList.remove('open');
+
+    // Panic button
+    document.getElementById('panicBtn').onclick = async () => {
+      const ok = confirm('Confirm PANIC alert?\n\nThis will send your live location to your 5 contacts and the national line.');
+      if (!ok) return;
+      await triggerPanic();
+    };
+
+    // Init on load
     document.addEventListener('DOMContentLoaded', () => {
       try { userNameEl.textContent = user.name; } catch {}
       try { initLocation(); } catch (e) { console.error(e); }
@@ -498,7 +542,18 @@
       try { initMarketplace(); } catch (e) { console.error(e); }
       [providersModal, bookingModal, instantModal, trackModal, categoryOptionsModal, itemsModal, cartModal, checkoutModal, orderModal]
         .forEach(m => m && m.addEventListener('click', (e)=>{ if (e.target === m) m.classList.remove('open'); }));
+      // PWA: register service worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(()=>{});
+      }
     });
+
+    // Pages
+    function showPage(page){
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      const el = document.getElementById('page-'+page);
+      (el || document.getElementById('page-home')).classList.add('active');
+    }
 
     // Services catalog
     const SERVICES = [
@@ -516,7 +571,7 @@
       { id:'fire',      name:'Fire Service',  icon:'🚒' },
       { id:'towing',    name:'Towing',        icon:'🚛' },
       { id:'security',  name:'Security',      icon:'🛡️' },
-      { id:'roadside',  name:'Roadside',      icon:'🔧' }, // item-search flow
+      { id:'roadside',  name:'Roadside',      icon:'🔧' },
     ];
 
     function renderServices(){
@@ -650,7 +705,7 @@
         el.innerHTML = `
           <div class="row" style="justify-content:space-between">
             <div class="row"><div style="font-size:24px">${o.icon||'•'}</div><div><strong>${o.name}</strong></div></div>
-            <button class="btn primary">Choose</button>
+            <button class="btn primary" type="button">Choose</button>
           </div>
         `;
         el.querySelector('button').onclick = () => onPick(o);
@@ -692,6 +747,7 @@
       chips.forEach(text => {
         const b = document.createElement('button');
         b.className = 'btn ghost';
+        b.type = 'button';
         b.textContent = text;
         b.onclick = () => { itemSearch.value = text; itemGo.click(); };
         itemChips.appendChild(b);
@@ -732,8 +788,8 @@
             <span class="badge ${p.available ? 'success':''}">${p.available ? 'available':'unavailable'}</span>
           </div>
           <div class="controls">
-            <button class="btn primary" data-k="instant">Instant Request</button>
-            <button class="btn ghost" data-k="schedule">Schedule</button>
+            <button class="btn primary" data-k="instant" type="button">Instant Request</button>
+            <button class="btn ghost" data-k="schedule" type="button">Schedule</button>
           </div>
         `;
         el.querySelectorAll('button[data-k]').forEach(b=>{
@@ -960,42 +1016,19 @@
       { id:'p700', title:'Gift Box',         cat:'others',      price:12,  stock:50, img:'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop' },
       { id:'p701', title:'Photo Frame',      cat:'others',      price:15,  stock:33, img:'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?q=80&w=800&auto=format&fit=crop' },
     ];
+
+    // Cart store
     let cart = loadCart();
+    function loadCart(){ try{ return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{ return { items:[] }; } }
+    function saveCart(){ localStorage.setItem('mp_cart', JSON.stringify(cart)); }
+    function updateCartCount(){
+      const count = cart.items.reduce((a,b)=>a+b.qty,0);
+      const headerBadge = document.getElementById('headerCartBadge');
+      if (cartCountEl) cartCountEl.textContent = String(count);
+      if (headerBadge) headerBadge.textContent = String(count);
+    }
 
-    const mpSearch = document.getElementById('mpSearch');
-    const mpVoice  = document.getElementById('mpVoice');
-    const mpSearchBtn = document.getElementById('mpSearchBtn');
-    const mpChips  = document.getElementById('mpChips');
-    const mpGrid   = document.getElementById('mpGrid');
-    const openCartBtn = document.getElementById('openCartBtn');
-    const cartModal = document.getElementById('cartModal');
-    const closeCart = document.getElementById('closeCart');
-    const cartList  = document.getElementById('cartList');
-    const cartTotalEl = document.getElementById('cartTotal');
-    const cartCountEl = document.getElementById('cartCount');
-    const checkoutModal = document.getElementById('checkoutModal');
-    const closeCheckout = document.getElementById('closeCheckout');
-    const chkTerms = document.getElementById('chkTerms');
-    const chkAddress = document.getElementById('chkAddress');
-    const placeOrderBtn = document.getElementById('placeOrderBtn');
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    const orderModal = document.getElementById('orderModal');
-    const closeOrder = document.getElementById('closeOrder');
-    const orderInfo = document.getElementById('orderInfo');
-    const chkName  = document.getElementById('chkName');
-    const chkPhone = document.getElementById('chkPhone');
-    const chkUnit  = document.getElementById('chkUnit');
-    const chkNotes = document.getElementById('chkNotes');
-
-    closeCart.onclick = () => cartModal.classList.remove('open');
-    openCartBtn.onclick = () => { renderCart(); cartModal.classList.add('open'); };
-    checkoutBtn.onclick = async () => {
-      cartModal.classList.remove('open');
-      checkoutModal.classList.add('open'); // show form so user can fill name/phone/address/terms
-    };
-    closeCheckout.onclick = () => checkoutModal.classList.remove('open');
-    closeOrder.onclick = () => orderModal.classList.remove('open');
-
+    // Marketplace init/search/render
     mpVoice.onclick = () => voiceToInput(mpSearch, () => runMarketplaceSearch());
     mpSearchBtn.onclick = runMarketplaceSearch;
 
@@ -1004,6 +1037,7 @@
       MP_CATEGORIES.forEach(c=>{
         const b = document.createElement('button');
         b.className = 'btn ghost';
+        b.type='button';
         b.textContent = c.name;
         b.onclick = () => { renderMarketplace(c.id, mpSearch.value.trim().toLowerCase()); };
         mpChips.appendChild(b);
@@ -1011,12 +1045,10 @@
       renderMarketplace();
       updateCartCount();
     }
-
     function runMarketplaceSearch(){
       const q = mpSearch.value.trim().toLowerCase();
       renderMarketplace(null, q);
     }
-
     function renderMarketplace(category=null, query=''){
       mpGrid.innerHTML = '';
       let list = MP_PRODUCTS.slice();
@@ -1029,6 +1061,7 @@
       list.forEach(p=>{
         const el = document.createElement('div');
         el.className = 'card product';
+        el.dataset.id = p.id;
         el.innerHTML = `
           <img src="${p.img}" alt="${p.title}"/>
           <div><strong>${p.title}</strong></div>
@@ -1036,7 +1069,7 @@
             <div class="price">$${p.price.toFixed(2)}</div>
             <div class="small muted">Stock: ${p.stock}</div>
           </div>
-          <button class="btn primary">${p.stock > 0 ? 'Add to Cart' : 'Out of Stock'}</button>
+          <button class="btn primary" type="button">${p.stock > 0 ? 'Add to Cart' : 'Out of Stock'}</button>
         `;
         const btn = el.querySelector('button');
         btn.disabled = p.stock <= 0;
@@ -1044,7 +1077,6 @@
         mpGrid.appendChild(el);
       });
     }
-
     function addToCart(productId){
       const prod = MP_PRODUCTS.find(p=>p.id===productId);
       if (!prod || prod.stock <= 0) return;
@@ -1053,17 +1085,6 @@
       else cart.items.push({ id:prod.id, title:prod.title, price:prod.price, img:prod.img, qty:1 });
       saveCart(); updateCartCount();
     }
-    function updateCartCount(){
-      const count = cart.items.reduce((a,b)=>a+b.qty,0);
-      const headerBadge = document.getElementById('headerCartBadge');
-      if (cartCountEl) cartCountEl.textContent = String(count);
-      if (headerBadge) headerBadge.textContent = String(count);
-    }
-    function loadCart(){
-      try{ return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{ return { items:[] }; }
-    }
-    function saveCart(){ localStorage.setItem('mp_cart', JSON.stringify(cart)); }
-
     function renderCart(){
       cartList.innerHTML = '';
       if (!cart.items.length){
@@ -1086,10 +1107,10 @@
               </div>
             </div>
             <div class="qty">
-              <button class="btn ghost" data-k="dec">−</button>
+              <button class="btn ghost" data-k="dec" type="button">−</button>
               <div>${item.qty}</div>
-              <button class="btn ghost" data-k="inc">＋</button>
-              <button class="btn ghost" data-k="rm">✖</button>
+              <button class="btn ghost" data-k="inc" type="button">＋</button>
+              <button class="btn ghost" data-k="rm" type="button">✖</button>
             </div>
           </div>
         `;
@@ -1102,6 +1123,7 @@
       cartTotalEl.textContent = total.toFixed(2);
     }
 
+    // Checkout
     placeOrderBtn.onclick = async () => {
       const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
       if (!chkTerms.checked){ alert('Please accept the Terms'); return; }
@@ -1210,451 +1232,5 @@
       }, 3000);
     }
   </script>
-  <script>
-// Hotfix: reliable navigation + panic + hash routing
-(function () {
-  const PAGES = ['home','services','bookings','marketplace','profile','wallet','topup'];
-
-  function showPageSafe(page) {
-    const target = PAGES.includes(page) ? page : 'home';
-    PAGES.forEach(id => {
-      const el = document.getElementById('page-'+id);
-      if (el) el.classList.toggle('active', id === target);
-    });
-    // footer active
-    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-    const activeBtn = document.querySelector(`.nav button[data-page="${target}"]`);
-    if (activeBtn) activeBtn.classList.add('active');
-    // close account menu
-    const menu = document.getElementById('profileMenu');
-    if (menu) menu.style.display = 'none';
-    // ensure home sections render
-    if (target === 'home') {
-      try { renderServices(); } catch {}
-      try { renderEmergency(); } catch {}
-      try { renderRecent(); } catch {}
-    }
-  }
-
-  function routeFromHash() {
-    const h = location.hash.replace(/^#\/?/, '');
-    showPageSafe(h || 'home');
-  }
-
-  // Prevent buttons from behaving like submit
-  document.querySelectorAll('.nav button, #profileMenu .btn, #profileBtn, #cartBtn').forEach(b => b.setAttribute('type','button'));
-
-  // Global click handler
-  document.addEventListener('click', (e) => {
-    // Footer nav
-    const navBtn = e.target.closest('.nav button');
-    if (navBtn && navBtn.dataset.page) {
-      e.preventDefault();
-      location.hash = '/'+navBtn.dataset.page;
-      return;
-    }
-
-    // Account dropdown toggle
-    if (e.target.id === 'profileBtn') {
-      e.preventDefault();
-      const menu = document.getElementById('profileMenu');
-      if (menu) menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-      return;
-    }
-
-    // Account dropdown items
-    if (e.target.id === 'menuProfile') { e.preventDefault(); location.hash='/profile'; return; }
-    if (e.target.id === 'menuWallet')  { e.preventDefault(); location.hash='/wallet';  return; }
-    if (e.target.id === 'menuTopup')   { e.preventDefault(); location.hash='/topup';   return; }
-    if (e.target.id === 'menuLogout')  { e.preventDefault(); alert('Logged out');      return; }
-
-    // Click outside menu closes it
-    if (!e.target.closest('#profileMenu') && e.target.id !== 'profileBtn') {
-      const menu = document.getElementById('profileMenu');
-      if (menu) menu.style.display = 'none';
-    }
-  });
-
-  // Panic button
-  const panicBtn = document.getElementById('panicBtn');
-  if (panicBtn) {
-    panicBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const ok = confirm('Confirm PANIC alert?\n\nThis will send your live location to your 5 contacts and the national line.');
-      if (!ok) return;
-      try { await triggerPanic(); } catch { alert('Emergency alert sent.'); }
-    });
-  }
-
-  // Ensure header cart opens cart modal (does not navigate away)
-  const cartBtn = document.getElementById('cartBtn');
-  if (cartBtn) {
-    cartBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      location.hash = '/marketplace';
-      try { renderCart(); } catch {}
-      const cartModal = document.getElementById('cartModal');
-      if (cartModal) setTimeout(() => cartModal.classList.add('open'), 0);
-    });
-  }
-
-  // Route on load and hash change
-  window.addEventListener('hashchange', routeFromHash);
-  window.addEventListener('DOMContentLoaded', routeFromHash);
-
-  // Log JS errors (helps find what's breaking rendering)
-  window.addEventListener('error', (e) => console.error('JS error:', e.error || e.message));
-})();
-</script>
-  <script>
-// Cart edit/quantity/remove hotfix (works with your existing cart/checkout)
-(function () {
-  // Ensure a single cart store
-  if (!window.cart) {
-    try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); } catch { window.cart = { items: [] }; }
-  }
-
-  // Helpers
-  function saveCart() {
-    localStorage.setItem('mp_cart', JSON.stringify(window.cart));
-  }
-  function updateCartCount() {
-    const count = window.cart.items.reduce((a,b)=>a+b.qty,0);
-    const headerBadge = document.getElementById('headerCartBadge');
-    const cartCountEl = document.getElementById('cartCount');
-    if (headerBadge) headerBadge.textContent = String(count);
-    if (cartCountEl) cartCountEl.textContent = String(count);
-  }
-  function findProductById(id) {
-    try { return (window.MP_PRODUCTS || []).find(p => p.id === id); } catch { return null; }
-  }
-
-  // Public add to cart (used by product grid)
-  window.addToCart = function addToCart(productId) {
-    const prod = findProductById(productId);
-    if (!prod) return;
-    if (prod.stock !== undefined && prod.stock <= 0) return;
-
-    const idx = window.cart.items.findIndex(x => x.id === productId);
-    if (idx >= 0) {
-      window.cart.items[idx].qty += 1;
-    } else {
-      window.cart.items.push({ id: prod.id, title: prod.title, price: prod.price, img: prod.img, qty: 1 });
-    }
-    saveCart();
-    updateCartCount();
-  };
-
-  // Render cart with inc/dec/remove
-  window.renderCart = function renderCart() {
-    const cartList  = document.getElementById('cartList');
-    const cartTotal = document.getElementById('cartTotal');
-    if (!cartList || !cartTotal) return;
-
-    cartList.innerHTML = '';
-    if (!window.cart.items.length) {
-      cartList.innerHTML = '<div class="small muted">Your cart is empty.</div>';
-      cartTotal.textContent = '0.00';
-      updateCartCount();
-      return;
-    }
-
-    let total = 0;
-    window.cart.items.forEach(item => {
-      total += item.price * item.qty;
-      const row = document.createElement('div');
-      row.className = 'card';
-      row.dataset.id = item.id;
-      row.innerHTML = `
-        <div class="row" style="justify-content:space-between; align-items:flex-start">
-          <div class="row">
-            <img src="${item.img}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
-            <div style="margin-left:8px">
-              <strong>${item.title}</strong>
-              <div class="small muted">$${item.price.toFixed(2)}</div>
-            </div>
-          </div>
-          <div class="qty">
-            <button class="btn ghost" data-cart-dec>−</button>
-            <div data-cart-qty>${item.qty}</div>
-            <button class="btn ghost" data-cart-inc>＋</button>
-            <button class="btn ghost" data-cart-rm>✖</button>
-          </div>
-        </div>
-      `;
-      cartList.appendChild(row);
-    });
-
-    cartTotal.textContent = total.toFixed(2);
-    updateCartCount();
-  };
-
-  // Event delegation for cart controls
-  document.addEventListener('click', (e) => {
-    const decBtn = e.target.closest('[data-cart-dec]');
-    const incBtn = e.target.closest('[data-cart-inc]');
-    const rmBtn  = e.target.closest('[data-cart-rm]');
-
-    if (decBtn || incBtn || rmBtn) {
-      e.preventDefault();
-      const row = e.target.closest('.card');
-      if (!row) return;
-      const id = row.dataset.id;
-      const idx = window.cart.items.findIndex(x => x.id === id);
-      if (idx < 0) return;
-
-      if (decBtn) {
-        window.cart.items[idx].qty = Math.max(1, window.cart.items[idx].qty - 1);
-      } else if (incBtn) {
-        // Optional: respect stock if available
-        const prod = findProductById(id);
-        const max = prod && typeof prod.stock === 'number' ? prod.stock : Infinity;
-        window.cart.items[idx].qty = Math.min(window.cart.items[idx].qty + 1, max);
-      } else if (rmBtn) {
-        window.cart.items.splice(idx, 1);
-      }
-
-      saveCart();
-      window.renderCart();
-      return;
-    }
-  });
-
-  // Make marketplace product buttons call addToCart reliably
-  // Override renderMarketplace minimally to add data hooks if it exists
-  if (typeof window.renderMarketplace === 'function') {
-    const originalRenderMarketplace = window.renderMarketplace;
-    window.renderMarketplace = function patchedRenderMarketplace(category, query) {
-      originalRenderMarketplace(category, query);
-      // Attach add-to-cart safely
-      try {
-        const grid = document.getElementById('mpGrid');
-        if (!grid) return;
-        grid.querySelectorAll('.card.product').forEach(card => {
-          const btn = card.querySelector('button');
-          if (!btn || btn.disabled) return;
-          // Avoid double-binding
-          if (btn.dataset.bound === '1') return;
-          btn.dataset.bound = '1';
-          btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const titleEl = card.querySelector('strong');
-            const title = titleEl ? titleEl.textContent.trim() : '';
-            const prod = (window.MP_PRODUCTS || []).find(p => p.title === title);
-            if (prod) window.addToCart(prod.id);
-          });
-        });
-      } catch {}
-    };
-  }
-
-  // Initialize counts on load
-  window.addEventListener('DOMContentLoaded', updateCartCount);
-})();
-</script>
-  <script>
-// Restore "Add to Cart" using robust delegation (no overrides)
-(function () {
-  const grid = document.getElementById('mpGrid');
-  if (!grid) return;
-
-  // Map product titles to ids once
-  const titleToId = {};
-  try {
-    (window.MP_PRODUCTS || []).forEach(p => { titleToId[(p.title || '').toLowerCase()] = p.id; });
-  } catch {}
-
-  // Enhance cards whenever the grid changes
-  function enhanceCards() {
-    grid.querySelectorAll('.card.product').forEach(card => {
-      const titleEl = card.querySelector('strong');
-      const btn = card.querySelector('button');
-      if (btn && !btn.getAttribute('type')) btn.setAttribute('type','button');
-      if (!card.dataset.id && titleEl) {
-        const id = titleToId[(titleEl.textContent || '').trim().toLowerCase()];
-        if (id) card.dataset.id = id;
-      }
-    });
-  }
-
-  // Initial pass + mutation observer for dynamic renders
-  const mo = new MutationObserver(() => enhanceCards());
-  mo.observe(grid, { childList: true, subtree: true });
-  enhanceCards();
-
-  // Single, reliable click handler for Add to Cart
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('#mpGrid .card.product button');
-    if (!btn) return;
-    const card = btn.closest('.card.product');
-    const id = card && card.dataset.id;
-    if (!id) {
-      // Fallback by title if no data-id
-      const title = (card.querySelector('strong')?.textContent || '').trim().toLowerCase();
-      const guessed = titleToId[title];
-      if (!guessed) return;
-      e.preventDefault();
-      try { window.addToCart(guessed); } catch {}
-      return;
-    }
-    e.preventDefault();
-    try { window.addToCart(id); } catch {}
-  });
-})();
-</script>
-  <script>
-// Cart add-to-cart fix (non-destructive). Works with existing MP_PRODUCTS and cart UI.
-(function () {
-  // 1) Ensure a single cart store and helpers exist
-  if (!window.cart) {
-    try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); } catch { window.cart = { items: [] }; }
-  }
-  if (typeof window.saveCart !== 'function') {
-    window.saveCart = function saveCart() {
-      localStorage.setItem('mp_cart', JSON.stringify(window.cart));
-    };
-  }
-  if (typeof window.updateCartCount !== 'function') {
-    window.updateCartCount = function updateCartCount() {
-      const count = window.cart.items.reduce((a,b)=>a+b.qty,0);
-      const headerBadge = document.getElementById('headerCartBadge');
-      const cartCountEl = document.getElementById('cartCount');
-      if (headerBadge) headerBadge.textContent = String(count);
-      if (cartCountEl) cartCountEl.textContent = String(count);
-    };
-  }
-
-  // 2) Define a reliable addToCart if missing
-  if (typeof window.addToCart !== 'function') {
-    window.addToCart = function addToCart(productId) {
-      const prod = (window.MP_PRODUCTS || []).find(p => p.id === productId);
-      if (!prod) return;
-      if (typeof prod.stock === 'number' && prod.stock <= 0) return;
-      const idx = window.cart.items.findIndex(x => x.id === productId);
-      if (idx >= 0) window.cart.items[idx].qty += 1;
-      else window.cart.items.push({ id: prod.id, title: prod.title, price: prod.price, img: prod.img, qty: 1 });
-      window.saveCart();
-      window.updateCartCount();
-    };
-  }
-
-  // 3) Build lookup maps for robust matching
-  function normalizeSrc(src) {
-    try { const u = new URL(src, location.origin); return u.origin + u.pathname; } catch { return src || ''; }
-  }
-  const titleToId = {};
-  const imgToId = {};
-  try {
-    (window.MP_PRODUCTS || []).forEach(p => {
-      titleToId[(p.title || '').trim().toLowerCase()] = p.id;
-      imgToId[normalizeSrc(p.img || '')] = p.id;
-    });
-  } catch {}
-
-  // 4) Enhance product cards with data-id (non-destructive)
-  function enhanceProductCards() {
-    const grid = document.getElementById('mpGrid');
-    if (!grid) return;
-    grid.querySelectorAll('.card.product').forEach(card => {
-      const title = (card.querySelector('strong')?.textContent || '').trim().toLowerCase();
-      const imgSrc = normalizeSrc(card.querySelector('img')?.getAttribute('src') || '');
-      if (!card.dataset.id) {
-        card.dataset.id = titleToId[title] || imgToId[imgSrc] || '';
-      }
-      const btn = card.querySelector('button');
-      if (btn && !btn.getAttribute('type')) btn.setAttribute('type','button');
-    });
-  }
-  const grid = document.getElementById('mpGrid');
-  if (grid) {
-    enhanceProductCards();
-    new MutationObserver(enhanceProductCards).observe(grid, { childList: true, subtree: true });
-  }
-
-  // 5) Single delegated click handler for Add to Cart
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('#mpGrid .card.product button');
-    if (!btn) return;
-    e.preventDefault();
-    const card = btn.closest('.card.product');
-    let id = card?.dataset.id || '';
-    if (!id) {
-      const title = (card.querySelector('strong')?.textContent || '').trim().toLowerCase();
-      const imgSrc = normalizeSrc(card.querySelector('img')?.getAttribute('src') || '');
-      id = titleToId[title] || imgToId[imgSrc] || '';
-    }
-    if (!id) return;
-    try { window.addToCart(id); } catch {}
-  });
-
-  // 6) Initialize count on load
-  window.addEventListener('DOMContentLoaded', window.updateCartCount);
-})();
-</script>
-</body><script>
-// Make footer buttons and account menu work without editing HTML
-(function () {
-  // Ensure footer buttons don't submit forms
-  document.querySelectorAll('.nav button').forEach(b => b.setAttribute('type','button'));
-
-  // Robust click handling (footer + account dropdown)
-  document.addEventListener('click', (e) => {
-    // Footer buttons
-    const navBtn = e.target.closest('.nav button');
-    if (navBtn) {
-      e.preventDefault();
-      document.querySelectorAll('.nav button').forEach(x => x.classList.remove('active'));
-      navBtn.classList.add('active');
-      try { showPage(navBtn.dataset.page); } catch {}
-      return;
-    }
-
-    // Account dropdown toggle
-    if (e.target.id === 'profileBtn') {
-      e.preventDefault();
-      const menu = document.getElementById('profileMenu');
-      if (menu) menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-      return;
-    }
-
-    // Account menu items
-    if (e.target.id === 'menuProfile') { e.preventDefault(); document.getElementById('profileMenu').style.display='none'; try{ showPage('profile'); }catch{} return; }
-    if (e.target.id === 'menuWallet')  { e.preventDefault(); document.getElementById('profileMenu').style.display='none'; try{ showPage('wallet');  }catch{} return; }
-    if (e.target.id === 'menuTopup')   { e.preventDefault(); document.getElementById('profileMenu').style.display='none'; try{ showPage('topup');   }catch{} return; }
-    if (e.target.id === 'menuLogout')  { e.preventDefault(); document.getElementById('profileMenu').style.display='none'; alert('Logged out'); return; }
-
-    // Click outside menu closes it
-    if (!e.target.closest('#profileMenu') && e.target.id !== 'profileBtn') {
-      const menu = document.getElementById('profileMenu');
-      if (menu) menu.style.display = 'none';
-    }
-  });
-
-  // Header cart reliably opens cart modal
-  const cartBtn = document.getElementById('cartBtn');
-  if (cartBtn) {
-    cartBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      try { showPage('marketplace'); } catch {}
-      try { renderCart(); } catch {}
-      const cartModal = document.getElementById('cartModal');
-      if (cartModal) setTimeout(() => cartModal.classList.add('open'), 0);
-    });
-  }
-
-  // Safety re-render so Home never stays empty if a prior error blocked execution
-  window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-      try { renderServices(); } catch {}
-      try { renderEmergency(); } catch {}
-      try { renderRecent(); } catch {}
-    }, 50);
-  });
-
-  // Show JS errors in console to diagnose quickly
-  window.addEventListener('error', (e) => console.error('JS error:', e.error || e.message));
-})();
-</script>
+</body>
 </html>
