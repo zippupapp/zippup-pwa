@@ -1503,6 +1503,95 @@
   });
 })();
 </script>
+  <script>
+// Cart add-to-cart fix (non-destructive). Works with existing MP_PRODUCTS and cart UI.
+(function () {
+  // 1) Ensure a single cart store and helpers exist
+  if (!window.cart) {
+    try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); } catch { window.cart = { items: [] }; }
+  }
+  if (typeof window.saveCart !== 'function') {
+    window.saveCart = function saveCart() {
+      localStorage.setItem('mp_cart', JSON.stringify(window.cart));
+    };
+  }
+  if (typeof window.updateCartCount !== 'function') {
+    window.updateCartCount = function updateCartCount() {
+      const count = window.cart.items.reduce((a,b)=>a+b.qty,0);
+      const headerBadge = document.getElementById('headerCartBadge');
+      const cartCountEl = document.getElementById('cartCount');
+      if (headerBadge) headerBadge.textContent = String(count);
+      if (cartCountEl) cartCountEl.textContent = String(count);
+    };
+  }
+
+  // 2) Define a reliable addToCart if missing
+  if (typeof window.addToCart !== 'function') {
+    window.addToCart = function addToCart(productId) {
+      const prod = (window.MP_PRODUCTS || []).find(p => p.id === productId);
+      if (!prod) return;
+      if (typeof prod.stock === 'number' && prod.stock <= 0) return;
+      const idx = window.cart.items.findIndex(x => x.id === productId);
+      if (idx >= 0) window.cart.items[idx].qty += 1;
+      else window.cart.items.push({ id: prod.id, title: prod.title, price: prod.price, img: prod.img, qty: 1 });
+      window.saveCart();
+      window.updateCartCount();
+    };
+  }
+
+  // 3) Build lookup maps for robust matching
+  function normalizeSrc(src) {
+    try { const u = new URL(src, location.origin); return u.origin + u.pathname; } catch { return src || ''; }
+  }
+  const titleToId = {};
+  const imgToId = {};
+  try {
+    (window.MP_PRODUCTS || []).forEach(p => {
+      titleToId[(p.title || '').trim().toLowerCase()] = p.id;
+      imgToId[normalizeSrc(p.img || '')] = p.id;
+    });
+  } catch {}
+
+  // 4) Enhance product cards with data-id (non-destructive)
+  function enhanceProductCards() {
+    const grid = document.getElementById('mpGrid');
+    if (!grid) return;
+    grid.querySelectorAll('.card.product').forEach(card => {
+      const title = (card.querySelector('strong')?.textContent || '').trim().toLowerCase();
+      const imgSrc = normalizeSrc(card.querySelector('img')?.getAttribute('src') || '');
+      if (!card.dataset.id) {
+        card.dataset.id = titleToId[title] || imgToId[imgSrc] || '';
+      }
+      const btn = card.querySelector('button');
+      if (btn && !btn.getAttribute('type')) btn.setAttribute('type','button');
+    });
+  }
+  const grid = document.getElementById('mpGrid');
+  if (grid) {
+    enhanceProductCards();
+    new MutationObserver(enhanceProductCards).observe(grid, { childList: true, subtree: true });
+  }
+
+  // 5) Single delegated click handler for Add to Cart
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#mpGrid .card.product button');
+    if (!btn) return;
+    e.preventDefault();
+    const card = btn.closest('.card.product');
+    let id = card?.dataset.id || '';
+    if (!id) {
+      const title = (card.querySelector('strong')?.textContent || '').trim().toLowerCase();
+      const imgSrc = normalizeSrc(card.querySelector('img')?.getAttribute('src') || '');
+      id = titleToId[title] || imgToId[imgSrc] || '';
+    }
+    if (!id) return;
+    try { window.addToCart(id); } catch {}
+  });
+
+  // 6) Initialize count on load
+  window.addEventListener('DOMContentLoaded', window.updateCartCount);
+})();
+</script>
 </body><script>
 // Make footer buttons and account menu work without editing HTML
 (function () {
