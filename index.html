@@ -546,20 +546,22 @@
 
     // Init
     document.addEventListener('DOMContentLoaded', () => {
-      userNameEl.textContent = user.name;
-      document.getElementById('profName').textContent = user.name;
-      document.getElementById('profEmail').textContent = user.email;
-      initLocation();
-      renderServices();
-      renderEmergency();
-      renderRecent();
-      renderServicesAll();
-      renderBookings();
-      initMarketplace();
-      [providersModal, bookingModal, instantModal, trackModal, categoryOptionsModal, itemsModal, cartModal, checkoutModal, orderModal].forEach(m=>{
-        m.addEventListener('click', (e)=>{ if (e.target === m) m.classList.remove('open'); });
-      });
-    });
+  try { userNameEl.textContent = user.name; } catch {}
+  try { initLocation(); } catch (e) { console.error(e); }
+  try { renderServices(); } catch (e) { console.error(e); }
+  try { renderEmergency(); } catch (e) { console.error(e); }
+  try { renderRecent(); } catch (e) { console.error(e); }
+  try { renderServicesAll?.(); } catch (e) { console.error(e); }
+  try { renderBookings?.(); } catch (e) { console.error(e); }
+  try {
+[providersModal, bookingModal, instantModal, trackModal, categoryOptionsModal, itemsModal, cartModal, checkoutModal, orderModal]
+      .forEach(m => m && m.addEventListener('click', (e)=>{ if (e.target === m) m.classList.remove('open'); }));
+  } catch {}
+});
+
+ window.addEventListener('error', (e) => {
+  console.error('JS error:', e.error || e.message);
+});   
 
     function showPage(page){
       const ids = ['home','services','bookings','marketplace','profile','wallet','topup'];
@@ -593,23 +595,24 @@
       } catch { return null; }
     }
 
-    // Catalog
-    const SERVICES = [
-      { id:'transport', name:'Transport', icon:'🚗', desc:'Ride & moving', instant:true, scheduled:true },
-      { id:'food', name:'Food', icon:'🍔', desc:'Restaurant & grocery', instant:true, scheduled:true },
-      { id:'tech', name:'Tech Services', icon:'🔧', desc:'Phone/computer repair', instant:true, scheduled:true },
-      { id:'home', name:'Home Services', icon:'🏠', desc:'Cleaning & maintenance', instant:true, scheduled:true },
-      { id:'construction', name:'Construction', icon:'🏗️', desc:'Builders & electricians', instant:false, scheduled:true },
-      { id:'auto', name:'Automobile Repair', icon:'🛠️', desc:'Mechanics, tires, roadside', instant:true, scheduled:true },
-      { id:'others', name:'Others', icon:'🎯', desc:'Events, tutors, more', instant:false, scheduled:true },
-    ];
-    const EMERGENCY = [
-      { id:'ambulance', name:'Ambulance', icon:'🚑' },
-      { id:'fire',      name:'Fire Service', icon:'🚒' },
-      { id:'towing',    name:'Towing', icon:'🚛' },
-      { id:'security',  name:'Security', icon:'🛡️' },
-      { id:'roadside',  name:'Roadside', icon:'🔧' }, // uses items flow
-    ];
+    // Services catalog (safe defaults)
+const SERVICES = [
+  { id:'transport',    name:'Transport',         icon:'🚗', desc:'Ride & moving',                 instant:true,  scheduled:true },
+  { id:'food',         name:'Food',              icon:'🍔', desc:'Restaurant & grocery',         instant:true,  scheduled:true },
+  { id:'tech',         name:'Tech Services',     icon:'🔧', desc:'Phone/computer repair',        instant:true,  scheduled:true },
+  { id:'home',         name:'Home Services',     icon:'🏠', desc:'Cleaning & maintenance',       instant:true,  scheduled:true },
+  { id:'construction', name:'Construction',      icon:'🏗️', desc:'Builders & electricians',     instant:false, scheduled:true },
+  { id:'auto',         name:'Automobile Repair', icon:'🛠️', desc:'Mechanics, tires, roadside',   instant:true,  scheduled:true },
+  { id:'others',       name:'Others',            icon:'🎯', desc:'Events, tutors, more',         instant:false, scheduled:true },
+];
+
+const EMERGENCY = [
+  { id:'ambulance', name:'Ambulance', icon:'🚑' },
+  { id:'fire',      name:'Fire Service', icon:'🚒' },
+  { id:'towing',    name:'Towing',    icon:'🚛' },
+  { id:'security',  name:'Security',  icon:'🛡️' },
+  { id:'roadside',  name:'Roadside',  icon:'🔧' }, // item-search flow
+];
 
     function renderServices(){
       servicesGrid.innerHTML = '';
@@ -628,17 +631,29 @@
         servicesGrid.appendChild(el);
       });
     }
-    function renderServicesAll(){
-      servicesAllGrid.innerHTML = '';
-      SERVICES.forEach(s=>{
-        const el = document.createElement('div');
-        el.className = 'card service';
-        el.innerHTML = `<div class="row"><div style="font-size:28px">${s.icon}</div><h4>${s.name}</h4></div><div class="small muted" style="margin-top:6px">${s.desc}</div>`;
-        el.onclick = () => openCategory(s.id, s.name);
-        servicesAllGrid.appendChild(el);
-      });
-    }
-
+    function renderServices(){
+  try {
+    const grid = document.getElementById('servicesGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    SERVICES.forEach(s => {
+      const el = document.createElement('div');
+      el.className = 'card service';
+      el.innerHTML = `
+        <div class="row"><div style="font-size:28px">${s.icon}</div><h4>${s.name}</h4></div>
+        <div class="small muted" style="margin-top:6px">${s.desc}</div>
+        <div class="row" style="margin-top:8px">
+          ${s.instant ? '<span class="pill">Instant</span>' : ''}
+          ${s.scheduled ? '<span class="pill">Scheduled</span>' : ''}
+        </div>
+      `;
+      el.onclick = () => openCategory(s.id, s.name);
+      grid.appendChild(el);
+    });
+  } catch (e) {
+    console.error('renderServices error:', e);
+  }
+}
     function renderEmergency(){
       emergencyGrid.innerHTML = '';
       EMERGENCY.forEach(e => {
