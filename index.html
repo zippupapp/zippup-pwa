@@ -42,6 +42,9 @@
     .nav { position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around; background:#fff; border-top:1px solid var(--border); padding:8px 0; z-index:15 }
     .nav button { background:none; border:0; padding:8px 10px; border-radius:10px; color:var(--muted) }
     .nav button.active { color:var(--primary); background:#EFF6FF }
+    /* Pages */
+    .page { display:none; padding-bottom:80px }
+    .page.active { display:block }
     /* Modals */
     .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:50; padding:16px }
     .modal.open { display:flex }
@@ -68,10 +71,11 @@
         <button class="btn ghost" id="notifBtn">🔔</button>
         <button class="btn ghost" id="cartBtn">🛒</button>
         <div style="position:relative">
-          <button class="btn ghost" id="profileBtn">👤 Profile</button>
+          <button class="btn ghost" id="profileBtn">👤 Account</button>
           <div id="profileMenu">
             <button class="btn ghost" id="menuProfile">👤 Profile</button>
             <button class="btn ghost" id="menuWallet">💰 Wallet</button>
+            <button class="btn ghost" id="menuTopup">⚡ Top‑up</button>
             <button class="btn ghost" id="menuLogout">🚪 Logout</button>
           </div>
         </div>
@@ -79,7 +83,8 @@
     </div>
   </header>
 
-  <main>
+  <!-- Pages -->
+  <main id="page-home" class="page active">
     <section class="search">
       <div class="box">
         <input id="search" placeholder="Search transport, food, services, emergency…"/>
@@ -101,6 +106,69 @@
     <section class="section">
       <div class="title">Recent</div>
       <div id="recentList"></div>
+    </section>
+  </main>
+
+  <main id="page-services" class="page">
+    <section class="section">
+      <div class="title">Services</div>
+      <div class="grid" id="servicesAllGrid"></div>
+    </section>
+  </main>
+
+  <main id="page-bookings" class="page">
+    <section class="section">
+      <div class="title">My Bookings</div>
+      <div id="bookingsList"></div>
+    </section>
+  </main>
+
+  <main id="page-marketplace" class="page">
+    <section class="section">
+      <div class="title">Marketplace</div>
+      <div class="card">Browse and manage products here (coming soon)</div>
+    </section>
+  </main>
+
+  <main id="page-profile" class="page">
+    <section class="section">
+      <div class="title">Profile</div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <div class="row"><div style="width:48px;height:48px;border-radius:50%;background:#E5EDFF;display:flex;align-items:center;justify-content:center">👤</div>
+            <div style="margin-left:8px">
+              <div><strong id="profName">Demo User</strong></div>
+              <div class="small" id="profEmail">demo@zippup.com</div>
+            </div>
+          </div>
+          <button class="btn primary" id="editProfileBtn">Edit</button>
+        </div>
+      </div>
+      <div class="list" style="margin-top:12px">
+        <button class="btn ghost" id="manageServicesBtn">Manage Services</button>
+        <button class="btn ghost" id="manageProductsBtn">Manage Products</button>
+        <button class="btn ghost" id="emergencyContactsBtn">Emergency Contacts</button>
+        <button class="btn ghost" id="providerVerifyBtn">Become Verified Provider</button>
+        <button class="btn ghost" id="availToggleBtn">Go Offline / Available</button>
+      </div>
+    </section>
+  </main>
+
+  <main id="page-wallet" class="page">
+    <section class="section">
+      <div class="title">Wallet</div>
+      <div class="card">Balance: <strong>$245.80</strong></div>
+    </section>
+  </main>
+
+  <main id="page-topup" class="page">
+    <section class="section">
+      <div class="title">Top‑up (Digital)</div>
+      <div class="grid">
+        <div class="card service" data-topup="airtime"><div class="row"><div style="font-size:24px">📞</div><h4>Buy Airtime</h4></div></div>
+        <div class="card service" data-topup="data"><div class="row"><div style="font-size:24px">📶</div><h4>Data Bundles</h4></div></div>
+        <div class="card service" data-topup="bills"><div class="row"><div style="font-size:24px">💡</div><h4>Pay Bills</h4></div></div>
+      </div>
     </section>
   </main>
 
@@ -205,7 +273,7 @@
     </div>
   </div>
 
-  <!-- Items/Search Modal (Fastfood / Groceries) -->
+  <!-- Items/Search Modal (Fastfood / Groceries / Others etc.) -->
   <div class="modal" id="itemsModal">
     <div class="sheet">
       <div class="head">
@@ -214,7 +282,7 @@
       </div>
       <div class="body">
         <div class="row" style="gap:8px;margin-bottom:10px">
-          <input id="itemSearch" placeholder="Say or type what you want (e.g., pizza, fries, milk)…" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+          <input id="itemSearch" placeholder="Say or type what you need (e.g., pizza, plumber, tire)…" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px"/>
           <button class="btn ghost" id="itemVoice">🎤</button>
           <button class="btn primary" id="itemGo">Search</button>
         </div>
@@ -224,17 +292,16 @@
   </div>
 
   <script>
-    // Backend
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
 
-    // State
-    let user = { name:'Guest' };
+    let user = { name:'Guest', email:'demo@zippup.com' };
     let coords = null;
     let selectedProvider = null;
     let requestId = null;
     let instantTimer = null;
     let instantLeft = 90;
     let map, userMarker, providerMarker, trackPoll = null;
+    let currentPage = 'home';
 
     // Elements
     const userNameEl = document.getElementById('userName');
@@ -281,16 +348,14 @@
     const cartBtn  = document.getElementById('cartBtn');
     const profileBtn = document.getElementById('profileBtn');
     const profileMenu= document.getElementById('profileMenu');
-    notifBtn.onclick = () => alert('Notifications');
-    cartBtn.onclick  = () => alert('Shopping cart');
-    profileBtn.onclick = (e) => {
-      e.stopPropagation();
-      profileMenu.style.display = profileMenu.style.display==='block' ? 'none' : 'block';
-    };
+    notifBtn.onclick = () => showPage('home') || alert('Notifications (coming soon)');
+    cartBtn.onclick  = () => showPage('marketplace');
+    profileBtn.onclick = (e) => { e.stopPropagation(); profileMenu.style.display = profileMenu.style.display==='block' ? 'none' : 'block'; };
     document.addEventListener('click', () => profileMenu.style.display='none');
-    document.getElementById('menuProfile').onclick = () => alert('Open Profile page');
-    document.getElementById('menuWallet').onclick  = () => alert('Open Wallet page');
-    document.getElementById('menuLogout').onclick  = () => alert('Logged out');
+    document.getElementById('menuProfile').onclick = () => { profileMenu.style.display='none'; showPage('profile'); };
+    document.getElementById('menuWallet').onclick  = () => { profileMenu.style.display='none'; showPage('wallet'); };
+    document.getElementById('menuTopup').onclick   = () => { profileMenu.style.display='none'; showPage('topup'); };
+    document.getElementById('menuLogout').onclick  = () => { profileMenu.style.display='none'; alert('Logged out'); };
 
     // Panic
     document.getElementById('panicBtn').onclick = async () => {
@@ -299,34 +364,53 @@
       await triggerPanic();
     };
 
-    // Nav buttons
+    // Footer nav
     document.querySelectorAll('.nav button').forEach(b=>{
       b.onclick = () => {
         document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
         b.classList.add('active');
-        if (b.dataset.page === 'services') alert('Services page');
-        if (b.dataset.page === 'bookings') alert('Open My Bookings');
-        if (b.dataset.page === 'marketplace') alert('Open Marketplace');
+        showPage(b.dataset.page);
       };
     });
 
-    // Search (home)
+    // Home search
     const voiceBtn = document.getElementById('voiceBtn');
     const searchInp= document.getElementById('search');
     voiceBtn.onclick = () => voiceToInput(searchInp, () => runHomeSearch());
     document.getElementById('searchBtn').onclick = runHomeSearch;
 
+    // Top-up page quick actions
+    document.querySelectorAll('[data-topup]').forEach(el=>{
+      el.onclick = () => alert('Top-up: ' + el.dataset.topup);
+    });
+
     // Init
     document.addEventListener('DOMContentLoaded', () => {
       userNameEl.textContent = user.name;
+      document.getElementById('profName').textContent = user.name;
+      document.getElementById('profEmail').textContent = user.email;
       initLocation();
       renderServices();
       renderEmergency();
       renderRecent();
+      renderServicesAll();
+      renderBookings();
       [providersModal, bookingModal, instantModal, trackModal, categoryOptionsModal, itemsModal].forEach(m=>{
         m.addEventListener('click', (e)=>{ if (e.target === m) m.classList.remove('open'); });
       });
     });
+
+    function showPage(page){
+      const ids = ['home','services','bookings','marketplace','profile','wallet','topup'];
+      currentPage = page;
+      ids.forEach(id => {
+        const el = document.getElementById('page-'+id);
+        if (el) el.classList.toggle('active', id===page);
+      });
+      if (page==='services') renderServicesAll();
+      if (page==='bookings') renderBookings();
+      return true;
+    }
 
     async function initLocation() {
       try {
@@ -362,8 +446,9 @@
       { id:'ambulance', name:'Ambulance', icon:'🚑' },
       { id:'fire',      name:'Fire Service', icon:'🚒' },
       { id:'towing',    name:'Towing', icon:'🚛' },
-      { id:'roadside',  name:'Roadside', icon:'🔧' },
       { id:'security',  name:'Security', icon:'🛡️' },
+      // Roadside uses item-search flow below
+      { id:'roadside',  name:'Roadside', icon:'🔧' },
     ];
 
     function renderServices(){
@@ -383,6 +468,18 @@
         servicesGrid.appendChild(el);
       });
     }
+    function renderServicesAll(){
+      const wrap = document.getElementById('servicesAllGrid');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      SERVICES.forEach(s=>{
+        const el = document.createElement('div');
+        el.className = 'card service';
+        el.innerHTML = `<div class="row"><div style="font-size:28px">${s.icon}</div><h4>${s.name}</h4></div><div class="small muted" style="margin-top:6px">${s.desc}</div>`;
+        el.onclick = () => openCategory(s.id, s.name);
+        wrap.appendChild(el);
+      });
+    }
 
     function renderEmergency(){
       emergencyGrid.innerHTML = '';
@@ -391,10 +488,13 @@
         el.className = 'card service';
         el.innerHTML = `
           <div class="row"><div style="font-size:28px">${e.icon}</div><h4>${e.name}</h4></div>
-          <div class="small muted" style="margin-top:6px">Find nearest/available</div>
+          <div class="small muted" style="margin-top:6px">${e.id==='roadside' ? 'Describe the issue' : 'Find nearest/available'}</div>
           <div class="row" style="margin-top:8px"><span class="pill">Instant</span></div>
         `;
-        el.onclick = () => openEmergency(e.id, e.name);
+        el.onclick = () => {
+          if (e.id==='roadside') openItemsModal('roadside');
+          else openEmergency(e.id, e.name);
+        };
         emergencyGrid.appendChild(el);
       });
     }
@@ -432,7 +532,20 @@
         });
         return;
       }
-      // Default categories → open providers
+      // Other categories → items search first
+      const itemsMap = {
+        home:       { title:'Home Services', chips:['cleaning','gardening','painting','plumber','electrician'] },
+        tech:       { title:'Tech Services', chips:['phone repair','computer','tv repair','software'] },
+        auto:       { title:'Automobile', chips:['mechanic','tires','battery','car wash'] },
+        construction:{ title:'Construction', chips:['builder','carpenter','electrician','plumber'] },
+        others:     { title:'Other Services', chips:['events','tutor','legal','photography'] },
+        roadside:   { title:'Roadside Help', chips:['flat tire','jumpstart','fuel','lockout'] },
+      };
+      if (itemsMap[catId]) {
+        openItemsModal(catId, itemsMap[catId].title, itemsMap[catId].chips);
+        return;
+      }
+      // Fallback: open providers
       providersTitle.textContent = label + ' — Providers';
       const list = await fetchProviders(catId);
       renderProviders(list);
@@ -457,38 +570,47 @@
       categoryOptionsModal.classList.add('open');
     }
 
-    // Food/Grocery items → providers
-    function openItemsModal(kind){ // 'fastfood' | 'grocery'
-      itemsTitle.textContent = kind === 'fastfood' ? 'Fast Food' : 'Groceries';
-      renderItemChips(kind);
+    // Items → providers
+    function openItemsModal(kind, customTitle, customChips){
+      const title = customTitle || (kind === 'fastfood' ? 'Fast Food' : kind === 'grocery' ? 'Groceries' : 'Find Service');
+      const chipDefaults = {
+        fastfood:['pizza','burger','fries','chicken','drinks','meat'],
+        grocery: ['milk','bread','eggs','rice','fruits','vegetables','water'],
+        home:    ['cleaning','gardening','painting','plumber','electrician'],
+        tech:    ['phone repair','computer','tv repair','software'],
+        auto:    ['mechanic','tires','battery','car wash'],
+        construction:['builder','carpenter','electrician','plumber'],
+        others:  ['events','tutor','legal','photography'],
+        roadside:['flat tire','jumpstart','fuel','lockout'],
+      };
+      itemsTitle.textContent = title;
+      const chips = customChips || chipDefaults[kind] || [];
+      renderItemChips(chips);
       itemsModal.classList.add('open');
 
       itemGo.onclick = async () => {
         const q = (itemSearch.value||'').trim().toLowerCase();
         itemsModal.classList.remove('open');
-        providersTitle.textContent = (q ? q : (kind==='fastfood'?'Fast Food':'Groceries')) + ' — Providers';
-        const list = await fetchProviders('food', q || kind);
+        providersTitle.textContent = (q ? q : title) + ' — Providers';
+        const list = await fetchProviders(kind, q || kind);
         renderProviders(list);
         providersModal.classList.add('open');
       };
 
       itemVoice.onclick = () => voiceToInput(itemSearch, () => itemGo.click());
     }
-    function renderItemChips(kind){
-      const fast = ['pizza','burger','fries','chicken','drinks','meat'];
-      const groc = ['milk','bread','eggs','rice','fruits','vegetables','water'];
-      const data = kind === 'fastfood' ? fast : groc;
+    function renderItemChips(chips){
       itemChips.innerHTML = '';
-      data.forEach(t => {
+      chips.forEach(text => {
         const b = document.createElement('button');
         b.className = 'btn ghost';
-        b.textContent = t;
-        b.onclick = () => { itemSearch.value = t; itemGo.click(); };
+        b.textContent = text;
+        b.onclick = () => { itemSearch.value = text; itemGo.click(); };
         itemChips.appendChild(b);
       });
     }
 
-    // Emergency opens providers nearest
+    // Emergency
     async function openEmergency(emId, label){
       providersTitle.textContent = label + ' — Nearest';
       const list = await fetchProviders('emergency', emId);
@@ -496,7 +618,7 @@
       providersModal.classList.add('open');
     }
 
-    // Providers rendering
+    // Providers
     async function fetchProviders(category, sub=null){
       try{
         const q = new URLSearchParams({ category, sub: sub || '', lat: coords?.lat || '', lng: coords?.lng || '' });
@@ -505,7 +627,6 @@
         const d = await r.json();
         return d.providers || [];
       }catch{
-        // Demo fallback
         return [
           { id:'p1', name:'Pro One', icon:'👤', distance:'0.8km', eta:'6-9m', fee:'$8-12', available:true },
           { id:'p2', name:'Quick Help', icon:'⚡', distance:'1.2km', eta:'8-12m', fee:'$10-15', available:true },
@@ -645,7 +766,7 @@
         const r = await fetch(`${BASE_API}/api/requests/${encodeURIComponent(id)}/position`);
         if (!r.ok) throw new Error();
         const d = await r.json();
-        return { lat:d.provider?.lat, lng:d.provider?.lng, eta:d.eta };
+        return { lat:d.provider?.lat, lng:d.provider?.lng, eta: d.eta };
       }catch{
         const base = coords ? { lat: coords.lat + (Math.random()-0.5)/100, lng: coords.lng + (Math.random()-0.5)/100 } : { lat:0, lng:0 };
         return { lat: base.lat, lng: base.lng, eta: '8 min' };
@@ -692,8 +813,6 @@
       rec.start();
     }
 
-    // Items chips + search already wired in openItemsModal()
-
     // Home search router
     function runHomeSearch(){
       const q = (searchInp.value||'').trim().toLowerCase();
@@ -714,10 +833,28 @@
       if (/(fire)/.test(q)) { openEmergency('fire','Fire Service'); return; }
       if (/(towing|tow)/.test(q)) { openEmergency('towing','Towing'); return; }
       if (/(security|police)/.test(q)) { openEmergency('security','Security'); return; }
+      // Category-intent for other services
+      if (/(plumber|electrician|clean|garden|paint)/.test(q)) { openItemsModal('home'); return; }
+      if (/(mechanic|tire|battery|car wash)/.test(q)) { openItemsModal('auto'); return; }
+      if (/(phone|computer|laptop|tv|repair|software)/.test(q)) { openItemsModal('tech'); return; }
+      if (/(builder|carpenter|construction)/.test(q)) { openItemsModal('construction'); return; }
+      if (/(event|tutor|legal|photo|photography)/.test(q)) { openItemsModal('others'); return; }
+      if (/(flat|jumpstart|fuel|lockout|road)/.test(q)) { openItemsModal('roadside'); return; }
+
       // fallback generic provider search
       providersTitle.textContent = q + ' — Providers';
       fetchProviders('search', q).then(renderProviders);
       providersModal.classList.add('open');
+    }
+
+    // Bookings (landing page)
+    function renderBookings(){
+      const el = document.getElementById('bookingsList');
+      if (!el) return;
+      el.innerHTML = `
+        <div class="card"><div class="row" style="justify-content:space-between"><div>🔧 Phone Repair</div><span class="badge" style="background:#FFF7ED;color:#9A3412">scheduled</span></div><div class="small muted" style="margin-top:6px">Tomorrow 11:00</div></div>
+        <div class="card" style="margin-top:8px"><div class="row" style="justify-content:space-between"><div>🚗 Ride to Airport</div><span class="badge success">completed</span></div><div class="small muted" style="margin-top:6px">2h ago</div></div>
+      `;
     }
   </script>
 </body>
