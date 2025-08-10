@@ -95,7 +95,7 @@
   <button class=.floating-panic {
   position: fixed;
   right: 16px;
-  bottom: 80px; /* sits above footer */
+  bottom: 80px; /* above footer */
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -104,11 +104,14 @@
   border: 0;
   font-size: 20px;
   box-shadow: var(--shadow);
-  z-index: 16;
-  touch-action: none;   /* enables smooth drag on touch */
+  z-index: 1000;
+  touch-action: none;    /* smooth drag on touch */
   cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.floating-panic.dragging { cursor: grabbing; } id="panicBtn">🚨</button>
+.floating-panic.dragging { cursor: grabbing; } >🚨</button>
 
   <nav class="nav">
     <button data-page="home" class="active">🏠 Home</button>
@@ -631,22 +634,125 @@
   btn.addEventListener('pointerup', onPointerUp);
   btn.addEventListener('pointercancel', onPointerUp);
 
-  // keep inside bounds on rotate/resize
-  window.addEventListener('resize', () => {
+  (function () {
+  const btn = document.getElementById('panicBtn');
+  const nav = document.querySelector('.nav');
+  if (!btn) return;
+
+  let dragging = false, didDrag = false;
+  let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  function navHeight() { return (nav && nav.offsetHeight) || 64; }
+
+  function clampToViewport(left, top) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const w = btn.offsetWidth, h = btn.offsetHeight, pad = 8;
+    const minLeft = pad, maxLeft = vw - w - pad;
+    const minTop = pad, maxTop = vh - h - navHeight() - pad;
+    left = Math.min(Math.max(left, minLeft), maxLeft);
+    top = Math.min(Math.max(top, minTop), maxTop);
+    return { left, top };
+  }
+
+  // Restore saved position safely
+  (function restore() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('panic_pos') || 'null');
+      if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
+        // switch to left/top positioning
+        btn.style.right = 'auto';
+        btn.style.bottom = 'auto';
+        const clamped = clampToViewport(saved.left, saved.top);
+        btn.style.left = clamped.left + 'px';
+        btn.style.top = clamped.top + 'px';
+      }
+    } catch {}
+    // If off-screen for any reason, snap to default bottom-right
+    requestAnimationFrame(() => {
+      const r = btn.getBoundingClientRect();
+      if (r.right < 0 || r.bottom < 0 || r.left > window.innerWidth || r.top > window.innerHeight) {
+        btn.style.left = '';
+        btn.style.top = '';
+        btn.style.right = '16px';
+        btn.style.bottom = '80px';
+        localStorage.removeItem('panic_pos');
+      }
+    });
+  })();
+
+  function onPointerDown(e) {
+    dragging = true; didDrag = false;
+    btn.classList.add('dragging');
+    btn.setPointerCapture?.(e.pointerId);
+
     const rect = btn.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const w = btn.offsetWidth;
-    const h = btn.offsetHeight;
-    const pad = 8;
-    let left = Math.min(Math.max(rect.left, pad), vw - w - pad);
-    let top = Math.min(Math.max(rect.top, pad), vh - h - navHeight() - pad);
-    btn.style.left = left + 'px';
-    btn.style.top = top + 'px';
+    startLeft = rect.left; startTop = rect.top;
+    startX = e.clientX; startY = e.clientY;
+
+    btn.style.left = startLeft + 'px';
+    btn.style.top = startTop + 'px';
     btn.style.right = 'auto';
     btn.style.bottom = 'auto';
-    localStorage.setItem('panic_pos', JSON.stringify({ left, top }));
+  }
+
+  function onPointerMove(e) {
+    if (!dragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (Math.abs(dx) + Math.abs(dy) > 3) didDrag = true;
+
+    let left = startLeft + dx;
+    let top = startTop + dy;
+    const clamped = clampToViewport(left, top);
+    btn.style.left = clamped.left + 'px';
+    btn.style.top = clamped.top + 'px';
+  }
+
+  function onPointerUp(e) {
+    if (!dragging) return;
+    dragging = false; btn.classList.remove('dragging');
+    btn.releasePointerCapture?.(e.pointerId);
+
+    const rect = btn.getBoundingClientRect();
+    const clamped = clampToViewport(rect.left, rect.top);
+    btn.style.left = clamped.left + 'px';
+    btn.style.top = clamped.top + 'px';
+    localStorage.setItem('panic_pos', JSON.stringify(clamped));
+
+    setTimeout(() => { didDrag = false; }, 0);
+  }
+
+  // Prevent click after drag
+  btn.addEventListener('click', (e) => {
+    if (didDrag) { e.stopImmediatePropagation?.(); e.preventDefault(); didDrag = false; }
   });
+
+  btn.addEventListener('pointerdown', onPointerDown);
+  btn.addEventListener('pointermove', onPointerMove);
+  btn.addEventListener('pointerup', onPointerUp);
+  btn.addEventListener('pointercancel', onPointerUp);
+
+  // Keep inside on resize/rotate
+  window.addEventListener('resize', () => {
+    const rect = btn.getBoundingClientRect();
+    const clamped = clampToViewport(rect.left, rect.top);
+    btn.style.left = clamped.left + 'px';
+    btn.style.top = clamped.top + 'px';
+    btn.style.right = 'auto';
+    btn.style.bottom = 'auto';
+    localStorage.setItem('panic_pos', JSON.stringify(clamped));
+  });
+
+  // Long-press (1.2s) to reset position to bottom-right
+  let pressTimer = null;
+  btn.addEventListener('pointerdown', () => {
+    pressTimer = setTimeout(() => {
+      btn.style.left = ''; btn.style.top = '';
+      btn.style.right = '16px'; btn.style.bottom = '80px';
+      localStorage.removeItem('panic_pos');
+    }, 1200);
+  });
+  btn.addEventListener('pointerup',   () => clearTimeout(pressTimer));
+  btn.addEventListener('pointercancel', () => clearTimeout(pressTimer));
 })();
     };
   </script>
