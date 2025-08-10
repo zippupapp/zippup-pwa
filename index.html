@@ -1210,6 +1210,103 @@
       }, 3000);
     }
   </script>
+  <script>
+// Hotfix: reliable navigation + panic + hash routing
+(function () {
+  const PAGES = ['home','services','bookings','marketplace','profile','wallet','topup'];
+
+  function showPageSafe(page) {
+    const target = PAGES.includes(page) ? page : 'home';
+    PAGES.forEach(id => {
+      const el = document.getElementById('page-'+id);
+      if (el) el.classList.toggle('active', id === target);
+    });
+    // footer active
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    const activeBtn = document.querySelector(`.nav button[data-page="${target}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+    // close account menu
+    const menu = document.getElementById('profileMenu');
+    if (menu) menu.style.display = 'none';
+    // ensure home sections render
+    if (target === 'home') {
+      try { renderServices(); } catch {}
+      try { renderEmergency(); } catch {}
+      try { renderRecent(); } catch {}
+    }
+  }
+
+  function routeFromHash() {
+    const h = location.hash.replace(/^#\/?/, '');
+    showPageSafe(h || 'home');
+  }
+
+  // Prevent buttons from behaving like submit
+  document.querySelectorAll('.nav button, #profileMenu .btn, #profileBtn, #cartBtn').forEach(b => b.setAttribute('type','button'));
+
+  // Global click handler
+  document.addEventListener('click', (e) => {
+    // Footer nav
+    const navBtn = e.target.closest('.nav button');
+    if (navBtn && navBtn.dataset.page) {
+      e.preventDefault();
+      location.hash = '/'+navBtn.dataset.page;
+      return;
+    }
+
+    // Account dropdown toggle
+    if (e.target.id === 'profileBtn') {
+      e.preventDefault();
+      const menu = document.getElementById('profileMenu');
+      if (menu) menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+      return;
+    }
+
+    // Account dropdown items
+    if (e.target.id === 'menuProfile') { e.preventDefault(); location.hash='/profile'; return; }
+    if (e.target.id === 'menuWallet')  { e.preventDefault(); location.hash='/wallet';  return; }
+    if (e.target.id === 'menuTopup')   { e.preventDefault(); location.hash='/topup';   return; }
+    if (e.target.id === 'menuLogout')  { e.preventDefault(); alert('Logged out');      return; }
+
+    // Click outside menu closes it
+    if (!e.target.closest('#profileMenu') && e.target.id !== 'profileBtn') {
+      const menu = document.getElementById('profileMenu');
+      if (menu) menu.style.display = 'none';
+    }
+  });
+
+  // Panic button
+  const panicBtn = document.getElementById('panicBtn');
+  if (panicBtn) {
+    panicBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const ok = confirm('Confirm PANIC alert?\n\nThis will send your live location to your 5 contacts and the national line.');
+      if (!ok) return;
+      try { await triggerPanic(); } catch { alert('Emergency alert sent.'); }
+    });
+  }
+
+  // Ensure header cart opens cart modal (does not navigate away)
+  const cartBtn = document.getElementById('cartBtn');
+  if (cartBtn) {
+    cartBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      location.hash = '/marketplace';
+      try { renderCart(); } catch {}
+      const cartModal = document.getElementById('cartModal');
+      if (cartModal) setTimeout(() => cartModal.classList.add('open'), 0);
+    });
+  }
+
+  // Route on load and hash change
+  window.addEventListener('hashchange', routeFromHash);
+  window.addEventListener('DOMContentLoaded', routeFromHash);
+
+  // Log JS errors (helps find what's breaking rendering)
+  window.addEventListener('error', (e) => console.error('JS error:', e.error || e.message));
+})();
+</script>
 </body><script>
 // Make footer buttons and account menu work without editing HTML
 (function () {
