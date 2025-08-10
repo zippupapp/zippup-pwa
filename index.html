@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>ZippUp — On‑Demand Services</title>
   <meta name="theme-color" content="#2563EB"/>
+  <link rel="manifest" href="manifest.json"/>
 
   <!-- Leaflet (live tracking map) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -14,21 +15,24 @@
     :root { --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF; --text:#111827; --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB; --radius:14px; --shadow:0 8px 24px rgba(17,24,39,.08) }
     * { box-sizing:border-box; margin:0; padding:0 }
     body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif; background:var(--bg); color:var(--text) }
+    .container { max-width:980px; margin:0 auto; padding:16px }
     header { position:sticky; top:0; z-index:20; background:var(--card); border-bottom:1px solid var(--border) }
     header .row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px }
     .greet { display:flex; flex-direction:column }
     .small { color:var(--muted); font-size:13px }
+    .nav { position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around; background:#fff; border-top:1px solid var(--border); padding:8px 0; z-index:15 }
+    .nav button { background:none; border:0; padding:8px 10px; border-radius:10px; color:var(--muted) }
+    .nav button.active { color:var(--primary); background:#EFF6FF }
     .search { padding:16px }
     .search .box { display:flex; gap:8px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:8px 10px }
     .search input { flex:1; border:0; outline:0; font-size:15px }
-    .section { padding:12px 16px }
-    .title { font-weight:700; margin-bottom:10px }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px }
     @media(min-width:720px){ .grid{ grid-template-columns:repeat(3,minmax(0,1fr)) } }
     .card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow) }
     .service { cursor:pointer; transition:transform .1s ease }
     .service:hover { transform:translateY(-2px) }
-    .row { display:flex; gap:10px; align-items:center }
+    .service h4{ margin-top:6px; margin-bottom:4px }
+    .row { display:flex; gap:10px; align-items:center; }
     .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; border-radius:999px; background:#EEF2FF; color:#3730A3 }
     .badge { padding:4px 8px; font-size:12px; border-radius:999px; }
     .success{ background:#ECFDF5; color:#065F46 }
@@ -38,10 +42,9 @@
     .btn.primary:hover { background:var(--primary-600) }
     .btn.ghost { background:#F3F4F6 }
     .btn.block { width:100% }
-    .floating-panic { position:fixed; right:16px; bottom:16px; width:60px; height:60px; border-radius:50%; background:var(--danger); color:#fff; border:0; font-size:20px; box-shadow:var(--shadow); z-index:16 }
-    .nav { position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around; background:#fff; border-top:1px solid var(--border); padding:8px 0; z-index:15 }
-    .nav button { background:none; border:0; padding:8px 10px; border-radius:10px; color:var(--muted) }
-    .nav button.active { color:var(--primary); background:#EFF6FF }
+    .section { padding:12px 16px }
+    .title { font-weight:700; margin-bottom:10px }
+    .floating-panic { position:fixed; right:16px; bottom:80px; width:60px; height:60px; border-radius:50%; background:var(--danger); color:#fff; border:0; font-size:20px; box-shadow:var(--shadow); z-index:16; display:flex; align-items:center; justify-content:center }
     /* Modals */
     .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:50; padding:16px }
     .modal.open { display:flex }
@@ -71,7 +74,7 @@
   <main>
     <section class="search">
       <div class="box">
-        <input id="search" placeholder="Search transport, food, services, emergency…"/>
+        <input id="search" placeholder="Search transport, food, services, emergency…" />
         <button class="btn primary" id="searchBtn">Search</button>
       </div>
     </section>
@@ -92,33 +95,13 @@
     </section>
   </main>
 
-  <button class=.floating-panic {
-  position: fixed;
-  right: 16px;
-  bottom: 80px; /* above footer */
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--danger);
-  color: #fff;
-  border: 0;
-  font-size: 20px;
-  box-shadow: var(--shadow);
-  z-index: 1000;
-  touch-action: none;    /* smooth drag on touch */
-  cursor: grab;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.floating-panic.dragging { cursor: grabbing; } >🚨</button>
+  <button class="floating-panic" id="panicBtn">🚨</button>
 
   <nav class="nav">
     <button data-page="home" class="active">🏠 Home</button>
     <button data-page="services">🔧 Services</button>
     <button data-page="bookings">📋 Bookings</button>
     <button data-page="wallet">💰 Wallet</button>
-    <button data-page="profile">👤 Profile</button>
   </nav>
 
   <!-- Providers Modal -->
@@ -253,7 +236,6 @@
         b.classList.add('active');
         if (b.dataset.page === 'bookings') alert('Open bookings list.');
         if (b.dataset.page === 'wallet') alert('Open wallet.');
-        if (b.dataset.page === 'profile') alert('Open profile.');
       };
     });
 
@@ -537,223 +519,6 @@
       }catch{
         alert('Booking sent (demo). Provider will confirm soon.');
       } finally { bookingModal.classList.remove('open'); }
-
-      // Make the panic button draggable (mouse + touch), with position saved
-(function () {
-  const btn = document.getElementById('panicBtn');
-  const nav = document.querySelector('.nav');
-  let dragging = false, didDrag = false;
-  let startX = 0, startY = 0, startLeft = 0, startTop = 0;
-
-  // restore last position
-  try {
-    const saved = JSON.parse(localStorage.getItem('panic_pos') || 'null');
-    if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
-      btn.style.left = saved.left + 'px';
-      btn.style.top = saved.top + 'px';
-      btn.style.right = 'auto';
-      btn.style.bottom = 'auto';
-    }
-  } catch (e) {}
-
-  function navHeight() { return (nav && nav.offsetHeight) || 64; }
-
-  function onPointerDown(e) {
-    dragging = true;
-    didDrag = false;
-    btn.classList.add('dragging');
-    btn.setPointerCapture?.(e.pointerId);
-
-    const rect = btn.getBoundingClientRect();
-    startLeft = rect.left;
-    startTop = rect.top;
-    startX = e.clientX;
-    startY = e.clientY;
-
-    // switch to top/left positioning while dragging
-    btn.style.left = startLeft + 'px';
-    btn.style.top = startTop + 'px';
-    btn.style.right = 'auto';
-    btn.style.bottom = 'auto';
-  }
-
-  function onPointerMove(e) {
-    if (!dragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    if (Math.abs(dx) + Math.abs(dy) > 3) didDrag = true;
-
-    let left = startLeft + dx;
-    let top = startTop + dy;
-
-    // clamp inside viewport and above footer
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const w = btn.offsetWidth;
-    const h = btn.offsetHeight;
-    const pad = 8;
-    const minLeft = pad;
-    const maxLeft = vw - w - pad;
-    const minTop = pad;
-    const maxTop = vh - h - navHeight() - pad;
-
-    if (left < minLeft) left = minLeft;
-    if (left > maxLeft) left = maxLeft;
-    if (top < minTop) top = minTop;
-    if (top > maxTop) top = maxTop;
-
-    btn.style.left = left + 'px';
-    btn.style.top = top + 'px';
-  }
-
-  function onPointerUp(e) {
-    if (!dragging) return;
-    dragging = false;
-    btn.classList.remove('dragging');
-    btn.releasePointerCapture?.(e.pointerId);
-
-    // save position
-    const rect = btn.getBoundingClientRect();
-    localStorage.setItem('panic_pos', JSON.stringify({ left: rect.left, top: rect.top }));
-
-    // if it was a drag, swallow the click that follows
-    setTimeout(() => { didDrag = false; }, 0);
-  }
-
-  // prevent accidental panic when user drags
-  btn.addEventListener('click', (e) => {
-    if (didDrag) {
-      e.stopImmediatePropagation?.();
-      e.preventDefault();
-      didDrag = false;
-    }
-  });
-
-  btn.addEventListener('pointerdown', onPointerDown);
-  btn.addEventListener('pointermove', onPointerMove);
-  btn.addEventListener('pointerup', onPointerUp);
-  btn.addEventListener('pointercancel', onPointerUp);
-
-  (function () {
-  const btn = document.getElementById('panicBtn');
-  const nav = document.querySelector('.nav');
-  if (!btn) return;
-
-  let dragging = false, didDrag = false;
-  let startX = 0, startY = 0, startLeft = 0, startTop = 0;
-
-  function navHeight() { return (nav && nav.offsetHeight) || 64; }
-
-  function clampToViewport(left, top) {
-    const vw = window.innerWidth, vh = window.innerHeight;
-    const w = btn.offsetWidth, h = btn.offsetHeight, pad = 8;
-    const minLeft = pad, maxLeft = vw - w - pad;
-    const minTop = pad, maxTop = vh - h - navHeight() - pad;
-    left = Math.min(Math.max(left, minLeft), maxLeft);
-    top = Math.min(Math.max(top, minTop), maxTop);
-    return { left, top };
-  }
-
-  // Restore saved position safely
-  (function restore() {
-    try {
-      const saved = JSON.parse(localStorage.getItem('panic_pos') || 'null');
-      if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
-        // switch to left/top positioning
-        btn.style.right = 'auto';
-        btn.style.bottom = 'auto';
-        const clamped = clampToViewport(saved.left, saved.top);
-        btn.style.left = clamped.left + 'px';
-        btn.style.top = clamped.top + 'px';
-      }
-    } catch {}
-    // If off-screen for any reason, snap to default bottom-right
-    requestAnimationFrame(() => {
-      const r = btn.getBoundingClientRect();
-      if (r.right < 0 || r.bottom < 0 || r.left > window.innerWidth || r.top > window.innerHeight) {
-        btn.style.left = '';
-        btn.style.top = '';
-        btn.style.right = '16px';
-        btn.style.bottom = '80px';
-        localStorage.removeItem('panic_pos');
-      }
-    });
-  })();
-
-  function onPointerDown(e) {
-    dragging = true; didDrag = false;
-    btn.classList.add('dragging');
-    btn.setPointerCapture?.(e.pointerId);
-
-    const rect = btn.getBoundingClientRect();
-    startLeft = rect.left; startTop = rect.top;
-    startX = e.clientX; startY = e.clientY;
-
-    btn.style.left = startLeft + 'px';
-    btn.style.top = startTop + 'px';
-    btn.style.right = 'auto';
-    btn.style.bottom = 'auto';
-  }
-
-  function onPointerMove(e) {
-    if (!dragging) return;
-    const dx = e.clientX - startX, dy = e.clientY - startY;
-    if (Math.abs(dx) + Math.abs(dy) > 3) didDrag = true;
-
-    let left = startLeft + dx;
-    let top = startTop + dy;
-    const clamped = clampToViewport(left, top);
-    btn.style.left = clamped.left + 'px';
-    btn.style.top = clamped.top + 'px';
-  }
-
-  function onPointerUp(e) {
-    if (!dragging) return;
-    dragging = false; btn.classList.remove('dragging');
-    btn.releasePointerCapture?.(e.pointerId);
-
-    const rect = btn.getBoundingClientRect();
-    const clamped = clampToViewport(rect.left, rect.top);
-    btn.style.left = clamped.left + 'px';
-    btn.style.top = clamped.top + 'px';
-    localStorage.setItem('panic_pos', JSON.stringify(clamped));
-
-    setTimeout(() => { didDrag = false; }, 0);
-  }
-
-  // Prevent click after drag
-  btn.addEventListener('click', (e) => {
-    if (didDrag) { e.stopImmediatePropagation?.(); e.preventDefault(); didDrag = false; }
-  });
-
-  btn.addEventListener('pointerdown', onPointerDown);
-  btn.addEventListener('pointermove', onPointerMove);
-  btn.addEventListener('pointerup', onPointerUp);
-  btn.addEventListener('pointercancel', onPointerUp);
-
-  // Keep inside on resize/rotate
-  window.addEventListener('resize', () => {
-    const rect = btn.getBoundingClientRect();
-    const clamped = clampToViewport(rect.left, rect.top);
-    btn.style.left = clamped.left + 'px';
-    btn.style.top = clamped.top + 'px';
-    btn.style.right = 'auto';
-    btn.style.bottom = 'auto';
-    localStorage.setItem('panic_pos', JSON.stringify(clamped));
-  });
-
-  // Long-press (1.2s) to reset position to bottom-right
-  let pressTimer = null;
-  btn.addEventListener('pointerdown', () => {
-    pressTimer = setTimeout(() => {
-      btn.style.left = ''; btn.style.top = '';
-      btn.style.right = '16px'; btn.style.bottom = '80px';
-      localStorage.removeItem('panic_pos');
-    }, 1200);
-  });
-  btn.addEventListener('pointerup',   () => clearTimeout(pressTimer));
-  btn.addEventListener('pointercancel', () => clearTimeout(pressTimer));
-})();
     };
   </script>
 </body>
