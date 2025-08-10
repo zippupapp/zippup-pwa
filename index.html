@@ -404,6 +404,7 @@
   <script>
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
     STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+    const FALLBACK_PAYMENT_LINK = ''; // optional: paste a Stripe Payment Link URL here (e.g., https://buy.stripe.com/test_...)
     
     let user = { name:'Guest', email:'demo@zippup.com' };
     let coords = null;
@@ -529,6 +530,10 @@
     const orderModal = document.getElementById('orderModal');
     const closeOrder = document.getElementById('closeOrder');
     const orderInfo = document.getElementById('orderInfo');
+    const chkName  = document.getElementById('chkName');
+    const chkPhone = document.getElementById('chkPhone');
+    const chkUnit  = document.getElementById('chkUnit');
+    const chkNotes = document.getElementById('chkNotes');
 
     closeCart.onclick = () => cartModal.classList.remove('open');
     openCartBtn.onclick = () => { renderCart(); cartModal.classList.add('open'); };
@@ -1146,10 +1151,10 @@
 
   const payload = {
     items: cart.items.map(i=>({ id:i.id, title:i.title, qty:i.qty, price:i.price })),
-    address: chkAddress.value.trim(),
-    unit: (chkUnit.value||'').trim(),
     name: chkName.value.trim(),
     phone: chkPhone.value.trim(),
+    address: chkAddress.value.trim(),
+    unit: (chkUnit.value||'').trim(),
     notes: (chkNotes.value||'').trim(),
   };
 
@@ -1176,8 +1181,18 @@
         await stripe.redirectToCheckout({ sessionId: d.id || d.sessionId });
         return;
       }
+      if (FALLBACK_PAYMENT_LINK) {
+        cart.items = []; saveCart(); updateCartCount();
+        window.location.href = FALLBACK_PAYMENT_LINK;
+        return;
+      }
       alert('Payment session error. Falling back to cash/demo flow.');
     } catch {
+      if (FALLBACK_PAYMENT_LINK) {
+        cart.items = []; saveCart(); updateCartCount();
+        window.location.href = FALLBACK_PAYMENT_LINK;
+        return;
+      }
       alert('Payment session error. Falling back to cash/demo flow.');
     }
   }
