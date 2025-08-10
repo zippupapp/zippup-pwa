@@ -7,7 +7,6 @@
   <meta name="theme-color" content="#2563EB"/>
   <link rel="manifest" href="manifest.json"/>
 
-  <!-- Leaflet (live tracking map) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -15,26 +14,23 @@
     :root { --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF; --text:#111827; --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB; --radius:14px; --shadow:0 8px 24px rgba(17,24,39,.08) }
     * { box-sizing:border-box; margin:0; padding:0 }
     body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif; background:var(--bg); color:var(--text) }
-    .container { max-width:980px; margin:0 auto; padding:16px }
     header { position:sticky; top:0; z-index:20; background:var(--card); border-bottom:1px solid var(--border) }
     header .row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px }
     .greet { display:flex; flex-direction:column }
     .small { color:var(--muted); font-size:13px }
-    .nav { position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around; background:#fff; border-top:1px solid var(--border); padding:8px 0; z-index:15 }
-    .nav button { background:none; border:0; padding:8px 10px; border-radius:10px; color:var(--muted) }
-    .nav button.active { color:var(--primary); background:#EFF6FF }
     .search { padding:16px }
     .search .box { display:flex; gap:8px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:8px 10px }
     .search input { flex:1; border:0; outline:0; font-size:15px }
+    .section { padding:12px 16px }
+    .title { font-weight:700; margin-bottom:10px }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px }
     @media(min-width:720px){ .grid{ grid-template-columns:repeat(3,minmax(0,1fr)) } }
     .card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow) }
     .service { cursor:pointer; transition:transform .1s ease }
     .service:hover { transform:translateY(-2px) }
-    .service h4{ margin-top:6px; margin-bottom:4px }
-    .row { display:flex; gap:10px; align-items:center; }
+    .row { display:flex; gap:10px; align-items:center }
     .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; border-radius:999px; background:#EEF2FF; color:#3730A3 }
-    .badge { padding:4px 8px; font-size:12px; border-radius:999px; }
+    .badge { padding:4px 8px; font-size:12px; border-radius:999px }
     .success{ background:#ECFDF5; color:#065F46 }
     .muted { color:var(--muted) }
     .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:12px; border:0; cursor:pointer; font-weight:600 }
@@ -42,9 +38,10 @@
     .btn.primary:hover { background:var(--primary-600) }
     .btn.ghost { background:#F3F4F6 }
     .btn.block { width:100% }
-    .section { padding:12px 16px }
-    .title { font-weight:700; margin-bottom:10px }
     .floating-panic { position:fixed; right:16px; bottom:80px; width:60px; height:60px; border-radius:50%; background:var(--danger); color:#fff; border:0; font-size:20px; box-shadow:var(--shadow); z-index:16; display:flex; align-items:center; justify-content:center }
+    .nav { position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around; background:#fff; border-top:1px solid var(--border); padding:8px 0; z-index:15 }
+    .nav button { background:none; border:0; padding:8px 10px; border-radius:10px; color:var(--muted) }
+    .nav button.active { color:var(--primary); background:#EFF6FF }
     /* Modals */
     .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:50; padding:16px }
     .modal.open { display:flex }
@@ -55,6 +52,9 @@
     .provider { border:1px solid var(--border); border-radius:14px; padding:12px }
     .controls { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap }
     #track-map { width:100%; height:360px; border-radius:12px; border:1px solid var(--border) }
+    /* Profile dropdown */
+    #profileMenu { position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:180px; z-index:30 }
+    #profileMenu .btn { width:100%; justify-content:flex-start }
   </style>
 </head>
 <body>
@@ -65,8 +65,16 @@
         <span class="small">📍 <span id="userLoc">Detecting location…</span></span>
       </div>
       <div class="row">
-        <button class="btn ghost" id="manageBookingsBtn">Bookings</button>
-        <button class="btn ghost" id="profileBtn">Profile</button>
+        <button class="btn ghost" id="notifBtn">🔔</button>
+        <button class="btn ghost" id="cartBtn">🛒</button>
+        <div style="position:relative">
+          <button class="btn ghost" id="profileBtn">👤 Profile</button>
+          <div id="profileMenu">
+            <button class="btn ghost" id="menuProfile">👤 Profile</button>
+            <button class="btn ghost" id="menuWallet">💰 Wallet</button>
+            <button class="btn ghost" id="menuLogout">🚪 Logout</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -74,7 +82,8 @@
   <main>
     <section class="search">
       <div class="box">
-        <input id="search" placeholder="Search transport, food, services, emergency…" />
+        <input id="search" placeholder="Search transport, food, services, emergency…"/>
+        <button class="btn ghost" id="voiceBtn">🎤</button>
         <button class="btn primary" id="searchBtn">Search</button>
       </div>
     </section>
@@ -101,7 +110,7 @@
     <button data-page="home" class="active">🏠 Home</button>
     <button data-page="services">🔧 Services</button>
     <button data-page="bookings">📋 Bookings</button>
-    <button data-page="wallet">💰 Wallet</button>
+    <button data-page="marketplace">🛍️ Marketplace</button>
   </nav>
 
   <!-- Providers Modal -->
@@ -183,6 +192,37 @@
     </div>
   </div>
 
+  <!-- Category Options Modal (Transport / Food) -->
+  <div class="modal" id="categoryOptionsModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="categoryOptionsTitle">Options</strong>
+        <button class="btn ghost" id="closeCategoryOptions">✖</button>
+      </div>
+      <div class="body">
+        <div id="categoryOptionsList" class="list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items/Search Modal (Fastfood / Groceries) -->
+  <div class="modal" id="itemsModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="itemsTitle">Find Items</strong>
+        <button class="btn ghost" id="closeItems">✖</button>
+      </div>
+      <div class="body">
+        <div class="row" style="gap:8px;margin-bottom:10px">
+          <input id="itemSearch" placeholder="Say or type what you want (e.g., pizza, fries, milk)…" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+          <button class="btn ghost" id="itemVoice">🎤</button>
+          <button class="btn primary" id="itemGo">Search</button>
+        </div>
+        <div id="itemChips" class="controls"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Backend
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
@@ -221,23 +261,60 @@
     const trackStatus= document.getElementById('trackStatus');
     document.getElementById('closeTrack').onclick = () => { stopTracking(); trackModal.classList.remove('open'); };
 
+    // Category options
+    const categoryOptionsModal = document.getElementById('categoryOptionsModal');
+    const categoryOptionsTitle = document.getElementById('categoryOptionsTitle');
+    const categoryOptionsList  = document.getElementById('categoryOptionsList');
+    document.getElementById('closeCategoryOptions').onclick = () => categoryOptionsModal.classList.remove('open');
+
+    // Items modal
+    const itemsModal = document.getElementById('itemsModal');
+    const itemsTitle = document.getElementById('itemsTitle');
+    const itemSearch = document.getElementById('itemSearch');
+    const itemVoice  = document.getElementById('itemVoice');
+    const itemGo     = document.getElementById('itemGo');
+    const itemChips  = document.getElementById('itemChips');
+    document.getElementById('closeItems').onclick = () => itemsModal.classList.remove('open');
+
+    // Header actions
+    const notifBtn = document.getElementById('notifBtn');
+    const cartBtn  = document.getElementById('cartBtn');
+    const profileBtn = document.getElementById('profileBtn');
+    const profileMenu= document.getElementById('profileMenu');
+    notifBtn.onclick = () => alert('Notifications');
+    cartBtn.onclick  = () => alert('Shopping cart');
+    profileBtn.onclick = (e) => {
+      e.stopPropagation();
+      profileMenu.style.display = profileMenu.style.display==='block' ? 'none' : 'block';
+    };
+    document.addEventListener('click', () => profileMenu.style.display='none');
+    document.getElementById('menuProfile').onclick = () => alert('Open Profile page');
+    document.getElementById('menuWallet').onclick  = () => alert('Open Wallet page');
+    document.getElementById('menuLogout').onclick  = () => alert('Logged out');
+
+    // Panic
     document.getElementById('panicBtn').onclick = async () => {
       const ok = confirm('Confirm PANIC alert?\n\nThis will send your live location to your 5 contacts and the national line.');
       if (!ok) return;
       await triggerPanic();
     };
 
-    document.getElementById('manageBookingsBtn').onclick = () => alert('Open bookings management.');
-    document.getElementById('profileBtn').onclick = () => alert('Open profile.');
-    document.getElementById('searchBtn').onclick = () => alert('Search coming soon.');
+    // Nav buttons
     document.querySelectorAll('.nav button').forEach(b=>{
       b.onclick = () => {
         document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
         b.classList.add('active');
-        if (b.dataset.page === 'bookings') alert('Open bookings list.');
-        if (b.dataset.page === 'wallet') alert('Open wallet.');
+        if (b.dataset.page === 'services') alert('Services page');
+        if (b.dataset.page === 'bookings') alert('Open My Bookings');
+        if (b.dataset.page === 'marketplace') alert('Open Marketplace');
       };
     });
+
+    // Search (home)
+    const voiceBtn = document.getElementById('voiceBtn');
+    const searchInp= document.getElementById('search');
+    voiceBtn.onclick = () => voiceToInput(searchInp, () => runHomeSearch());
+    document.getElementById('searchBtn').onclick = runHomeSearch;
 
     // Init
     document.addEventListener('DOMContentLoaded', () => {
@@ -246,7 +323,7 @@
       renderServices();
       renderEmergency();
       renderRecent();
-      [providersModal, bookingModal, instantModal, trackModal].forEach(m=>{
+      [providersModal, bookingModal, instantModal, trackModal, categoryOptionsModal, itemsModal].forEach(m=>{
         m.addEventListener('click', (e)=>{ if (e.target === m) m.classList.remove('open'); });
       });
     });
@@ -286,7 +363,7 @@
       { id:'fire',      name:'Fire Service', icon:'🚒' },
       { id:'towing',    name:'Towing', icon:'🚛' },
       { id:'roadside',  name:'Roadside', icon:'🔧' },
-      { id:'police',    name:'Police', icon:'👮' },
+      { id:'security',  name:'Security', icon:'🛡️' },
     ];
 
     function renderServices(){
@@ -329,19 +406,97 @@
       `;
     }
 
-    // Providers
+    // Category flows
     async function openCategory(catId, label){
+      // Transport → choose Ride/Taxi or Truck/Backie
+      if (catId === 'transport') {
+        openCategoryOptions('Transport Options', [
+          { id:'ride',   name:'Ride / Taxi', icon:'🚗' },
+          { id:'moving', name:'Truck / Backie', icon:'🚚' },
+        ], (opt) => {
+          categoryOptionsModal.classList.remove('open');
+          providersTitle.textContent = opt.name + ' — Providers';
+          fetchProviders('transport', opt.id).then(renderProviders);
+          providersModal.classList.add('open');
+        });
+        return;
+      }
+      // Food → choose Fast food or Groceries → items search
+      if (catId === 'food') {
+        openCategoryOptions('Food Options', [
+          { id:'fastfood', name:'Fast Food', icon:'🍔' },
+          { id:'grocery',  name:'Groceries', icon:'🛒' },
+        ], (opt) => {
+          categoryOptionsModal.classList.remove('open');
+          openItemsModal(opt.id);
+        });
+        return;
+      }
+      // Default categories → open providers
       providersTitle.textContent = label + ' — Providers';
       const list = await fetchProviders(catId);
       renderProviders(list);
       providersModal.classList.add('open');
     }
+
+    function openCategoryOptions(title, options, onPick){
+      categoryOptionsTitle.textContent = title;
+      categoryOptionsList.innerHTML = '';
+      options.forEach(o => {
+        const el = document.createElement('div');
+        el.className = 'provider';
+        el.innerHTML = `
+          <div class="row" style="justify-content:space-between">
+            <div class="row"><div style="font-size:24px">${o.icon||'•'}</div><div><strong>${o.name}</strong></div></div>
+            <button class="btn primary">Choose</button>
+          </div>
+        `;
+        el.querySelector('button').onclick = () => onPick(o);
+        categoryOptionsList.appendChild(el);
+      });
+      categoryOptionsModal.classList.add('open');
+    }
+
+    // Food/Grocery items → providers
+    function openItemsModal(kind){ // 'fastfood' | 'grocery'
+      itemsTitle.textContent = kind === 'fastfood' ? 'Fast Food' : 'Groceries';
+      renderItemChips(kind);
+      itemsModal.classList.add('open');
+
+      itemGo.onclick = async () => {
+        const q = (itemSearch.value||'').trim().toLowerCase();
+        itemsModal.classList.remove('open');
+        providersTitle.textContent = (q ? q : (kind==='fastfood'?'Fast Food':'Groceries')) + ' — Providers';
+        const list = await fetchProviders('food', q || kind);
+        renderProviders(list);
+        providersModal.classList.add('open');
+      };
+
+      itemVoice.onclick = () => voiceToInput(itemSearch, () => itemGo.click());
+    }
+    function renderItemChips(kind){
+      const fast = ['pizza','burger','fries','chicken','drinks','meat'];
+      const groc = ['milk','bread','eggs','rice','fruits','vegetables','water'];
+      const data = kind === 'fastfood' ? fast : groc;
+      itemChips.innerHTML = '';
+      data.forEach(t => {
+        const b = document.createElement('button');
+        b.className = 'btn ghost';
+        b.textContent = t;
+        b.onclick = () => { itemSearch.value = t; itemGo.click(); };
+        itemChips.appendChild(b);
+      });
+    }
+
+    // Emergency opens providers nearest
     async function openEmergency(emId, label){
       providersTitle.textContent = label + ' — Nearest';
       const list = await fetchProviders('emergency', emId);
       renderProviders(list);
       providersModal.classList.add('open');
     }
+
+    // Providers rendering
     async function fetchProviders(category, sub=null){
       try{
         const q = new URLSearchParams({ category, sub: sub || '', lat: coords?.lat || '', lng: coords?.lng || '' });
@@ -350,6 +505,7 @@
         const d = await r.json();
         return d.providers || [];
       }catch{
+        // Demo fallback
         return [
           { id:'p1', name:'Pro One', icon:'👤', distance:'0.8km', eta:'6-9m', fee:'$8-12', available:true },
           { id:'p2', name:'Quick Help', icon:'⚡', distance:'1.2km', eta:'8-12m', fee:'$10-15', available:true },
@@ -520,6 +676,49 @@
         alert('Booking sent (demo). Provider will confirm soon.');
       } finally { bookingModal.classList.remove('open'); }
     };
+
+    // Voice helper
+    function voiceToInput(inputEl, onResult){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert('Voice not supported'); return; }
+      const rec = new SR();
+      rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
+      rec.onresult = (e) => {
+        const text = e.results[0][0].transcript || '';
+        inputEl.value = text;
+        if (onResult) onResult(text);
+      };
+      rec.onerror = () => {};
+      rec.start();
+    }
+
+    // Items chips + search already wired in openItemsModal()
+
+    // Home search router
+    function runHomeSearch(){
+      const q = (searchInp.value||'').trim().toLowerCase();
+      if (!q) return;
+      if (/(ride|taxi|cab|uber|bolt)/.test(q)) { openCategory('transport','Transport'); return; }
+      if (/(truck|backie|moving|load)/.test(q)) {
+        openCategoryOptions('Transport Options',[{id:'moving',name:'Truck / Backie',icon:'🚚'}],o=>{
+          categoryOptionsModal.classList.remove('open');
+          providersTitle.textContent = o.name + ' — Providers';
+          fetchProviders('transport','moving').then(renderProviders);
+          providersModal.classList.add('open');
+        });
+        return;
+      }
+      if (/(food|pizza|burger|fries|chicken|drinks)/.test(q)) { openItemsModal('fastfood'); return; }
+      if (/(grocery|milk|bread|eggs|rice|fruit|vegetable|vegetables)/.test(q)) { openItemsModal('grocery'); return; }
+      if (/(ambulance|medical)/.test(q)) { openEmergency('ambulance','Ambulance'); return; }
+      if (/(fire)/.test(q)) { openEmergency('fire','Fire Service'); return; }
+      if (/(towing|tow)/.test(q)) { openEmergency('towing','Towing'); return; }
+      if (/(security|police)/.test(q)) { openEmergency('security','Security'); return; }
+      // fallback generic provider search
+      providersTitle.textContent = q + ' — Providers';
+      fetchProviders('search', q).then(renderProviders);
+      providersModal.classList.add('open');
+    }
   </script>
 </body>
 </html>
