@@ -85,11 +85,11 @@
         <div style="position:relative">
           <button class="btn ghost" id="profileBtn">👤 Account</button>
           <div id="profileMenu">
-            <button class="btn ghost" id="menuProfile">👤 Profile</button>
-            <button class="btn ghost" id="menuWallet">💰 Wallet</button>
-            <button class="btn ghost" id="menuTopup">⚡ Top‑up</button>
-            <button class="btn ghost" id="menuLogout">🚪 Logout</button>
-          </div>
+  <button type="button" class="btn ghost" id="menuProfile">👤 Profile</button>
+  <button type="button" class="btn ghost" id="menuWallet">💰 Wallet</button>
+  <button type="button" class="btn ghost" id="menuTopup">⚡ Top‑up</button>
+  <button type="button" class="btn ghost" id="menuLogout">🚪 Logout</button>
+</div>
         </div>
       </div>
     </div>
@@ -207,11 +207,11 @@
   <button class="floating-panic" id="panicBtn">🚨</button>
 
   <nav class="nav">
-    <button data-page="home" class="active">🏠 Home</button>
-    <button data-page="services">🔧 Services</button>
-    <button data-page="bookings">📋 Bookings</button>
-    <button data-page="marketplace">🛍️ Marketplace</button>
-  </nav>
+  <button type="button" data-page="home" class="active">🏠 Home</button>
+  <button type="button" data-page="services">🔧 Services</button>
+  <button type="button" data-page="bookings">📋 Bookings</button>
+  <button type="button" data-page="marketplace">🛍️ Marketplace</button>
+</nav>
 
   <!-- Providers Modal -->
   <div class="modal" id="providersModal">
@@ -487,18 +487,34 @@
       el.onclick = () => alert('Top-up: ' + el.dataset.topup);
     });
 
-    document.addEventListener('DOMContentLoaded', () => {
-      try { userNameEl.textContent = user.name; } catch {}
-      try { initLocation(); } catch (e) { console.error(e); }
-      try { renderServices(); } catch (e) { console.error(e); }
-      try { renderEmergency(); } catch (e) { console.error(e); }
-      try { renderRecent(); } catch (e) { console.error(e); }
-      try { renderServicesAll(); } catch (e) { console.error(e); }
-      try { renderBookings(); } catch (e) { console.error(e); }
-      try { initMarketplace(); } catch (e) { console.error(e); }
-      [providersModal, bookingModal, instantModal, trackModal, categoryOptionsModal, itemsModal, cartModal, checkoutModal, orderModal]
-        .forEach(m => m && m.addEventListener('click', (e)=>{ if (e.target === m) m.classList.remove('open'); }));
-    });
+    // Footer nav + account menu via event delegation (reliable)
+document.addEventListener('click', (e) => {
+  // Footer buttons
+  const navBtn = e.target.closest('.nav button');
+  if (navBtn) {
+    e.preventDefault();
+    document.querySelectorAll('.nav button').forEach(x => x.classList.remove('active'));
+    navBtn.classList.add('active');
+    showPage(navBtn.dataset.page);
+    return;
+  }
+
+  // Account dropdown toggle
+  if (e.target.id === 'profileBtn') {
+    e.preventDefault();
+    profileMenu.style.display = (profileMenu.style.display === 'block') ? 'none' : 'block';
+    return;
+  }
+  if (e.target.id === 'menuProfile') { e.preventDefault(); profileMenu.style.display='none'; showPage('profile'); return; }
+  if (e.target.id === 'menuWallet')  { e.preventDefault(); profileMenu.style.display='none'; showPage('wallet');  return; }
+  if (e.target.id === 'menuTopup')   { e.preventDefault(); profileMenu.style.display='none'; showPage('topup');   return; }
+  if (e.target.id === 'menuLogout')  { e.preventDefault(); profileMenu.style.display='none'; alert('Logged out');  return; }
+
+  // Click outside closes dropdown
+  if (!e.target.closest('#profileMenu') && e.target.id !== 'profileBtn') {
+    profileMenu.style.display = 'none';
+  }
+});
 
     // Services catalog
     const SERVICES = [
