@@ -42,10 +42,8 @@
     .nav { position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around; background:#fff; border-top:1px solid var(--border); padding:8px 0; z-index:15 }
     .nav button { background:none; border:0; padding:8px 10px; border-radius:10px; color:var(--muted) }
     .nav button.active { color:var(--primary); background:#EFF6FF }
-    /* Pages */
     .page { display:none; padding-bottom:80px }
     .page.active { display:block }
-    /* Modals */
     .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:50; padding:16px }
     .modal.open { display:flex }
     .sheet { width:100%; max-width:720px; background:#fff; border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow) }
@@ -55,9 +53,16 @@
     .provider { border:1px solid var(--border); border-radius:14px; padding:12px }
     .controls { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap }
     #track-map { width:100%; height:360px; border-radius:12px; border:1px solid var(--border) }
-    /* Profile dropdown */
     #profileMenu { position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:180px; z-index:30 }
     #profileMenu .btn { width:100%; justify-content:flex-start }
+    /* Marketplace */
+    .product { display:flex; flex-direction:column; gap:8px }
+    .product img { width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--border) }
+    .price { font-weight:700; color:#111 }
+    .cart-fab { position:fixed; right:16px; bottom:140px; z-index:16 }
+    .qty { display:flex; gap:8px; align-items:center }
+    .qty button { width:30px; height:30px; border-radius:8px; }
+    .terms { display:flex; gap:8px; align-items:flex-start; font-size:13px; color:#333 }
   </style>
 </head>
 <body>
@@ -83,7 +88,7 @@
     </div>
   </header>
 
-  <!-- Pages -->
+  <!-- Home -->
   <main id="page-home" class="page active">
     <section class="search">
       <div class="box">
@@ -109,6 +114,7 @@
     </section>
   </main>
 
+  <!-- Services landing -->
   <main id="page-services" class="page">
     <section class="section">
       <div class="title">Services</div>
@@ -116,6 +122,7 @@
     </section>
   </main>
 
+  <!-- Bookings landing -->
   <main id="page-bookings" class="page">
     <section class="section">
       <div class="title">My Bookings</div>
@@ -123,19 +130,35 @@
     </section>
   </main>
 
+  <!-- Marketplace landing -->
   <main id="page-marketplace" class="page">
-    <section class="section">
-      <div class="title">Marketplace</div>
-      <div class="card">Browse and manage products here (coming soon)</div>
+    <section class="search">
+      <div class="box">
+        <input id="mpSearch" placeholder="Search products (e.g., phone, shoes, blender)…"/>
+        <button class="btn ghost" id="mpVoice">🎤</button>
+        <button class="btn primary" id="mpSearchBtn">Search</button>
+      </div>
     </section>
+    <section class="section">
+      <div class="controls" id="mpChips"></div>
+    </section>
+    <section class="section">
+      <div class="title">Products</div>
+      <div class="grid" id="mpGrid"></div>
+    </section>
+    <div class="cart-fab">
+      <button class="btn primary" id="openCartBtn">🛒 Cart (<span id="cartCount">0</span>)</button>
+    </div>
   </main>
 
+  <!-- Profile -->
   <main id="page-profile" class="page">
     <section class="section">
       <div class="title">Profile</div>
       <div class="card">
         <div class="row" style="justify-content:space-between">
-          <div class="row"><div style="width:48px;height:48px;border-radius:50%;background:#E5EDFF;display:flex;align-items:center;justify-content:center">👤</div>
+          <div class="row">
+            <div style="width:48px;height:48px;border-radius:50%;background:#E5EDFF;display:flex;align-items:center;justify-content:center">👤</div>
             <div style="margin-left:8px">
               <div><strong id="profName">Demo User</strong></div>
               <div class="small" id="profEmail">demo@zippup.com</div>
@@ -154,6 +177,7 @@
     </section>
   </main>
 
+  <!-- Wallet -->
   <main id="page-wallet" class="page">
     <section class="section">
       <div class="title">Wallet</div>
@@ -161,6 +185,7 @@
     </section>
   </main>
 
+  <!-- Top-up -->
   <main id="page-topup" class="page">
     <section class="section">
       <div class="title">Top‑up (Digital)</div>
@@ -227,7 +252,7 @@
     </div>
   </div>
 
-  <!-- Instant Request Modal (90s) -->
+  <!-- Instant Request Modal -->
   <div class="modal" id="instantModal">
     <div class="sheet">
       <div class="head">
@@ -291,6 +316,66 @@
     </div>
   </div>
 
+  <!-- Cart Modal -->
+  <div class="modal" id="cartModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>My Cart</strong>
+        <button class="btn ghost" id="closeCart">✖</button>
+      </div>
+      <div class="body">
+        <div id="cartList" class="list"></div>
+        <div class="row" style="justify-content:space-between;margin-top:10px">
+          <div class="price">Total: $<span id="cartTotal">0.00</span></div>
+          <button class="btn primary" id="checkoutBtn">Checkout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div class="modal" id="checkoutModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Checkout</strong>
+        <button class="btn ghost" id="closeCheckout">✖</button>
+      </div>
+      <div class="body">
+        <div class="list">
+          <div>
+            <div class="small">Payment Method</div>
+            <div class="controls">
+              <label><input type="radio" name="payMethod" value="card" checked/> Card (funds held until delivery)</label>
+              <label><input type="radio" name="payMethod" value="cash"/> Cash (you accept the risk)</label>
+            </div>
+          </div>
+          <div>
+            <div class="small">Delivery Address</div>
+            <input id="chkAddress" placeholder="Enter delivery address" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+          </div>
+          <label class="terms">
+            <input type="checkbox" id="chkTerms"/>
+            <span>I accept the Terms. I understand: for cash, buyer/seller take the risk. For card, funds are held until seller enters the app delivery code. Disputes: funds held up to 7 days for admin review. Platform takes 5% on non-cash sales; unpaid cash commissions limit selling to one more item until settled.</span>
+          </label>
+          <button class="btn primary" id="placeOrderBtn">Place Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Status Modal -->
+  <div class="modal" id="orderModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Order Status</strong>
+        <button class="btn ghost" id="closeOrder">✖</button>
+      </div>
+      <div class="body">
+        <div id="orderInfo" class="list"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
 
@@ -303,27 +388,34 @@
     let map, userMarker, providerMarker, trackPoll = null;
     let currentPage = 'home';
 
-    // Elements
+    // Header / pages
     const userNameEl = document.getElementById('userName');
     const userLocEl  = document.getElementById('userLoc');
+
+    // Home services/emergency
     const servicesGrid = document.getElementById('servicesGrid');
+    const servicesAllGrid = document.getElementById('servicesAllGrid');
     const emergencyGrid = document.getElementById('emergencyGrid');
     const recentList = document.getElementById('recentList');
 
+    // Providers
     const providersModal = document.getElementById('providersModal');
     const providersList  = document.getElementById('providersList');
     const providersTitle = document.getElementById('providersTitle');
     document.getElementById('closeProviders').onclick = () => providersModal.classList.remove('open');
 
+    // Booking
     const bookingModal = document.getElementById('bookingModal');
     const bookingForm  = document.getElementById('bookingForm');
     document.getElementById('closeBooking').onclick = () => bookingModal.classList.remove('open');
 
+    // Instant
     const instantModal = document.getElementById('instantModal');
     const countdownEl  = document.getElementById('countdown');
     document.getElementById('cancelInstant').onclick = cancelInstant;
     document.getElementById('findOthers').onclick = () => { instantModal.classList.remove('open'); providersModal.classList.add('open'); };
 
+    // Tracking
     const trackModal = document.getElementById('trackModal');
     const trackStatus= document.getElementById('trackStatus');
     document.getElementById('closeTrack').onclick = () => { stopTracking(); trackModal.classList.remove('open'); };
@@ -334,7 +426,7 @@
     const categoryOptionsList  = document.getElementById('categoryOptionsList');
     document.getElementById('closeCategoryOptions').onclick = () => categoryOptionsModal.classList.remove('open');
 
-    // Items modal
+    // Items search
     const itemsModal = document.getElementById('itemsModal');
     const itemsTitle = document.getElementById('itemsTitle');
     const itemSearch = document.getElementById('itemSearch');
@@ -343,7 +435,7 @@
     const itemChips  = document.getElementById('itemChips');
     document.getElementById('closeItems').onclick = () => itemsModal.classList.remove('open');
 
-    // Header actions
+    // Header buttons
     const notifBtn = document.getElementById('notifBtn');
     const cartBtn  = document.getElementById('cartBtn');
     const profileBtn = document.getElementById('profileBtn');
@@ -379,10 +471,41 @@
     voiceBtn.onclick = () => voiceToInput(searchInp, () => runHomeSearch());
     document.getElementById('searchBtn').onclick = runHomeSearch;
 
-    // Top-up page quick actions
+    // Top-up
     document.querySelectorAll('[data-topup]').forEach(el=>{
       el.onclick = () => alert('Top-up: ' + el.dataset.topup);
     });
+
+    // Marketplace elements
+    const mpSearch = document.getElementById('mpSearch');
+    const mpVoice  = document.getElementById('mpVoice');
+    const mpSearchBtn = document.getElementById('mpSearchBtn');
+    const mpChips  = document.getElementById('mpChips');
+    const mpGrid   = document.getElementById('mpGrid');
+    const openCartBtn = document.getElementById('openCartBtn');
+    const cartModal = document.getElementById('cartModal');
+    const closeCart = document.getElementById('closeCart');
+    const cartList  = document.getElementById('cartList');
+    const cartTotalEl = document.getElementById('cartTotal');
+    const cartCountEl = document.getElementById('cartCount');
+    const checkoutModal = document.getElementById('checkoutModal');
+    const closeCheckout = document.getElementById('closeCheckout');
+    const chkTerms = document.getElementById('chkTerms');
+    const chkAddress = document.getElementById('chkAddress');
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const orderModal = document.getElementById('orderModal');
+    const closeOrder = document.getElementById('closeOrder');
+    const orderInfo = document.getElementById('orderInfo');
+
+    closeCart.onclick = () => cartModal.classList.remove('open');
+    openCartBtn.onclick = () => { renderCart(); cartModal.classList.add('open'); };
+    checkoutBtn.onclick = () => { cartModal.classList.remove('open'); checkoutModal.classList.add('open'); };
+    closeCheckout.onclick = () => checkoutModal.classList.remove('open');
+    closeOrder.onclick = () => orderModal.classList.remove('open');
+
+    mpVoice.onclick = () => voiceToInput(mpSearch, () => runMarketplaceSearch());
+    mpSearchBtn.onclick = runMarketplaceSearch;
 
     // Init
     document.addEventListener('DOMContentLoaded', () => {
@@ -395,20 +518,21 @@
       renderRecent();
       renderServicesAll();
       renderBookings();
-      [providersModal, bookingModal, instantModal, trackModal, categoryOptionsModal, itemsModal].forEach(m=>{
+      initMarketplace();
+      [providersModal, bookingModal, instantModal, trackModal, categoryOptionsModal, itemsModal, cartModal, checkoutModal, orderModal].forEach(m=>{
         m.addEventListener('click', (e)=>{ if (e.target === m) m.classList.remove('open'); });
       });
     });
 
     function showPage(page){
       const ids = ['home','services','bookings','marketplace','profile','wallet','topup'];
-      currentPage = page;
       ids.forEach(id => {
         const el = document.getElementById('page-'+id);
         if (el) el.classList.toggle('active', id===page);
       });
       if (page==='services') renderServicesAll();
       if (page==='bookings') renderBookings();
+      if (page==='marketplace') { renderMarketplace(); }
       return true;
     }
 
@@ -447,8 +571,7 @@
       { id:'fire',      name:'Fire Service', icon:'🚒' },
       { id:'towing',    name:'Towing', icon:'🚛' },
       { id:'security',  name:'Security', icon:'🛡️' },
-      // Roadside uses item-search flow below
-      { id:'roadside',  name:'Roadside', icon:'🔧' },
+      { id:'roadside',  name:'Roadside', icon:'🔧' }, // uses items flow
     ];
 
     function renderServices(){
@@ -469,15 +592,13 @@
       });
     }
     function renderServicesAll(){
-      const wrap = document.getElementById('servicesAllGrid');
-      if (!wrap) return;
-      wrap.innerHTML = '';
+      servicesAllGrid.innerHTML = '';
       SERVICES.forEach(s=>{
         const el = document.createElement('div');
         el.className = 'card service';
         el.innerHTML = `<div class="row"><div style="font-size:28px">${s.icon}</div><h4>${s.name}</h4></div><div class="small muted" style="margin-top:6px">${s.desc}</div>`;
         el.onclick = () => openCategory(s.id, s.name);
-        wrap.appendChild(el);
+        servicesAllGrid.appendChild(el);
       });
     }
 
@@ -508,7 +629,6 @@
 
     // Category flows
     async function openCategory(catId, label){
-      // Transport → choose Ride/Taxi or Truck/Backie
       if (catId === 'transport') {
         openCategoryOptions('Transport Options', [
           { id:'ride',   name:'Ride / Taxi', icon:'🚗' },
@@ -521,7 +641,6 @@
         });
         return;
       }
-      // Food → choose Fast food or Groceries → items search
       if (catId === 'food') {
         openCategoryOptions('Food Options', [
           { id:'fastfood', name:'Fast Food', icon:'🍔' },
@@ -532,7 +651,6 @@
         });
         return;
       }
-      // Other categories → items search first
       const itemsMap = {
         home:       { title:'Home Services', chips:['cleaning','gardening','painting','plumber','electrician'] },
         tech:       { title:'Tech Services', chips:['phone repair','computer','tv repair','software'] },
@@ -545,7 +663,6 @@
         openItemsModal(catId, itemsMap[catId].title, itemsMap[catId].chips);
         return;
       }
-      // Fallback: open providers
       providersTitle.textContent = label + ' — Providers';
       const list = await fetchProviders(catId);
       renderProviders(list);
@@ -833,21 +950,18 @@
       if (/(fire)/.test(q)) { openEmergency('fire','Fire Service'); return; }
       if (/(towing|tow)/.test(q)) { openEmergency('towing','Towing'); return; }
       if (/(security|police)/.test(q)) { openEmergency('security','Security'); return; }
-      // Category-intent for other services
       if (/(plumber|electrician|clean|garden|paint)/.test(q)) { openItemsModal('home'); return; }
       if (/(mechanic|tire|battery|car wash)/.test(q)) { openItemsModal('auto'); return; }
       if (/(phone|computer|laptop|tv|repair|software)/.test(q)) { openItemsModal('tech'); return; }
       if (/(builder|carpenter|construction)/.test(q)) { openItemsModal('construction'); return; }
       if (/(event|tutor|legal|photo|photography)/.test(q)) { openItemsModal('others'); return; }
       if (/(flat|jumpstart|fuel|lockout|road)/.test(q)) { openItemsModal('roadside'); return; }
-
-      // fallback generic provider search
       providersTitle.textContent = q + ' — Providers';
       fetchProviders('search', q).then(renderProviders);
       providersModal.classList.add('open');
     }
 
-    // Bookings (landing page)
+    // Bookings (landing)
     function renderBookings(){
       const el = document.getElementById('bookingsList');
       if (!el) return;
@@ -855,6 +969,204 @@
         <div class="card"><div class="row" style="justify-content:space-between"><div>🔧 Phone Repair</div><span class="badge" style="background:#FFF7ED;color:#9A3412">scheduled</span></div><div class="small muted" style="margin-top:6px">Tomorrow 11:00</div></div>
         <div class="card" style="margin-top:8px"><div class="row" style="justify-content:space-between"><div>🚗 Ride to Airport</div><span class="badge success">completed</span></div><div class="small muted" style="margin-top:6px">2h ago</div></div>
       `;
+    }
+
+    // Marketplace
+    const MP_CATEGORIES = [
+      { id:'electronics', name:'Electronics' },
+      { id:'fashion', name:'Fashion' },
+      { id:'home', name:'Home & Garden' },
+      { id:'sports', name:'Sports' },
+    ];
+    const MP_PRODUCTS = [
+      { id:'p100', title:'Smartphone X', cat:'electronics', price:499, img:'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop' },
+      { id:'p101', title:'Wireless Earbuds', cat:'electronics', price:59, img:'https://images.unsplash.com/photo-1585386959984-a41552231658?q=80&w=800&auto=format&fit=crop' },
+      { id:'p200', title:'Running Shoes', cat:'fashion', price:79, img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop' },
+      { id:'p201', title:'Denim Jacket', cat:'fashion', price:69, img:'https://images.unsplash.com/photo-1542060748-10c28b62716b?q=80&w=800&auto=format&fit=crop' },
+      { id:'p300', title:'Blender Pro', cat:'home', price:49, img:'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800&auto=format&fit=crop' },
+      { id:'p301', title:'Desk Lamp', cat:'home', price:25, img:'https://images.unsplash.com/photo-1505685296765-3a2736de412f?q=80&w=800&auto=format&fit=crop' },
+      { id:'p400', title:'Football', cat:'sports', price:19, img:'https://images.unsplash.com/photo-1521417530178-1f1f06f9a70b?q=80&w=800&auto=format&fit=crop' },
+      { id:'p401', title:'Yoga Mat', cat:'sports', price:29, img:'https://images.unsplash.com/photo-1599050751795-5a9e3d0f5f7b?q=80&w=800&auto=format&fit=crop' },
+    ];
+    let cart = loadCart();
+
+    function initMarketplace(){
+      // category chips
+      mpChips.innerHTML = '';
+      MP_CATEGORIES.forEach(c=>{
+        const b = document.createElement('button');
+        b.className = 'btn ghost';
+        b.textContent = c.name;
+        b.onclick = () => { renderMarketplace(c.id, mpSearch.value.trim().toLowerCase()); };
+        mpChips.appendChild(b);
+      });
+      renderMarketplace();
+      updateCartCount();
+    }
+
+    function runMarketplaceSearch(){
+      const q = mpSearch.value.trim().toLowerCase();
+      renderMarketplace(null, q);
+    }
+
+    function renderMarketplace(category=null, query=''){
+      mpGrid.innerHTML = '';
+      let list = MP_PRODUCTS.slice();
+      if (category) list = list.filter(p => p.cat === category);
+      if (query) list = list.filter(p => p.title.toLowerCase().includes(query));
+      if (!list.length){
+        mpGrid.innerHTML = '<div class="small muted">No products found.</div>';
+        return;
+      }
+      list.forEach(p=>{
+        const el = document.createElement('div');
+        el.className = 'card product';
+        el.innerHTML = `
+          <img src="${p.img}" alt="${p.title}"/>
+          <div><strong>${p.title}</strong></div>
+          <div class="price">$${p.price.toFixed(2)}</div>
+          <button class="btn primary">Add to Cart</button>
+        `;
+        el.querySelector('button').onclick = () => addToCart(p.id);
+        mpGrid.appendChild(el);
+      });
+    }
+
+    function addToCart(productId){
+      const prod = MP_PRODUCTS.find(p=>p.id===productId);
+      if (!prod) return;
+      const i = cart.items.findIndex(x=>x.id===productId);
+      if (i>=0) cart.items[i].qty += 1;
+      else cart.items.push({ id:prod.id, title:prod.title, price:prod.price, img:prod.img, qty:1 });
+      saveCart(); updateCartCount();
+    }
+    function updateCartCount(){
+      const count = cart.items.reduce((a,b)=>a+b.qty,0);
+      cartCountEl.textContent = String(count);
+    }
+    function loadCart(){
+      try{ return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{ return { items:[] }; }
+    }
+    function saveCart(){ localStorage.setItem('mp_cart', JSON.stringify(cart)); }
+
+    function renderCart(){
+      cartList.innerHTML = '';
+      if (!cart.items.length){
+        cartList.innerHTML = '<div class="small muted">Your cart is empty.</div>';
+        cartTotalEl.textContent = '0.00';
+        return;
+      }
+      let total = 0;
+      cart.items.forEach(item=>{
+        total += item.price * item.qty;
+        const row = document.createElement('div');
+        row.className = 'card';
+        row.innerHTML = `
+          <div class="row" style="justify-content:space-between; align-items:flex-start">
+            <div class="row">
+              <img src="${item.img}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
+              <div style="margin-left:8px">
+                <strong>${item.title}</strong>
+                <div class="small muted">$${item.price.toFixed(2)}</div>
+              </div>
+            </div>
+            <div class="qty">
+              <button class="btn ghost" data-k="dec">−</button>
+              <div>${item.qty}</div>
+              <button class="btn ghost" data-k="inc">＋</button>
+              <button class="btn ghost" data-k="rm">✖</button>
+            </div>
+          </div>
+        `;
+        const [dec, , inc, rm] = row.querySelectorAll('button');
+        dec.onclick = () => { item.qty = Math.max(1, item.qty-1); saveCart(); renderCart(); updateCartCount(); };
+        inc.onclick = () => { item.qty += 1; saveCart(); renderCart(); updateCartCount(); };
+        rm.onclick  = () => { cart.items = cart.items.filter(x=>x.id!==item.id); saveCart(); renderCart(); updateCartCount(); };
+        cartList.appendChild(row);
+      });
+      cartTotalEl.textContent = total.toFixed(2);
+    }
+
+    placeOrderBtn.onclick = async () => {
+      const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+      if (!chkTerms.checked){ alert('Please accept the Terms'); return; }
+      if (!chkAddress.value.trim()){ alert('Enter delivery address'); return; }
+      if (!cart.items.length){ alert('Cart is empty'); return; }
+
+      const payload = {
+        items: cart.items.map(i=>({ id:i.id, qty:i.qty })),
+        paymentMethod: method,
+        address: chkAddress.value.trim(),
+      };
+
+      let orderId, code;
+      try{
+        const r = await fetch(`${BASE_API}/api/marketplace/orders`, {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        });
+        const d = await r.json().catch(()=>({}));
+        orderId = d.orderId || ('demo-' + Date.now());
+        code = d.deliveryCode || String(Math.floor(100000 + Math.random()*900000));
+      }catch{
+        orderId = 'demo-' + Date.now();
+        code = String(Math.floor(100000 + Math.random()*900000));
+      }
+
+      checkoutModal.classList.remove('open');
+      showOrderStatus(orderId, code, method);
+      // Clear cart after order placed
+      cart.items = []; saveCart(); updateCartCount();
+    };
+
+    function showOrderStatus(orderId, code, method){
+      orderInfo.innerHTML = `
+        <div class="card">
+          <div><strong>Order ID:</strong> ${orderId}</div>
+          <div style="margin-top:6px"><strong>Status:</strong> <span id="ordStatus">pending</span></div>
+          <div style="margin-top:6px"><strong>Delivery code for seller to enter:</strong> <span style="font-family:monospace">${code}</span></div>
+          <div class="small muted" style="margin-top:6px">
+            ${method==='card'
+              ? 'Funds are held. Seller must accept within 48h and enter the delivery code at handover to release funds.'
+              : 'Cash selected: buyer and seller accept the risk. Delivery code still marks the item delivered.'}
+          </div>
+        </div>
+      `;
+      orderModal.classList.add('open');
+
+      // Poll order status (demo: accept after ~6s, deliver after ~14s)
+      const ordStatusEl = document.getElementById('ordStatus');
+      let t = 0;
+      const poll = setInterval(async ()=>{
+        t += 3;
+        let status;
+        try{
+          const r = await fetch(`${BASE_API}/api/marketplace/orders/${encodeURIComponent(orderId)}`);
+          const d = await r.json().catch(()=>({}));
+          status = d.status;
+        }catch{
+          if (t>=6 && t<12) status = 'accepted';
+          else if (t>=12 && t<18) status = 'out_for_delivery';
+          else if (t>=18) status = 'delivered';
+          else status = 'pending';
+        }
+        ordStatusEl.textContent = status || 'pending';
+        if (status==='delivered' || t>=24) clearInterval(poll);
+      }, 3000);
+    }
+
+    // ======= Existing helper logic reused above =======
+    function voiceToInput(inputEl, onResult){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert('Voice not supported'); return; }
+      const rec = new SR();
+      rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
+      rec.onresult = (e) => {
+        const text = e.results[0][0].transcript || '';
+        inputEl.value = text;
+        if (onResult) onResult(text);
+      };
+      rec.onerror = () => {};
+      rec.start();
     }
   </script>
 </body>
