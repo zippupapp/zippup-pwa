@@ -9,8 +9,9 @@
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script defer src="https://js.stripe.com/v3"></script>
+  <script defer src="https://js.stripe.com/v3"></script>
+  
+  <script defer src="https://js.stripe.com/v3"></script>
   
   <style>
     :root { --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF; --text:#111827; --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB; --radius:14px; --shadow:0 8px 24px rgba(17,24,39,.08) }
@@ -382,7 +383,8 @@
 
   <script>
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
-
+    STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+    
     let user = { name:'Guest', email:'demo@zippup.com' };
     let coords = null;
     let selectedProvider = null;
