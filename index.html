@@ -347,23 +347,43 @@
       </div>
       <div class="body">
         <div class="list">
-          <div>
-            <div class="small">Payment Method</div>
-            <div class="controls">
-              <label><input type="radio" name="payMethod" value="card" checked/> Card (funds held until delivery)</label>
-              <label><input type="radio" name="payMethod" value="cash"/> Cash (you accept the risk)</label>
-            </div>
-          </div>
-          <div>
-            <div class="small">Delivery Address</div>
-            <input id="chkAddress" placeholder="Enter delivery address" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
-          </div>
-          <label class="terms">
-            <input type="checkbox" id="chkTerms"/>
-            <span>I accept the Terms. I understand: for cash, buyer/seller take the risk. For card, funds are held until seller enters the app delivery code. Disputes: funds held up to 7 days for admin review. Platform takes 5% on non-cash sales; unpaid cash commissions limit selling to one more item until settled.</span>
-          </label>
-          <button class="btn primary" id="placeOrderBtn">Place Order</button>
-        </div>
+  <div class="row" style="gap:12px">
+    <div style="flex:1">
+      <div class="small">Full Name</div>
+      <input id="chkName" placeholder="Your full name" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+    </div>
+    <div style="flex:1">
+      <div class="small">Phone</div>
+      <input id="chkPhone" placeholder="e.g. +1234567890" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+    </div>
+  </div>
+  <div class="row" style="gap:12px">
+    <div style="flex:2">
+      <div class="small">Street / Address</div>
+      <input id="chkAddress" placeholder="e.g. 12 Main St" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+    </div>
+    <div style="flex:1">
+      <div class="small">Flat / House No.</div>
+      <input id="chkUnit" placeholder="e.g. Apt 2B" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+    </div>
+  </div>
+  <div>
+    <div class="small">Delivery Notes</div>
+    <textarea id="chkNotes" rows="3" placeholder="Any special instructions…" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"></textarea>
+  </div>
+  <div>
+    <div class="small">Payment Method</div>
+    <div class="controls">
+      <label><input type="radio" name="payMethod" value="card" checked/> Card (funds held until delivery)</label>
+      <label><input type="radio" name="payMethod" value="cash"/> Cash (you accept the risk)</label>
+    </div>
+  </div>
+  <label class="terms">
+    <input type="checkbox" id="chkTerms"/>
+    <span>I accept the Terms. Cash is at your own risk. For card, funds are held until seller enters the delivery code. Disputes up to 7 days. 5% platform fee on non‑cash; unpaid cash fees limit selling to one more item.</span>
+  </label>
+  <button class="btn primary" id="placeOrderBtn">Place Order</button>
+</div>
       </div>
     </div>
   </div>
@@ -447,7 +467,13 @@
     const profileBtn = document.getElementById('profileBtn');
     const profileMenu= document.getElementById('profileMenu');
     notifBtn.onclick = () => showPage('home') || alert('Notifications (coming soon)');
-    cartBtn.onclick = () => { showPage('marketplace'); renderCart(); cartModal.classList.add('open'); };
+   cartBtn.onclick = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  showPage('marketplace');
+  renderCart();
+  setTimeout(() => cartModal.classList.add('open'), 0);
+  };
     profileBtn.onclick = (e) => { e.stopPropagation(); profileMenu.style.display = profileMenu.style.display==='block' ? 'none' : 'block'; };
     document.addEventListener('click', () => profileMenu.style.display='none');
     document.getElementById('menuProfile').onclick = () => { profileMenu.style.display='none'; showPage('profile'); };
@@ -1115,11 +1141,16 @@
   const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
   if (!chkTerms.checked){ alert('Please accept the Terms'); return; }
   if (!chkAddress.value.trim()){ alert('Enter delivery address'); return; }
+  if (!chkName.value.trim() || !chkPhone.value.trim()){ alert('Enter name and phone'); return; }
   if (!cart.items.length){ alert('Cart is empty'); return; }
 
   const payload = {
     items: cart.items.map(i=>({ id:i.id, title:i.title, qty:i.qty, price:i.price })),
     address: chkAddress.value.trim(),
+    unit: (chkUnit.value||'').trim(),
+    name: chkName.value.trim(),
+    phone: chkPhone.value.trim(),
+    notes: (chkNotes.value||'').trim(),
   };
 
   if (method === 'card') {
@@ -1128,8 +1159,7 @@
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
-          items: payload.items,
-          address: payload.address,
+          ...payload,
           successUrl: window.location.origin + '/?checkout=success',
           cancelUrl: window.location.origin + '/?checkout=cancel'
         })
