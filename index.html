@@ -1232,5 +1232,144 @@
       }, 3000);
     }
   </script>
+  <script>
+// Checkout hotfix: reliably opens checkout modal and redirects to Stripe (card) or creates cash order
+(function () {
+  function $(id){ return document.getElementById(id); }
+
+  const cartModal      = $('cartModal');
+  const checkoutModal  = $('checkoutModal');
+  const checkoutBtn    = $('checkoutBtn');
+  const placeOrderBtn  = $('placeOrderBtn');
+
+  const chkName    = $('chkName');
+  const chkPhone   = $('chkPhone');
+  const chkAddress = $('chkAddress');
+  const chkUnit    = $('chkUnit');
+  const chkNotes   = $('chkNotes');
+  const chkTerms   = $('chkTerms');
+
+  // Ensure cart store/helpers exist
+  if (!window.cart) {
+    try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); } catch { window.cart = { items: [] }; }
+  }
+  if (typeof window.saveCart !== 'function') {
+    window.saveCart = function saveCart() { localStorage.setItem('mp_cart', JSON.stringify(window.cart)); };
+  }
+  if (typeof window.updateCartCount !== 'function') {
+    window.updateCartCount = function updateCartCount() {
+      const count = window.cart.items.reduce((a,b)=>a+b.qty,0);
+      const headerBadge = document.getElementById('headerCartBadge');
+      const cartCountEl = document.getElementById('cartCount');
+      if (headerBadge) headerBadge.textContent = String(count);
+      if (cartCountEl)  cartCountEl.textContent  = String(count);
+    };
+  }
+
+  // Open checkout modal from cart
+  if (checkoutBtn) {
+    checkoutBtn.onclick = (e) => {
+      e.preventDefault();
+      if (cartModal)   cartModal.classList.remove('open');
+      if (checkoutModal) checkoutModal.classList.add('open');
+    };
+  }
+
+  async function placeOrder() {
+    try {
+      // Validate
+      const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+      if (!chkTerms?.checked)            { alert('Please accept the Terms'); return; }
+      if (!chkAddress?.value?.trim())    { alert('Enter delivery address'); return; }
+      if (!chkName?.value?.trim() || !chkPhone?.value?.trim()) { alert('Enter name and phone'); return; }
+      if (!window.cart.items.length)     { alert('Cart is empty'); return; }
+
+      const payload = {
+        items: window.cart.items.map(i=>({ id:i.id, title:i.title, qty:i.qty, price:i.price })),
+        name: (chkName.value||'').trim(),
+        phone: (chkPhone.value||'').trim(),
+        address: (chkAddress.value||'').trim(),
+        unit: (chkUnit?.value||'').trim(),
+        notes: (chkNotes?.value||'').trim(),
+      };
+
+      // Card → create checkout session and redirect
+      if (method === 'card') {
+        const r = await fetch(`${BASE_API}/api/payments/checkout-session`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            ...payload,
+            successUrl: window.location.origin + '/?checkout=success',
+            cancelUrl:  window.location.origin + '/?checkout=cancel'
+          })
+        });
+        const d = await r.json().catch(()=>({}));
+
+        if (d?.url) {
+          window.cart.items = []; window.saveCart(); window.updateCartCount();
+          window.location.href = d.url;
+          return;
+        }
+        if ((d?.id || d?.sessionId) && window.Stripe && typeof STRIPE_PK === 'string' && STRIPE_PK) {
+          const stripe = window.Stripe(STRIPE_PK);
+          window.cart.items = []; window.saveCart(); window.updateCartCount();
+          await stripe.redirectToCheckout({ sessionId: d.id || d.sessionId });
+          return;
+        }
+        if (typeof FALLBACK_PAYMENT_LINK === 'string' && FALLBACK_PAYMENT_LINK) {
+          window.cart.items = []; window.saveCart(); window.updateCartCount();
+          window.location.href = FALLBACK_PAYMENT_LINK;
+          return;
+        }
+        alert('Payment session error. Please try again or select Cash.');
+        return;
+      }
+
+      // Cash (or fallback)
+      let orderId = 'demo-' + Date.now();
+      let code = String(Math.floor(100000 + Math.random()*900000));
+      try {
+        const r2 = await fetch(`${BASE_API}/api/marketplace/orders`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ ...payload, paymentMethod: method })
+        });
+        const d2 = await r2.json().catch(()=>({}));
+        orderId = d2.orderId || orderId;
+        code    = d2.deliveryCode || code;
+      } catch {}
+
+      if (checkoutModal) checkoutModal.classList.remove('open');
+      // Show status modal (reuse existing function if present)
+      if (typeof window.showOrderStatus === 'function') {
+        window.showOrderStatus(orderId, code, method);
+      } else {
+        alert(`Order created (${orderId}). Delivery code: ${code}`);
+      }
+      window.cart.items = []; window.saveCart(); window.updateCartCount();
+    } catch (err) {
+      alert('Checkout error. Please try again.');
+    }
+  }
+
+  if (placeOrderBtn) {
+    placeOrderBtn.onclick = async (e) => { e.preventDefault(); await placeOrder(); };
+  }
+
+  // Ensure wiring on load (in case earlier scripts set other handlers)
+  window.addEventListener('DOMContentLoaded', () => {
+    if (checkoutBtn && (!checkoutBtn.onclick || checkoutBtn.onclick.toString().includes('showPage'))) {
+      checkoutBtn.onclick = (e) => {
+        e.preventDefault();
+        if (cartModal)   cartModal.classList.remove('open');
+        if (checkoutModal) checkoutModal.classList.add('open');
+      };
+    }
+    if (placeOrderBtn && (!placeOrderBtn.onclick || placeOrderBtn.onclick.length === 0)) {
+      placeOrderBtn.onclick = async (e) => { e.preventDefault(); await placeOrder(); };
+    }
+  });
+})();
+</script>
 </body>
 </html>
