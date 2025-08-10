@@ -1104,7 +1104,7 @@
       cartTotalEl.textContent = total.toFixed(2);
     }
 
-   placeOrderBtn.onclick = async () => {
+ placeOrderBtn.onclick = async () => {
   const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
   if (!chkTerms.checked){ alert('Please accept the Terms'); return; }
   if (!chkAddress.value.trim()){ alert('Enter delivery address'); return; }
@@ -1116,45 +1116,47 @@
   };
 
   if (method === 'card') {
-    // Create Stripe Checkout session on backend and redirect
-    try{
+    try {
       const r = await fetch(`${BASE_API}/api/payments/checkout-session`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           items: payload.items,
-          // optional metadata you may handle on backend:
           address: payload.address,
           successUrl: window.location.origin + '/?checkout=success',
-          cancelUrl: window.location.origin + '/?checkout=cancel',
+          cancelUrl: window.location.origin + '/?checkout=cancel'
         })
       });
       const d = await r.json().catch(()=>({}));
-      if (d.url) {
-        // clear cart before redirect to avoid duplicate orders on back
+      if (d?.url) {
         cart.items = []; saveCart(); updateCartCount();
         window.location.href = d.url;
         return;
       }
-      alert('Payment session error. Falling back to demo order.');
-    }catch{
-      alert('Payment session error. Falling back to demo order.');
+      if ((d?.id || d?.sessionId) && window.Stripe) {
+        const stripe = window.Stripe(STRIPE_PK);
+        cart.items = []; saveCart(); updateCartCount();
+        await stripe.redirectToCheckout({ sessionId: d.id || d.sessionId });
+        return;
+      }
+      alert('Payment session error. Falling back to cash/demo flow.');
+    } catch {
+      alert('Payment session error. Falling back to cash/demo flow.');
     }
   }
 
-  // Cash (or fallback): create order and show delivery code/status
-  let orderId, code;
-  try{
+  // Cash (or fallback)
+  let orderId = 'demo-' + Date.now();
+  let code = String(Math.floor(100000 + Math.random()*900000));
+  try {
     const r2 = await fetch(`${BASE_API}/api/marketplace/orders`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ ...payload, paymentMethod: method })
     });
     const d2 = await r2.json().catch(()=>({}));
-    orderId = d2.orderId || ('demo-' + Date.now());
-    code = d2.deliveryCode || String(Math.floor(100000 + Math.random()*900000));
-  }catch{
-    orderId = 'demo-' + Date.now();
-    code = String(Math.floor(100000 + Math.random()*900000));
-  }
+    orderId = d2.orderId || orderId;
+    code = d2.deliveryCode || code;
+  } catch {}
 
   checkoutModal.classList.remove('open');
   showOrderStatus(orderId, code, method);
