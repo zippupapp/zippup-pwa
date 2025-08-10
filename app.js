@@ -408,69 +408,216 @@ if (!resp.ok || !data?.success) throw new Error(data?.error || 'alert_failed');
     });
   }
 
-  showServiceDetail(service) {
-    const modal = document.getElementById('service-modal');
-    const title = document.getElementById('service-title');
-    const details = document.getElementById('service-details');
-    if (!modal || !title || !details) return;
-
-    title.textContent = service.name;
-
-    const isEmergencyType = ['POLICE','FIRE','AMBULANCE','ROADSIDE'].includes(service.category);
-    if (isEmergencyType) {
-      details.innerHTML = `
-        <div style="text-align:center; margin-bottom:16px;">
-          <div style="font-size:3rem; margin-bottom:8px;">${service.icon}</div>
-          <h3>${service.name}</h3>
-          <p style="color: var(--text-secondary); margin: 8px 0;">${service.description || 'Emergency service'}</p>
-        </div>
-        <div style="margin-bottom: 16px;">
-          <p>We’ll find the nearest available provider. You can request instantly (90s accept window) or schedule.</p>
-        </div>
-        <div style="display:flex; gap:12px;">
-          <button class="primary-btn" id="find-providers-btn" style="flex:1;">Find Nearest Providers</button>
-          <button class="secondary-btn" id="close-service-btn" style="flex:1;">Close</button>
-        </div>
-      `;
-      modal.classList.add('active');
-      document.body.classList.add('no-scroll');
-
-      document.getElementById('find-providers-btn').onclick = async () => {
-        const { lat, lng } = await this.getCurrentPositionSafe();
-        const providers = await this.fetchProvidersForCategory(service.category, lat, lng);
-        this.showProvidersModal(service, providers, lat, lng);
-      };
-      document.getElementById('close-service-btn').onclick = () => this.hideServiceModal();
-      return;
+openBookingForm(providerId, category) {
+  document.getElementById('bf-provider-id').value = providerId || '';
+  document.getElementById('bf-category').value = category || '';
+  document.getElementById('booking-form-modal').classList.add('active');
+  document.body.classList.add('no-scroll');
+}
+closeBookingForm() {
+  document.getElementById('booking-form-modal').classList.remove('active');
+  document.body.classList.remove('no-scroll');
+}
+initBookingUI() {
+  const closeBtn = document.getElementById('close-booking-form');
+  if (closeBtn) closeBtn.onclick = () => this.closeBookingForm();
+  const form = document.getElementById('booking-form');
+  if (form) form.onsubmit = async (e) => {
+    e.preventDefault();
+    const providerId = document.getElementById('bf-provider-id').value;
+    const category = document.getElementById('bf-category').value;
+    const date = document.getElementById('bf-date').value;
+    const time = document.getElementById('bf-time').value;
+    const address = document.getElementById('bf-address').value || null;
+    const meeting = document.getElementById('bf-meeting').value || 'at_user';
+    const notes = document.getElementById('bf-notes').value || '';
+    const when = date && time ? `${date} ${time}` : null;
+    const { lat, lng } = await this.getCurrentPositionSafe();
+    try {
+      const payload = { providerId, category, when, address, latitude: lat, longitude: lng, notes, meeting };
+      const data = await this.apiJson('/api/bookings', { method: 'POST', body: JSON.stringify(payload) });
+      this.showNotification('Booking created. Waiting for provider...', 'success');
+      this.closeBookingForm();
+      if (data?.bookingId) this.pollBookingStatus(data.bookingId, 90);
+    } catch {
+      this.showNotification('Failed to create booking', 'error');
     }
-
-    details.innerHTML = `
-      <div style="text-align: center; margin-bottom: 24px;">
-        <div style="font-size: 4rem; margin-bottom: 16px;">${service.icon}</div>
-        <h3>${service.name}</h3>
-        <p style="color: var(--text-secondary); margin: 8px 0;">${service.description || ''}</p>
-        <p style="color: var(--primary); font-weight: 600;">
-          ${this.formatCurrency(service.basePrice || 0)}
-        </p>
-      </div>
-      <div style="margin-bottom: 24px;">
-        <h4 style="margin-bottom: 12px;">Available Services:</h4>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-          ${(service.examples || []).map(example =>
-            `<span style="background: var(--background-secondary); padding: 4px 8px; border-radius: 6px; font-size: 0.875rem;">${example}</span>`
-          ).join('')}
+  };
+}
+openManageBookings() {
+  document.getElementById('manage-bookings-modal').classList.add('active');
+  document.body.classList.add('no-scroll');
+  this.loadMyBookings();
+}
+closeManageBookings() {
+  document.getElementById('manage-bookings-modal').classList.remove('active');
+  document.body.classList.remove('no-scroll');
+}
+async loadMyBookings() {
+  const list = document.getElementById('bookings-list');
+  list.innerHTML = 'Loading...';
+  try {
+    const resp = await this.api('/api/bookings?role=customer', { method: 'GET' });
+    const data = await resp.json();
+    const bookings = Array.isArray(data?.bookings) ? data.bookings : (Array.isArray(data) ? data : []);
+    if (!bookings.length) { list.innerHTML = '<div>No bookings yet</div>'; return; }
+    list.innerHTML = bookings.map(b => `
+      <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+        <div><strong>${b.category || 'Service'}</strong> • ${b.status}</div>
+        <div style="font-size:0.9rem;color:var(--text-secondary);">${b.address || ''}</div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          ${b.status === 'PENDING' ? `<button class="secondary-btn" onclick="app.cancelBooking('${b.id}')">Cancel</button>` : ''}
+          <button class="secondary-btn" onclick="app.openTracking('${b.id}')">Track</button>
         </div>
       </div>
-      <div style="display: flex; gap: 12px;">
-        <button class="primary-btn" onclick="app.bookService('${service.id}')" style="flex: 1;">Book Now</button>
-        <button class="secondary-btn" id="close-service-btn2" style="flex: 1;">Close</button>
+    `).join('');
+  } catch {
+    list.innerHTML = '<div>Failed to load bookings</div>';
+  }
+}
+async cancelBooking(bookingId) {
+  try {
+    await this.apiJson(`/api/bookings/${bookingId}`, { method: 'PATCH', body: JSON.stringify({ status: 'CANCELLED' }) });
+    this.showNotification('Booking cancelled', 'success');
+    this.loadMyBookings();
+  } catch {
+    this.showNotification('Failed to cancel booking', 'error');
+  }
+}
+
+async openTracking(bookingId) {
+  if (!bookingId) return;
+  const modal = document.getElementById('tracking-modal');
+  const mapEl = document.getElementById('tracking-map');
+  const statusEl = document.getElementById('tracking-status');
+  const etaEl = document.getElementById('tracking-eta');
+  modal.classList.add('active'); document.body.classList.add('no-scroll');
+
+  const booking = await this.fetchBooking(bookingId);
+  if (!booking) { statusEl.textContent = 'Status: not found'; return; }
+
+  if (!this._tracking) this._tracking = {};
+  const centerLat = booking.provider_lat ?? booking.latitude ?? 6.5244;
+  const centerLng = booking.provider_lng ?? booking.longitude ?? 3.3792;
+  if (this._tracking.map) this._tracking.map.remove();
+  const map = L.map(mapEl).setView([centerLat, centerLng], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'© OpenStreetMap' }).addTo(map);
+
+  const userMarker = (booking.latitude && booking.longitude) ? L.marker([booking.latitude, booking.longitude], { title: 'You' }).addTo(map) : null;
+  const providerMarker = L.marker([centerLat, centerLng], { title: 'Provider' }).addTo(map);
+  const bounds = []; if (userMarker) bounds.push(userMarker.getLatLng()); bounds.push(providerMarker.getLatLng());
+  if (bounds.length) map.fitBounds(bounds, { padding: [40,40] });
+
+  this._tracking = { bookingId, map, markers: { userMarker, providerMarker }, intervalId: null };
+
+  const closeBtn = document.getElementById('close-tracking');
+  if (closeBtn) closeBtn.onclick = () => this.closeTracking();
+  const cancelBtn = document.getElementById('tracking-cancel');
+  if (cancelBtn) cancelBtn.onclick = () => this.cancelBooking(bookingId);
+  const recenterBtn = document.getElementById('tracking-recenter');
+  if (recenterBtn) recenterBtn.onclick = () => {
+    const pts = []; const m = this._tracking.markers;
+    if (m.userMarker) pts.push(m.userMarker.getLatLng()); pts.push(m.providerMarker.getLatLng());
+    if (pts.length) this._tracking.map.fitBounds(L.latLngBounds(pts), { padding: [40,40] });
+  };
+
+  const update = async () => {
+    const b = await this.fetchBooking(bookingId); if (!b) return;
+    statusEl.textContent = `Status: ${b.status || '—'}`; etaEl.textContent = `ETA: ${b.eta_min != null ? `${b.eta_min} min` : '—'}`;
+    if (b.provider_lat != null && b.provider_lng != null) this._tracking.markers.providerMarker.setLatLng([b.provider_lat, b.provider_lng]);
+    if (b.status === 'COMPLETED' || b.status === 'CANCELLED') { this.showNotification(`Booking ${b.status.toLowerCase()}`,(b.status==='COMPLETED')?'success':'error'); this.closeTracking(); }
+  };
+  await update(); this._tracking.intervalId = setInterval(update, 4000);
+}
+closeTracking() {
+  const modal = document.getElementById('tracking-modal');
+  modal.classList.remove('active'); document.body.classList.remove('no-scroll');
+  if (this._tracking?.intervalId) clearInterval(this._tracking.intervalId);
+  if (this._tracking?.map) this._tracking.map.remove();
+  this._tracking = null;
+}
+async fetchBooking(bookingId) {
+  try {
+    const resp = await this.api(`/api/bookings/${bookingId}`, { method: 'GET' });
+    const d = await resp.json();
+    return {
+      id: d.id || d.bookingId || bookingId,
+      status: d.status || 'PENDING',
+      address: d.address || null,
+      latitude: d.latitude ?? d.user_lat ?? null,
+      longitude: d.longitude ?? d.user_lng ?? null,
+      provider_lat: d.provider_lat ?? null,
+      provider_lng: d.provider_lng ?? null,
+      eta_min: d.eta_min ?? null,
+      tracking_url: d.trackingUrl || d.tracking_url || null
+    };
+  } catch { return null; }
+}
+
+  showServiceDetail(service) {
+  const modal = document.getElementById('service-modal');
+  const title = document.getElementById('service-title');
+  const details = document.getElementById('service-details');
+  title.textContent = service.name;
+
+  const isEmergencyType = ['POLICE','FIRE','AMBULANCE','ROADSIDE'].includes(service.category);
+  if (isEmergencyType) {
+    details.innerHTML = `
+      <div style="text-align:center; margin-bottom:16px;">
+        <div style="font-size:3rem; margin-bottom:8px;">${service.icon}</div>
+        <h3>${service.name}</h3>
+        <p style="color: var(--text-secondary); margin: 8px 0;">${service.description || 'Emergency service'}</p>
+      </div>
+      <div style="margin-bottom: 16px;"><p>We’ll find nearest providers. You can request instantly (90s acceptance) or schedule.</p></div>
+      <div style="display:flex; gap:12px;">
+        <button class="primary-btn" id="find-providers-btn" style="flex:1;">Find Nearest Providers</button>
+        <button class="secondary-btn" id="close-service-btn" style="flex:1;">Close</button>
       </div>
     `;
-    modal.classList.add('active');
-    document.body.classList.add('no-scroll');
-
-    document.getElementById('close-service-btn2').onclick = () => this.hideServiceModal();
+    modal.classList.add('active'); document.body.classList.add('no-scroll');
+    document.getElementById('find-providers-btn').onclick = async () => {
+      const { lat, lng } = await this.getCurrentPositionSafe();
+      const providers = await this.fetchProvidersForCategory(service.category, lat, lng);
+      this.showProvidersModal(service, providers, lat, lng);
+    };
+    document.getElementById('close-service-btn').onclick = () => this.hideServiceModal();
+    return;
   }
+
+async getCurrentPositionSafe(){ /* as provided earlier */ }
+computeDistanceKm(lat1,lon1,lat2,lon2){ /* as provided earlier */ }
+formatCurrency(amount,currency='USD'){ /* as provided earlier */ }
+
+this.initBookingUI();
+const mbClose = document.getElementById('close-manage-bookings');
+if (mbClose) mbClose.onclick = () => this.closeManageBookings();
+const bookingsNav = document.querySelector('[data-page="bookings"]');
+if (bookingsNav) bookingsNav.addEventListener('click', () => this.openManageBookings());
+    
+  // Non-emergency layout
+  details.innerHTML = `
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="font-size: 4rem; margin-bottom: 16px;">${service.icon}</div>
+      <h3>${service.name}</h3>
+      <p style="color: var(--text-secondary); margin: 8px 0;">${service.description || ''}</p>
+      <p style="color: var(--primary); font-weight: 600;">${this.formatCurrency(service.basePrice || 0)}</p>
+    </div>
+    <div style="margin-bottom: 24px;">
+      <h4 style="margin-bottom: 12px;">Available Services:</h4>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        ${(service.examples || []).map(example =>
+          `<span style="background: var(--background-secondary); padding: 4px 8px; border-radius: 6px; font-size: 0.875rem;">${example}</span>`
+        ).join('')}
+      </div>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <button class="primary-btn" onclick="app.bookService('${service.id}')" style="flex: 1;">Book Now</button>
+      <button class="secondary-btn" id="close-service-btn2" style="flex: 1;">Close</button>
+    </div>
+  `;
+  modal.classList.add('active'); document.body.classList.add('no-scroll');
+  document.getElementById('close-service-btn2').onclick = () => this.hideServiceModal();
+}
 
   hideServiceModal() {
     const modal = document.getElementById('service-modal');
@@ -479,117 +626,142 @@ if (!resp.ok || !data?.success) throw new Error(data?.error || 'alert_failed');
     document.body.classList.remove('no-scroll');
   }
 
-  showProvidersModal(service, providers, userLat, userLng) {
-    const modal = document.getElementById('service-modal');
-    const title = document.getElementById('service-title');
-    const details = document.getElementById('service-details');
-    if (!modal || !title || !details) return;
-
-    title.textContent = `${service.name} - Providers`;
-
-    if (!providers.length) {
-      details.innerHTML = `
-        <p>No providers found near you. Please try again or schedule.</p>
-        <div style="display:flex; gap:12px; margin-top:12px;">
-          <button class="secondary-btn" onclick="app.hideServiceModal()">Close</button>
+<!-- Booking Form Modal -->
+<div id="booking-form-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Book Service</h3>
+      <button class="close-btn" id="close-booking-form"><span class="material-icons">close</span></button>
+    </div>
+    <div class="modal-body">
+      <form id="booking-form" class="auth-form">
+        <input type="hidden" id="bf-provider-id">
+        <input type="hidden" id="bf-category">
+        <div class="form-group"><label>Date</label><input type="date" id="bf-date" required></div>
+        <div class="form-group"><label>Time</label><input type="time" id="bf-time" required></div>
+        <div class="form-group"><label>Address (optional)</label><input type="text" id="bf-address" placeholder="Enter address or leave blank to use GPS"></div>
+        <div class="form-group"><label>Meeting preference</label>
+          <select id="bf-meeting"><option value="at_user">Meet at my address</option><option value="at_provider">I will come to provider</option></select>
         </div>
-      `;
-      return;
-    }
+        <div class="form-group"><label>Notes (optional)</label><input type="text" id="bf-notes" placeholder="Extra info for provider"></div>
+        <button type="submit" class="primary-btn">Submit Booking</button>
+      </form>
+    </div>
+  </div>
+</div>
 
-    const sorted = providers
-      .map(p => ({ ...p, distance: this.computeDistanceKm(userLat, userLng, p.lat, p.lng) }))
-      .sort((a, b) => (a.distance ?? 9999) - (b.distance ?? 9999))
-      .slice(0, 10);
+<!-- Manage Bookings Modal -->
+<div id="manage-bookings-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>My Bookings</h3>
+      <button class="close-btn" id="close-manage-bookings"><span class="material-icons">close</span></button>
+    </div>
+    <div class="modal-body"><div id="bookings-list" style="display:flex;flex-direction:column;gap:12px;"></div></div>
+  </div>
+</div>
 
-    const rows = sorted.map(p => `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid var(--border); border-radius:8px;">
+<!-- Tracking Modal -->
+<div id="tracking-modal" class="modal">
+  <div class="modal-content" style="max-width: 95vw; width: 100%; height: 85vh;">
+    <div class="modal-header">
+      <h3>Live Tracking</h3>
+      <button class="close-btn" id="close-tracking"><span class="material-icons">close</span></button>
+    </div>
+    <div class="modal-body" style="display:flex; flex-direction:column; gap:12px; height: calc(85vh - 64px);">
+      <div id="tracking-map" style="flex:1; width:100%; border-radius:12px; border:1px solid var(--border);"></div>
+      <div id="tracking-info" style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <div style="font-weight:600;">${p.name || 'Provider'}</div>
-          <div style="font-size:0.9rem; color:var(--text-secondary);">
-            ${p.distance != null ? `${p.distance} km` : ''} • ⭐ ${p.rating || '—'} • ${p.jobs || 0} jobs
-          </div>
-          <div style="font-size:0.9rem; color:var(--primary);">
-            ${this.formatCurrency(p.basePrice || 0, p.currency || 'USD')}
-          </div>
+          <div id="tracking-status" style="font-weight:600;">Status: —</div>
+          <div id="tracking-eta" style="font-size:0.9rem; color:var(--text-secondary);">ETA: —</div>
         </div>
         <div style="display:flex; gap:8px;">
-          <button class="secondary-btn" onclick="app.requestProvider('${p.id}','${service.category}','instant')">Instant Request</button>
-          <button class="secondary-btn" onclick="app.requestProvider('${p.id}','${service.category}','schedule')">Schedule</button>
+          <button class="secondary-btn" id="tracking-cancel">Cancel</button>
+          <button class="secondary-btn" id="tracking-recenter">Recenter</button>
         </div>
       </div>
-    `).join('');
+    </div>
+  </div>
+</div>
 
+  showProvidersModal(service, providers, userLat, userLng) {
+  const modal = document.getElementById('service-modal');
+  const title = document.getElementById('service-title');
+  const details = document.getElementById('service-details');
+  title.textContent = `${service.name} - Providers`;
+  if (!providers.length) {
     details.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:12px; max-height:50vh; overflow:auto;">
-        ${rows}
-      </div>
-      <div style="display:flex; gap:12px; margin-top:12px;">
-        <button class="secondary-btn" onclick="app.hideServiceModal()">Close</button>
-      </div>
-    `;
-    modal.classList.add('active');
-    document.body.classList.add('no-scroll');
+      <p>No providers found near you. Please try again or schedule.</p>
+      <div style="display:flex; gap:12px; margin-top:12px;"><button class="secondary-btn" onclick="app.hideServiceModal()">Close</button></div>`;
+    return;
   }
+  const sorted = providers.map(p => ({...p, distance: this.computeDistanceKm(userLat, userLng, p.lat, p.lng)}))
+                          .sort((a,b)=>(a.distance ?? 9999)-(b.distance ?? 9999)).slice(0,10);
+  const rows = sorted.map(p => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid var(--border); border-radius:8px;">
+      <div>
+        <div style="font-weight:600;">${p.name || 'Provider'}</div>
+        <div style="font-size:0.9rem; color:var(--text-secondary);">
+          ${p.distance != null ? `${p.distance} km` : ''} • ⭐ ${p.rating || '—'} • ${p.jobs || 0} jobs
+        </div>
+        <div style="font-size:0.9rem; color:var(--primary);">
+          ${this.formatCurrency(p.basePrice || 0, p.currency || 'USD')}
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="secondary-btn" onclick="app.requestProvider('${p.id}','${service.category}','instant')">Instant Request</button>
+        <button class="secondary-btn" onclick="app.openBookingForm('${p.id}','${service.category}')">Schedule</button>
+      </div>
+    </div>
+  `).join('');
+  details.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:12px; max-height:50vh; overflow:auto;">${rows}</div>
+    <div style="display:flex; gap:12px; margin-top:12px;"><button class="secondary-btn" onclick="app.hideServiceModal()">Close</button></div>`;
+  modal.classList.add('active'); document.body.classList.add('no-scroll');
+}
 
-  async requestProvider(providerId, category, mode) {
-    try {
-      const { lat, lng } = await this.getCurrentPositionSafe();
-      let when = null;
-      let address = '';
-      let notes = '';
-
-      if (mode === 'schedule') {
-        when = prompt('Enter date/time (e.g., 2025-08-09 18:00):', '');
-        address = prompt('Enter address (optional):', '') || '';
-      } else {
-        address = prompt('Enter address (optional, leave blank to use current location):', '') || '';
-      }
-      notes = prompt('Notes for provider (optional):', '') || '';
-
-      const payload = {
-        providerId,
-        category,        // 'POLICE' | 'FIRE' | 'AMBULANCE' | 'ROADSIDE' | others
-        when,            // null for instant
-        address: address || null,
-        latitude: lat,
-        longitude: lng,
-        notes,
-        acceptanceTimeoutSec: 90
-      };
-
-      const data = await this.apiJson('/api/bookings', { method: 'POST', body: JSON.stringify(payload) });
-
-      this.showNotification('Request sent. Waiting for provider response (90s)...', 'info');
-      if (data?.bookingId) this.pollBookingStatus(data.bookingId, 90);
-    } catch (e) {
-      this.showNotification('Failed to create request. Please try again.', 'error');
+async requestProvider(providerId, category, mode) {
+  try {
+    const { lat, lng } = await this.getCurrentPositionSafe();
+    let when = null, address = '', notes = '';
+    if (mode === 'schedule') {
+      when = prompt('Enter date/time (e.g., 2025-08-12 18:00):', '');
+      address = prompt('Enter address (optional):', '') || '';
+    } else {
+      address = prompt('Enter address (optional, leave blank to use current location):', '') || '';
     }
+    notes = prompt('Notes for provider (optional):', '') || '';
+    const payload = { providerId, category, when, address: address || null, latitude: lat, longitude: lng, notes, acceptanceTimeoutSec: 90 };
+    const data = await this.apiJson('/api/bookings', { method: 'POST', body: JSON.stringify(payload) });
+    this.showNotification('Request sent. Waiting for provider (90s)...', 'info');
+    if (data?.bookingId) this.pollBookingStatus(data.bookingId, 90);
+  } catch {
+    this.showNotification('Failed to create request. Please try again.', 'error');
   }
+}
 
-  async pollBookingStatus(bookingId, timeoutSec = 90) {
-    const deadline = Date.now() + timeoutSec * 1000;
-    const interval = setInterval(async () => {
-      if (Date.now() > deadline) {
+async pollBookingStatus(bookingId, timeoutSec = 90) {
+  const deadline = Date.now() + timeoutSec * 1000;
+  const interval = setInterval(async () => {
+    if (Date.now() > deadline) {
+      clearInterval(interval);
+      this.showNotification('Provider delayed. Try others.', 'error');
+      return;
+    }
+    try {
+      const resp = await this.api(`/api/bookings/${bookingId}`, { method: 'GET' });
+      const data = await resp.json();
+      if (data?.status === 'ACCEPTED') {
         clearInterval(interval);
-        this.showNotification('Provider delayed. Try others.', 'error');
-        return;
+        this.showNotification('Provider accepted. They are on the way!', 'success');
+        this.openTracking(bookingId);
+      } else if (data?.status === 'DECLINED') {
+        clearInterval(interval);
+        this.showNotification('Provider declined. Showing similar options...', 'error');
       }
-      try {
-        const res = await this.api(`/api/bookings/${bookingId}`, { method: 'GET' });
-        const data = await res.json();
-        if (data?.status === 'ACCEPTED') {
-          clearInterval(interval);
-          this.showNotification('Provider accepted. They are on the way!', 'success');
-          if (data.trackingUrl) window.location.href = data.trackingUrl;
-          setTimeout(() => this.promptRating(bookingId), 30 * 60 * 1000); // placeholder
-        } else if (data?.status === 'DECLINED') {
-          clearInterval(interval);
-          this.showNotification('Provider declined. Showing similar options...', 'error');
-        }
-      } catch {}
-    }, 3000);
-  }
+    } catch {}
+  }, 3000);
+}
 
   async promptRating(bookingId) {
     const r = prompt('Rate your provider (1-5):', '');
