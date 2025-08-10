@@ -447,7 +447,7 @@
     const profileBtn = document.getElementById('profileBtn');
     const profileMenu= document.getElementById('profileMenu');
     notifBtn.onclick = () => showPage('home') || alert('Notifications (coming soon)');
-    cartBtn.onclick  = () => { showPage('marketplace'); renderCart(); cartModal.classList.add('open'); };
+    cartBtn.onclick = () => { showPage('marketplace'); renderCart(); cartModal.classList.add('open'); };
     profileBtn.onclick = (e) => { e.stopPropagation(); profileMenu.style.display = profileMenu.style.display==='block' ? 'none' : 'block'; };
     document.addEventListener('click', () => profileMenu.style.display='none');
     document.getElementById('menuProfile').onclick = () => { profileMenu.style.display='none'; showPage('profile'); };
