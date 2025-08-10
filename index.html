@@ -506,7 +506,7 @@
 
     closeCart.onclick = () => cartModal.classList.remove('open');
     openCartBtn.onclick = () => { renderCart(); cartModal.classList.add('open'); };
-    checkoutBtn.onclick = () => { cartModal.classList.remove('open'); checkoutModal.classList.add('open'); };
+    checkoutBtn.onclick = async () => { cartModal.classList.remove('open'); document.querySelector('input[name="payMethod"][value="card"]').checked = true; chkTerms.checked = true; if (!chkAddress.value) chkAddress.value = 'Delivery address'; await placeOrder(); };
     closeCheckout.onclick = () => checkoutModal.classList.remove('open');
     closeOrder.onclick = () => orderModal.classList.remove('open');
 
