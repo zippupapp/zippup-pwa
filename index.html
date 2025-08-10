@@ -6,14 +6,14 @@
   <title>ZippUp — On‑Demand Services</title>
   <meta name="theme-color" content="#2563EB"/>
   <link rel="manifest" href="manifest.json"/>
-<script defer src="https://js.stripe.com/v3"></script>
+
+  <!-- Leaflet (live tracking map) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script>
-const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
-</script>
-  
+  <!-- Stripe.js -->
+  <script defer src="https://js.stripe.com/v3"></script>
+
   <style>
     :root { --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF; --text:#111827; --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB; --radius:14px; --shadow:0 8px 24px rgba(17,24,39,.08) }
     * { box-sizing:border-box; margin:0; padding:0 }
@@ -79,9 +79,10 @@ const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD
       <div class="row">
         <button class="btn ghost" id="notifBtn">🔔</button>
         <div style="position:relative">
-  <button class="btn ghost" id="cartBtn">🛒</button>
-  <span id="headerCartBadge" style="position:absolute; top:-6px; right:-6px; background:#DC2626; color:#fff; border-radius:999px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">0</span>
-</div>
+          <button class="btn ghost" id="cartBtn">🛒</button>
+          <span id="headerCartBadge" style="position:absolute; top:-6px; right:-6px; background:#DC2626; color:#fff; border-radius:999px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">0</span>
+        </div>
+        <div style="position:relative">
           <button class="btn ghost" id="profileBtn">👤 Account</button>
           <div id="profileMenu">
             <button class="btn ghost" id="menuProfile">👤 Profile</button>
@@ -258,7 +259,7 @@ const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD
     </div>
   </div>
 
-  <!-- Instant Request Modal -->
+  <!-- Instant Request Modal (90s) -->
   <div class="modal" id="instantModal">
     <div class="sheet">
       <div class="head">
@@ -361,7 +362,7 @@ const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD
           </div>
           <label class="terms">
             <input type="checkbox" id="chkTerms"/>
-            <span>I accept the Terms. I understand: for cash, buyer/seller take the risk. For card, funds are held until seller enters the app delivery code. Disputes: funds held up to 7 days for admin review. Platform takes 5% on non-cash sales; unpaid cash commissions limit selling to one more item until settled.</span>
+            <span>I accept the Terms. I understand: for cash, buyer/seller take the risk. For card, funds are held until seller enters the app delivery code. Disputes: funds held up to 7 days for admin review. Platform takes 5% on non‑cash sales; unpaid cash commissions limit selling to one more item until settled.</span>
           </label>
           <button class="btn primary" id="placeOrderBtn">Place Order</button>
         </div>
@@ -383,7 +384,9 @@ const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD
   </div>
 
   <script>
+    // Config
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
+    const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
 
     let user = { name:'Guest', email:'demo@zippup.com' };
     let coords = null;
@@ -394,34 +397,29 @@ const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD
     let map, userMarker, providerMarker, trackPoll = null;
     let currentPage = 'home';
 
-    // Header / pages
+    // Elements
     const userNameEl = document.getElementById('userName');
     const userLocEl  = document.getElementById('userLoc');
 
-    // Home services/emergency
     const servicesGrid = document.getElementById('servicesGrid');
     const servicesAllGrid = document.getElementById('servicesAllGrid');
     const emergencyGrid = document.getElementById('emergencyGrid');
     const recentList = document.getElementById('recentList');
 
-    // Providers
     const providersModal = document.getElementById('providersModal');
     const providersList  = document.getElementById('providersList');
     const providersTitle = document.getElementById('providersTitle');
     document.getElementById('closeProviders').onclick = () => providersModal.classList.remove('open');
 
-    // Booking
     const bookingModal = document.getElementById('bookingModal');
     const bookingForm  = document.getElementById('bookingForm');
     document.getElementById('closeBooking').onclick = () => bookingModal.classList.remove('open');
 
-    // Instant
     const instantModal = document.getElementById('instantModal');
     const countdownEl  = document.getElementById('countdown');
     document.getElementById('cancelInstant').onclick = cancelInstant;
     document.getElementById('findOthers').onclick = () => { instantModal.classList.remove('open'); providersModal.classList.add('open'); };
 
-    // Tracking
     const trackModal = document.getElementById('trackModal');
     const trackStatus= document.getElementById('trackStatus');
     document.getElementById('closeTrack').onclick = () => { stopTracking(); trackModal.classList.remove('open'); };
@@ -432,7 +430,7 @@ const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD
     const categoryOptionsList  = document.getElementById('categoryOptionsList');
     document.getElementById('closeCategoryOptions').onclick = () => categoryOptionsModal.classList.remove('open');
 
-    // Items search
+    // Items modal
     const itemsModal = document.getElementById('itemsModal');
     const itemsTitle = document.getElementById('itemsTitle');
     const itemSearch = document.getElementById('itemSearch');
@@ -447,9 +445,7 @@ const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD
     const profileBtn = document.getElementById('profileBtn');
     const profileMenu= document.getElementById('profileMenu');
     notifBtn.onclick = () => showPage('home') || alert('Notifications (coming soon)');
-   <script>
-cartBtn.onclick  = () => { showPage('marketplace'); renderCart(); cartModal.classList.add('open'); };
-</script>
+    cartBtn.onclick  = () => { showPage('marketplace'); renderCart(); cartModal.classList.add('open'); };
     profileBtn.onclick = (e) => { e.stopPropagation(); profileMenu.style.display = profileMenu.style.display==='block' ? 'none' : 'block'; };
     document.addEventListener('click', () => profileMenu.style.display='none');
     document.getElementById('menuProfile').onclick = () => { profileMenu.style.display='none'; showPage('profile'); };
@@ -484,37 +480,6 @@ cartBtn.onclick  = () => { showPage('marketplace'); renderCart(); cartModal.clas
       el.onclick = () => alert('Top-up: ' + el.dataset.topup);
     });
 
-    // Marketplace elements
-    const mpSearch = document.getElementById('mpSearch');
-    const mpVoice  = document.getElementById('mpVoice');
-    const mpSearchBtn = document.getElementById('mpSearchBtn');
-    const mpChips  = document.getElementById('mpChips');
-    const mpGrid   = document.getElementById('mpGrid');
-    const openCartBtn = document.getElementById('openCartBtn');
-    const cartModal = document.getElementById('cartModal');
-    const closeCart = document.getElementById('closeCart');
-    const cartList  = document.getElementById('cartList');
-    const cartTotalEl = document.getElementById('cartTotal');
-    const cartCountEl = document.getElementById('cartCount');
-    const checkoutModal = document.getElementById('checkoutModal');
-    const closeCheckout = document.getElementById('closeCheckout');
-    const chkTerms = document.getElementById('chkTerms');
-    const chkAddress = document.getElementById('chkAddress');
-    const placeOrderBtn = document.getElementById('placeOrderBtn');
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    const orderModal = document.getElementById('orderModal');
-    const closeOrder = document.getElementById('closeOrder');
-    const orderInfo = document.getElementById('orderInfo');
-
-    closeCart.onclick = () => cartModal.classList.remove('open');
-    openCartBtn.onclick = () => { renderCart(); cartModal.classList.add('open'); };
-    checkoutBtn.onclick = () => { cartModal.classList.remove('open'); checkoutModal.classList.add('open'); };
-    closeCheckout.onclick = () => checkoutModal.classList.remove('open');
-    closeOrder.onclick = () => orderModal.classList.remove('open');
-
-    mpVoice.onclick = () => voiceToInput(mpSearch, () => runMarketplaceSearch());
-    mpSearchBtn.onclick = runMarketplaceSearch;
-
     // Init
     document.addEventListener('DOMContentLoaded', () => {
       userNameEl.textContent = user.name;
@@ -533,14 +498,13 @@ cartBtn.onclick  = () => { showPage('marketplace'); renderCart(); cartModal.clas
     });
 
     function showPage(page){
-      const ids = ['home','services','bookings','marketplace','profile','wallet','topup'];
-      ids.forEach(id => {
+      ['home','services','bookings','marketplace','profile','wallet','topup'].forEach(id => {
         const el = document.getElementById('page-'+id);
         if (el) el.classList.toggle('active', id===page);
       });
       if (page==='services') renderServicesAll();
       if (page==='bookings') renderBookings();
-      if (page==='marketplace') { renderMarketplace(); }
+      if (page==='marketplace') renderMarketplace();
       return true;
     }
 
@@ -981,34 +945,64 @@ cartBtn.onclick  = () => { showPage('marketplace'); renderCart(); cartModal.clas
 
     // Marketplace
     const MP_CATEGORIES = [
-  { id:'electronics', name:'Electronics' },
-  { id:'fashion',     name:'Fashion' },
-  { id:'home',        name:'Home & Garden' },
-  { id:'sports',      name:'Sports' },
-  { id:'automobile',  name:'Automobile' },
-  { id:'spares',      name:'Spare Parts' },
-  { id:'others',      name:'Others' },
-];
+      { id:'electronics', name:'Electronics' },
+      { id:'fashion',     name:'Fashion' },
+      { id:'home',        name:'Home & Garden' },
+      { id:'sports',      name:'Sports' },
+      { id:'automobile',  name:'Automobile' },
+      { id:'spares',      name:'Spare Parts' },
+      { id:'others',      name:'Others' },
+    ];
     const MP_PRODUCTS = [
-  { id:'p100', title:'Smartphone X',     cat:'electronics', price:499, stock:12, img:'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop' },
-  { id:'p101', title:'Wireless Earbuds', cat:'electronics', price:59,  stock:34, img:'https://images.unsplash.com/photo-1585386959984-a41552231658?q=80&w=800&auto=format&fit=crop' },
-  { id:'p200', title:'Running Shoes',    cat:'fashion',     price:79,  stock:18, img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop' },
-  { id:'p201', title:'Denim Jacket',     cat:'fashion',     price:69,  stock:9,  img:'https://images.unsplash.com/photo-1542060748-10c28b62716b?q=80&w=800&auto=format&fit=crop' },
-  { id:'p300', title:'Blender Pro',      cat:'home',        price:49,  stock:22, img:'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800&auto=format&fit=crop' },
-  { id:'p301', title:'Desk Lamp',        cat:'home',        price:25,  stock:41, img:'https://images.unsplash.com/photo-1505685296765-3a2736de412f?q=80&w=800&auto=format&fit=crop' },
-  { id:'p400', title:'Football',         cat:'sports',      price:19,  stock:27, img:'https://images.unsplash.com/photo-1521417530178-1f1f06f9a70b?q=80&w=800&auto=format&fit=crop' },
-  { id:'p401', title:'Yoga Mat',         cat:'sports',      price:29,  stock:15, img:'https://images.unsplash.com/photo-1599050751795-5a9e3d0f5f7b?q=80&w=800&auto=format&fit=crop' },
-  { id:'p500', title:'Engine Oil 5W-30', cat:'automobile',  price:35,  stock:20, img:'https://images.unsplash.com/photo-1584448099095-530a1a9b55d8?q=80&w=800&auto=format&fit=crop' },
-  { id:'p501', title:'Car Tyre 17"',     cat:'automobile',  price:89,  stock:16, img:'https://images.unsplash.com/photo-1580674285055-c64b4d5d6a2f?q=80&w=800&auto=format&fit=crop' },
-  { id:'p600', title:'Brake Pads',       cat:'spares',      price:24,  stock:28, img:'https://images.unsplash.com/photo-1607863680058-5b5b7762dd44?q=80&w=800&auto=format&fit=crop' },
-  { id:'p601', title:'Spark Plugs (4)',  cat:'spares',      price:19,  stock:35, img:'https://images.unsplash.com/photo-1610465299997-91a2b74a53b0?q=80&w=800&auto=format&fit=crop' },
-  { id:'p700', title:'Gift Box',         cat:'others',      price:12,  stock:50, img:'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop' },
-  { id:'p701', title:'Photo Frame',      cat:'others',      price:15,  stock:33, img:'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?q=80&w=800&auto=format&fit=crop' },
-];
+      { id:'p100', title:'Smartphone X',     cat:'electronics', price:499, stock:12, img:'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop' },
+      { id:'p101', title:'Wireless Earbuds', cat:'electronics', price:59,  stock:34, img:'https://images.unsplash.com/photo-1585386959984-a41552231658?q=80&w=800&auto=format&fit=crop' },
+      { id:'p200', title:'Running Shoes',    cat:'fashion',     price:79,  stock:18, img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop' },
+      { id:'p201', title:'Denim Jacket',     cat:'fashion',     price:69,  stock:9,  img:'https://images.unsplash.com/photo-1542060748-10c28b62716b?q=80&w=800&auto=format&fit=crop' },
+      { id:'p300', title:'Blender Pro',      cat:'home',        price:49,  stock:22, img:'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800&auto=format&fit=crop' },
+      { id:'p301', title:'Desk Lamp',        cat:'home',        price:25,  stock:41, img:'https://images.unsplash.com/photo-1505685296765-3a2736de412f?q=80&w=800&auto=format&fit=crop' },
+      { id:'p400', title:'Football',         cat:'sports',      price:19,  stock:27, img:'https://images.unsplash.com/photo-1521417530178-1f1f06f9a70b?q=80&w=800&auto=format&fit=crop' },
+      { id:'p401', title:'Yoga Mat',         cat:'sports',      price:29,  stock:15, img:'https://images.unsplash.com/photo-1599050751795-5a9e3d0f5f7b?q=80&w=800&auto=format&fit=crop' },
+      { id:'p500', title:'Engine Oil 5W-30', cat:'automobile',  price:35,  stock:20, img:'https://images.unsplash.com/photo-1584448099095-530a1a9b55d8?q=80&w=800&auto=format&fit=crop' },
+      { id:'p501', title:'Car Tyre 17"',     cat:'automobile',  price:89,  stock:16, img:'https://images.unsplash.com/photo-1580674285055-c64b4d5d6a2f?q=80&w=800&auto=format&fit=crop' },
+      { id:'p600', title:'Brake Pads',       cat:'spares',      price:24,  stock:28, img:'https://images.unsplash.com/photo-1607863680058-5b5b7762dd44?q=80&w=800&auto=format&fit=crop' },
+      { id:'p601', title:'Spark Plugs (4)',  cat:'spares',      price:19,  stock:35, img:'https://images.unsplash.com/photo-1610465299997-91a2b74a53b0?q=80&w=800&auto=format&fit=crop' },
+      { id:'p700', title:'Gift Box',         cat:'others',      price:12,  stock:50, img:'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop' },
+      { id:'p701', title:'Photo Frame',      cat:'others',      price:15,  stock:33, img:'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?q=80&w=800&auto=format&fit=crop' },
+    ];
     let cart = loadCart();
 
+    // Marketplace DOM
+    const mpSearch = document.getElementById('mpSearch');
+    const mpVoice  = document.getElementById('mpVoice');
+    const mpSearchBtn = document.getElementById('mpSearchBtn');
+    const mpChips  = document.getElementById('mpChips');
+    const mpGrid   = document.getElementById('mpGrid');
+    const openCartBtn = document.getElementById('openCartBtn');
+    const cartModal = document.getElementById('cartModal');
+    const closeCart = document.getElementById('closeCart');
+    const cartList  = document.getElementById('cartList');
+    const cartTotalEl = document.getElementById('cartTotal');
+    const cartCountEl = document.getElementById('cartCount');
+    const checkoutModal = document.getElementById('checkoutModal');
+    const closeCheckout = document.getElementById('closeCheckout');
+    const chkTerms = document.getElementById('chkTerms');
+    const chkAddress = document.getElementById('chkAddress');
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const orderModal = document.getElementById('orderModal');
+    const closeOrder = document.getElementById('closeOrder');
+    const orderInfo = document.getElementById('orderInfo');
+
+    closeCart.onclick = () => cartModal.classList.remove('open');
+    openCartBtn.onclick = () => { renderCart(); cartModal.classList.add('open'); };
+    checkoutBtn.onclick = () => { cartModal.classList.remove('open'); checkoutModal.classList.add('open'); };
+    closeCheckout.onclick = () => checkoutModal.classList.remove('open');
+    closeOrder.onclick = () => orderModal.classList.remove('open');
+
+    mpVoice.onclick = () => voiceToInput(mpSearch, () => runMarketplaceSearch());
+    mpSearchBtn.onclick = runMarketplaceSearch;
+
     function initMarketplace(){
-      // category chips
       mpChips.innerHTML = '';
       MP_CATEGORIES.forEach(c=>{
         const b = document.createElement('button');
@@ -1026,52 +1020,47 @@ cartBtn.onclick  = () => { showPage('marketplace'); renderCart(); cartModal.clas
       renderMarketplace(null, q);
     }
 
-  function renderMarketplace(category=null, query=''){
-  mpGrid.innerHTML = '';
-  let list = MP_PRODUCTS.slice();
-  if (category) list = list.filter(p => p.cat === category);
-  if (query) list = list.filter(p => p.title.toLowerCase().includes(query) || p.cat.includes(query));
-  if (!list.length){
-    mpGrid.innerHTML = '<div class="small muted">No products found.</div>';
-    return;
-  }
-  list.forEach(p=>{
-    const el = document.createElement('div');
-    el.className = 'card product';
-    el.innerHTML = `
-      <img src="${p.img}" alt="${p.title}"/>
-      <div><strong>${p.title}</strong></div>
-      <div class="row" style="justify-content:space-between">
-        <div class="price">$${p.price.toFixed(2)}</div>
-        <div class="small muted">Stock: ${p.stock}</div>
-      </div>
-      <button class="btn primary">Add to Cart</button>
-    `;
-    const btn = el.querySelector('button');
-    btn.disabled = p.stock <= 0;
-    btn.textContent = p.stock > 0 ? 'Add to Cart' : 'Out of Stock';
-    btn.onclick = () => addToCart(p.id);
-    mpGrid.appendChild(el);
-  });
-}
+    function renderMarketplace(category=null, query=''){
+      mpGrid.innerHTML = '';
+      let list = MP_PRODUCTS.slice();
+      if (category) list = list.filter(p => p.cat === category);
+      if (query) list = list.filter(p => p.title.toLowerCase().includes(query) || p.cat.includes(query));
+      if (!list.length){
+        mpGrid.innerHTML = '<div class="small muted">No products found.</div>';
+        return;
+      }
+      list.forEach(p=>{
+        const el = document.createElement('div');
+        el.className = 'card product';
+        el.innerHTML = `
+          <img src="${p.img}" alt="${p.title}"/>
+          <div><strong>${p.title}</strong></div>
+          <div class="row" style="justify-content:space-between">
+            <div class="price">$${p.price.toFixed(2)}</div>
+            <div class="small muted">Stock: ${p.stock}</div>
+          </div>
+          <button class="btn primary">${p.stock > 0 ? 'Add to Cart' : 'Out of Stock'}</button>
+        `;
+        const btn = el.querySelector('button');
+        btn.disabled = p.stock <= 0;
+        btn.onclick = () => addToCart(p.id);
+        mpGrid.appendChild(el);
+      });
+    }
 
     function addToCart(productId){
       const prod = MP_PRODUCTS.find(p=>p.id===productId);
-      if (!prod) return;
+      if (!prod || prod.stock <= 0) return;
       const i = cart.items.findIndex(x=>x.id===productId);
       if (i>=0) cart.items[i].qty += 1;
       else cart.items.push({ id:prod.id, title:prod.title, price:prod.price, img:prod.img, qty:1 });
       saveCart(); updateCartCount();
     }
-   <script>
-function updateCartCount(){
-  const count = cart.items.reduce((a,b)=>a+b.qty,0);
-  const cartCountEl = document.getElementById('cartCount');      // marketplace cart button
-  const headerBadge = document.getElementById('headerCartBadge'); // header badge
-  if (cartCountEl) cartCountEl.textContent = String(count);
-  if (headerBadge) headerBadge.textContent = String(count);
-}
-</script>
+    function updateCartCount(){
+      const count = cart.items.reduce((a,b)=>a+b.qty,0);
+      const headerBadge = document.getElementById('headerCartBadge');
+      if (cartCountEl) cartCountEl.textContent = String(count);
+      if (headerBadge) headerBadge.textContent = String(count);
     }
     function loadCart(){
       try{ return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{ return { items:[] }; }
@@ -1116,74 +1105,71 @@ function updateCartCount(){
       cartTotalEl.textContent = total.toFixed(2);
     }
 
-  <script>
-placeOrderBtn.onclick = async () => {
-  const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
-  if (!chkTerms.checked){ alert('Please accept the Terms'); return; }
-  if (!chkAddress.value.trim()){ alert('Enter delivery address'); return; }
-  if (!cart.items.length){ alert('Cart is empty'); return; }
+    // Checkout
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    const chkTerms = document.getElementById('chkTerms');
+    const chkAddress = document.getElementById('chkAddress');
 
-  const payload = {
-    items: cart.items.map(i=>({ id:i.id, title:i.title, qty:i.qty, price:i.price })),
-    address: chkAddress.value.trim(),
-  };
+    placeOrderBtn.onclick = async () => {
+      const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+      if (!chkTerms.checked){ alert('Please accept the Terms'); return; }
+      if (!chkAddress.value.trim()){ alert('Enter delivery address'); return; }
+      if (!cart.items.length){ alert('Cart is empty'); return; }
 
-  if (method === 'card') {
-    // Try common endpoints; use Stripe URL or sessionId
-    const endpoints = [
-      `${BASE_API}/api/payments/checkout-session`,
-      `${BASE_API}/api/payments/create-checkout-session`
-    ];
-    for (const url of endpoints) {
+      const payload = {
+        items: cart.items.map(i=>({ id:i.id, title:i.title, qty:i.qty, price:i.price })),
+        address: chkAddress.value.trim(),
+      };
+
+      if (method === 'card') {
+        try {
+          const r = await fetch(`${BASE_API}/api/payments/checkout-session`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              items: payload.items,
+              address: payload.address,
+              successUrl: window.location.origin + '/?checkout=success',
+              cancelUrl: window.location.origin + '/?checkout=cancel'
+            })
+          });
+          const d = await r.json().catch(()=>({}));
+          if (d?.url) {
+            cart.items = []; saveCart(); updateCartCount();
+            window.location.href = d.url;
+            return;
+          }
+          if ((d?.id || d?.sessionId) && window.Stripe) {
+            const stripe = window.Stripe(STRIPE_PK);
+            cart.items = []; saveCart(); updateCartCount();
+            await stripe.redirectToCheckout({ sessionId: d.id || d.sessionId });
+            return;
+          }
+          alert('Payment session error. Falling back to cash/demo flow.');
+        } catch {
+          alert('Payment session error. Falling back to cash/demo flow.');
+        }
+      }
+
+      // Cash (or fallback)
+      let orderId = 'demo-' + Date.now();
+      let code = String(Math.floor(100000 + Math.random()*900000));
       try {
-        const r = await fetch(url, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({
-            items: payload.items,
-            address: payload.address,
-            successUrl: window.location.origin + '/?checkout=success',
-            cancelUrl: window.location.origin + '/?checkout=cancel'
-          })
+        const r2 = await fetch(`${BASE_API}/api/marketplace/orders`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ ...payload, paymentMethod: method })
         });
-        const d = await r.json().catch(()=>({}));
-        if (d && d.url) {
-          cart.items = []; saveCart(); updateCartCount();
-          window.location.href = d.url;
-          return;
-        }
-        if ((d && (d.id || d.sessionId)) && window.Stripe) {
-          const stripe = window.Stripe(STRIPE_PK);
-          cart.items = []; saveCart(); updateCartCount();
-          await stripe.redirectToCheckout({ sessionId: d.id || d.sessionId });
-          return;
-        }
+        const d2 = await r2.json().catch(()=>({}));
+        orderId = d2.orderId || orderId;
+        code = d2.deliveryCode || code;
       } catch {}
-    }
-    alert('Payment session error. Falling back to cash/demo flow.');
-  }
 
-  // Cash (or fallback)
-  let orderId, code;
-  try{
-    const r2 = await fetch(`${BASE_API}/api/marketplace/orders`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ ...payload, paymentMethod: method })
-    });
-    const d2 = await r2.json().catch(()=>({}));
-    orderId = d2.orderId || ('demo-' + Date.now());
-    code = d2.deliveryCode || String(Math.floor(100000 + Math.random()*900000));
-  }catch{
-    orderId = 'demo-' + Date.now();
-    code = String(Math.floor(100000 + Math.random()*900000));
-  }
+      checkoutModal.classList.remove('open');
+      showOrderStatus(orderId, code, method);
+      cart.items = []; saveCart(); updateCartCount();
+    };
 
-  checkoutModal.classList.remove('open');
-  showOrderStatus(orderId, code, method);
-  cart.items = []; saveCart(); updateCartCount();
-};
-</script>
-};
+    // Order status
     function showOrderStatus(orderId, code, method){
       orderInfo.innerHTML = `
         <div class="card">
@@ -1199,7 +1185,7 @@ placeOrderBtn.onclick = async () => {
       `;
       orderModal.classList.add('open');
 
-      // Poll order status (demo: accept after ~6s, deliver after ~14s)
+      // Poll order status (demo: accept after ~6s, deliver after ~18s)
       const ordStatusEl = document.getElementById('ordStatus');
       let t = 0;
       const poll = setInterval(async ()=>{
@@ -1218,21 +1204,6 @@ placeOrderBtn.onclick = async () => {
         ordStatusEl.textContent = status || 'pending';
         if (status==='delivered' || t>=24) clearInterval(poll);
       }, 3000);
-    }
-
-    // ======= Existing helper logic reused above =======
-    function voiceToInput(inputEl, onResult){
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) { alert('Voice not supported'); return; }
-      const rec = new SR();
-      rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
-      rec.onresult = (e) => {
-        const text = e.results[0][0].transcript || '';
-        inputEl.value = text;
-        if (onResult) onResult(text);
-      };
-      rec.onerror = () => {};
-      rec.start();
     }
   </script>
 </body>
