@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+<script defer src="https://js.stripe.com/v3"></script>
+  
   <style>
     :root { --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF; --text:#111827; --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB; --radius:14px; --shadow:0 8px 24px rgba(17,24,39,.08) }
     * { box-sizing:border-box; margin:0; padding:0 }
@@ -441,7 +443,7 @@
     const profileBtn = document.getElementById('profileBtn');
     const profileMenu= document.getElementById('profileMenu');
     notifBtn.onclick = () => showPage('home') || alert('Notifications (coming soon)');
-    cartBtn.onclick  = () => showPage('marketplace');
+    cartBtn.onclick  = () => { showPage('marketplace'); renderCart(); cartModal.classList.add('open'); };
     profileBtn.onclick = (e) => { e.stopPropagation(); profileMenu.style.display = profileMenu.style.display==='block' ? 'none' : 'block'; };
     document.addEventListener('click', () => profileMenu.style.display='none');
     document.getElementById('menuProfile').onclick = () => { profileMenu.style.display='none'; showPage('profile'); };
@@ -973,21 +975,30 @@
 
     // Marketplace
     const MP_CATEGORIES = [
-      { id:'electronics', name:'Electronics' },
-      { id:'fashion', name:'Fashion' },
-      { id:'home', name:'Home & Garden' },
-      { id:'sports', name:'Sports' },
-    ];
+  { id:'electronics', name:'Electronics' },
+  { id:'fashion',     name:'Fashion' },
+  { id:'home',        name:'Home & Garden' },
+  { id:'sports',      name:'Sports' },
+  { id:'automobile',  name:'Automobile' },
+  { id:'spares',      name:'Spare Parts' },
+  { id:'others',      name:'Others' },
+];
     const MP_PRODUCTS = [
-      { id:'p100', title:'Smartphone X', cat:'electronics', price:499, img:'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop' },
-      { id:'p101', title:'Wireless Earbuds', cat:'electronics', price:59, img:'https://images.unsplash.com/photo-1585386959984-a41552231658?q=80&w=800&auto=format&fit=crop' },
-      { id:'p200', title:'Running Shoes', cat:'fashion', price:79, img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop' },
-      { id:'p201', title:'Denim Jacket', cat:'fashion', price:69, img:'https://images.unsplash.com/photo-1542060748-10c28b62716b?q=80&w=800&auto=format&fit=crop' },
-      { id:'p300', title:'Blender Pro', cat:'home', price:49, img:'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800&auto=format&fit=crop' },
-      { id:'p301', title:'Desk Lamp', cat:'home', price:25, img:'https://images.unsplash.com/photo-1505685296765-3a2736de412f?q=80&w=800&auto=format&fit=crop' },
-      { id:'p400', title:'Football', cat:'sports', price:19, img:'https://images.unsplash.com/photo-1521417530178-1f1f06f9a70b?q=80&w=800&auto=format&fit=crop' },
-      { id:'p401', title:'Yoga Mat', cat:'sports', price:29, img:'https://images.unsplash.com/photo-1599050751795-5a9e3d0f5f7b?q=80&w=800&auto=format&fit=crop' },
-    ];
+  { id:'p100', title:'Smartphone X',     cat:'electronics', price:499, stock:12, img:'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop' },
+  { id:'p101', title:'Wireless Earbuds', cat:'electronics', price:59,  stock:34, img:'https://images.unsplash.com/photo-1585386959984-a41552231658?q=80&w=800&auto=format&fit=crop' },
+  { id:'p200', title:'Running Shoes',    cat:'fashion',     price:79,  stock:18, img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop' },
+  { id:'p201', title:'Denim Jacket',     cat:'fashion',     price:69,  stock:9,  img:'https://images.unsplash.com/photo-1542060748-10c28b62716b?q=80&w=800&auto=format&fit=crop' },
+  { id:'p300', title:'Blender Pro',      cat:'home',        price:49,  stock:22, img:'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800&auto=format&fit=crop' },
+  { id:'p301', title:'Desk Lamp',        cat:'home',        price:25,  stock:41, img:'https://images.unsplash.com/photo-1505685296765-3a2736de412f?q=80&w=800&auto=format&fit=crop' },
+  { id:'p400', title:'Football',         cat:'sports',      price:19,  stock:27, img:'https://images.unsplash.com/photo-1521417530178-1f1f06f9a70b?q=80&w=800&auto=format&fit=crop' },
+  { id:'p401', title:'Yoga Mat',         cat:'sports',      price:29,  stock:15, img:'https://images.unsplash.com/photo-1599050751795-5a9e3d0f5f7b?q=80&w=800&auto=format&fit=crop' },
+  { id:'p500', title:'Engine Oil 5W-30', cat:'automobile',  price:35,  stock:20, img:'https://images.unsplash.com/photo-1584448099095-530a1a9b55d8?q=80&w=800&auto=format&fit=crop' },
+  { id:'p501', title:'Car Tyre 17"',     cat:'automobile',  price:89,  stock:16, img:'https://images.unsplash.com/photo-1580674285055-c64b4d5d6a2f?q=80&w=800&auto=format&fit=crop' },
+  { id:'p600', title:'Brake Pads',       cat:'spares',      price:24,  stock:28, img:'https://images.unsplash.com/photo-1607863680058-5b5b7762dd44?q=80&w=800&auto=format&fit=crop' },
+  { id:'p601', title:'Spark Plugs (4)',  cat:'spares',      price:19,  stock:35, img:'https://images.unsplash.com/photo-1610465299997-91a2b74a53b0?q=80&w=800&auto=format&fit=crop' },
+  { id:'p700', title:'Gift Box',         cat:'others',      price:12,  stock:50, img:'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop' },
+  { id:'p701', title:'Photo Frame',      cat:'others',      price:15,  stock:33, img:'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?q=80&w=800&auto=format&fit=crop' },
+];
     let cart = loadCart();
 
     function initMarketplace(){
@@ -1009,28 +1020,34 @@
       renderMarketplace(null, q);
     }
 
-    function renderMarketplace(category=null, query=''){
-      mpGrid.innerHTML = '';
-      let list = MP_PRODUCTS.slice();
-      if (category) list = list.filter(p => p.cat === category);
-      if (query) list = list.filter(p => p.title.toLowerCase().includes(query));
-      if (!list.length){
-        mpGrid.innerHTML = '<div class="small muted">No products found.</div>';
-        return;
-      }
-      list.forEach(p=>{
-        const el = document.createElement('div');
-        el.className = 'card product';
-        el.innerHTML = `
-          <img src="${p.img}" alt="${p.title}"/>
-          <div><strong>${p.title}</strong></div>
-          <div class="price">$${p.price.toFixed(2)}</div>
-          <button class="btn primary">Add to Cart</button>
-        `;
-        el.querySelector('button').onclick = () => addToCart(p.id);
-        mpGrid.appendChild(el);
-      });
-    }
+  function renderMarketplace(category=null, query=''){
+  mpGrid.innerHTML = '';
+  let list = MP_PRODUCTS.slice();
+  if (category) list = list.filter(p => p.cat === category);
+  if (query) list = list.filter(p => p.title.toLowerCase().includes(query) || p.cat.includes(query));
+  if (!list.length){
+    mpGrid.innerHTML = '<div class="small muted">No products found.</div>';
+    return;
+  }
+  list.forEach(p=>{
+    const el = document.createElement('div');
+    el.className = 'card product';
+    el.innerHTML = `
+      <img src="${p.img}" alt="${p.title}"/>
+      <div><strong>${p.title}</strong></div>
+      <div class="row" style="justify-content:space-between">
+        <div class="price">$${p.price.toFixed(2)}</div>
+        <div class="small muted">Stock: ${p.stock}</div>
+      </div>
+      <button class="btn primary">Add to Cart</button>
+    `;
+    const btn = el.querySelector('button');
+    btn.disabled = p.stock <= 0;
+    btn.textContent = p.stock > 0 ? 'Add to Cart' : 'Out of Stock';
+    btn.onclick = () => addToCart(p.id);
+    mpGrid.appendChild(el);
+  });
+}
 
     function addToCart(productId){
       const prod = MP_PRODUCTS.find(p=>p.id===productId);
@@ -1087,37 +1104,62 @@
       cartTotalEl.textContent = total.toFixed(2);
     }
 
-    placeOrderBtn.onclick = async () => {
-      const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
-      if (!chkTerms.checked){ alert('Please accept the Terms'); return; }
-      if (!chkAddress.value.trim()){ alert('Enter delivery address'); return; }
-      if (!cart.items.length){ alert('Cart is empty'); return; }
+   placeOrderBtn.onclick = async () => {
+  const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+  if (!chkTerms.checked){ alert('Please accept the Terms'); return; }
+  if (!chkAddress.value.trim()){ alert('Enter delivery address'); return; }
+  if (!cart.items.length){ alert('Cart is empty'); return; }
 
-      const payload = {
-        items: cart.items.map(i=>({ id:i.id, qty:i.qty })),
-        paymentMethod: method,
-        address: chkAddress.value.trim(),
-      };
+  const payload = {
+    items: cart.items.map(i=>({ id:i.id, title:i.title, qty:i.qty, price:i.price })),
+    address: chkAddress.value.trim(),
+  };
 
-      let orderId, code;
-      try{
-        const r = await fetch(`${BASE_API}/api/marketplace/orders`, {
-          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
-        });
-        const d = await r.json().catch(()=>({}));
-        orderId = d.orderId || ('demo-' + Date.now());
-        code = d.deliveryCode || String(Math.floor(100000 + Math.random()*900000));
-      }catch{
-        orderId = 'demo-' + Date.now();
-        code = String(Math.floor(100000 + Math.random()*900000));
+  if (method === 'card') {
+    // Create Stripe Checkout session on backend and redirect
+    try{
+      const r = await fetch(`${BASE_API}/api/payments/checkout-session`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          items: payload.items,
+          // optional metadata you may handle on backend:
+          address: payload.address,
+          successUrl: window.location.origin + '/?checkout=success',
+          cancelUrl: window.location.origin + '/?checkout=cancel',
+        })
+      });
+      const d = await r.json().catch(()=>({}));
+      if (d.url) {
+        // clear cart before redirect to avoid duplicate orders on back
+        cart.items = []; saveCart(); updateCartCount();
+        window.location.href = d.url;
+        return;
       }
+      alert('Payment session error. Falling back to demo order.');
+    }catch{
+      alert('Payment session error. Falling back to demo order.');
+    }
+  }
 
-      checkoutModal.classList.remove('open');
-      showOrderStatus(orderId, code, method);
-      // Clear cart after order placed
-      cart.items = []; saveCart(); updateCartCount();
-    };
+  // Cash (or fallback): create order and show delivery code/status
+  let orderId, code;
+  try{
+    const r2 = await fetch(`${BASE_API}/api/marketplace/orders`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ ...payload, paymentMethod: method })
+    });
+    const d2 = await r2.json().catch(()=>({}));
+    orderId = d2.orderId || ('demo-' + Date.now());
+    code = d2.deliveryCode || String(Math.floor(100000 + Math.random()*900000));
+  }catch{
+    orderId = 'demo-' + Date.now();
+    code = String(Math.floor(100000 + Math.random()*900000));
+  }
 
+  checkoutModal.classList.remove('open');
+  showOrderStatus(orderId, code, method);
+  cart.items = []; saveCart(); updateCartCount();
+};
     function showOrderStatus(orderId, code, method){
       orderInfo.innerHTML = `
         <div class="card">
