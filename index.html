@@ -1453,6 +1453,56 @@
   window.addEventListener('DOMContentLoaded', updateCartCount);
 })();
 </script>
+  <script>
+// Restore "Add to Cart" using robust delegation (no overrides)
+(function () {
+  const grid = document.getElementById('mpGrid');
+  if (!grid) return;
+
+  // Map product titles to ids once
+  const titleToId = {};
+  try {
+    (window.MP_PRODUCTS || []).forEach(p => { titleToId[(p.title || '').toLowerCase()] = p.id; });
+  } catch {}
+
+  // Enhance cards whenever the grid changes
+  function enhanceCards() {
+    grid.querySelectorAll('.card.product').forEach(card => {
+      const titleEl = card.querySelector('strong');
+      const btn = card.querySelector('button');
+      if (btn && !btn.getAttribute('type')) btn.setAttribute('type','button');
+      if (!card.dataset.id && titleEl) {
+        const id = titleToId[(titleEl.textContent || '').trim().toLowerCase()];
+        if (id) card.dataset.id = id;
+      }
+    });
+  }
+
+  // Initial pass + mutation observer for dynamic renders
+  const mo = new MutationObserver(() => enhanceCards());
+  mo.observe(grid, { childList: true, subtree: true });
+  enhanceCards();
+
+  // Single, reliable click handler for Add to Cart
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#mpGrid .card.product button');
+    if (!btn) return;
+    const card = btn.closest('.card.product');
+    const id = card && card.dataset.id;
+    if (!id) {
+      // Fallback by title if no data-id
+      const title = (card.querySelector('strong')?.textContent || '').trim().toLowerCase();
+      const guessed = titleToId[title];
+      if (!guessed) return;
+      e.preventDefault();
+      try { window.addToCart(guessed); } catch {}
+      return;
+    }
+    e.preventDefault();
+    try { window.addToCart(id); } catch {}
+  });
+})();
+</script>
 </body><script>
 // Make footer buttons and account menu work without editing HTML
 (function () {
