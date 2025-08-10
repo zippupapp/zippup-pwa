@@ -383,7 +383,7 @@
 
   <script>
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
-    const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+    STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
     
     let user = { name:'Guest', email:'demo@zippup.com' };
     let coords = null;
@@ -1111,7 +1111,7 @@
       cartTotalEl.textContent = total.toFixed(2);
     }
 
- async function placeOrder() {
+ placeOrderBtn.onclick = async () => {
   const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
   if (!chkTerms.checked){ alert('Please accept the Terms'); return; }
   if (!chkAddress.value.trim()){ alert('Enter delivery address'); return; }
@@ -1135,7 +1135,6 @@
         })
       });
       const d = await r.json().catch(()=>({}));
-      // Try URL first, then sessionId/id
       if (d?.url) {
         cart.items = []; saveCart(); updateCartCount();
         window.location.href = d.url;
@@ -1169,9 +1168,6 @@
   checkoutModal.classList.remove('open');
   showOrderStatus(orderId, code, method);
   cart.items = []; saveCart(); updateCartCount();
-}
-
-placeOrderBtn.onclick = placeOrder;
 };
     function showOrderStatus(orderId, code, method){
       orderInfo.innerHTML = `
