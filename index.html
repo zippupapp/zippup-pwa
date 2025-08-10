@@ -6,11 +6,13 @@
   <title>ZippUp — On‑Demand Services</title>
   <meta name="theme-color" content="#2563EB"/>
   <link rel="manifest" href="manifest.json"/>
-
+<script defer src="https://js.stripe.com/v3"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script defer src="https://js.stripe.com/v3"></script>
+<script>
+const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+</script>
   
   <style>
     :root { --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF; --text:#111827; --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB; --radius:14px; --shadow:0 8px 24px rgba(17,24,39,.08) }
@@ -76,8 +78,10 @@
       </div>
       <div class="row">
         <button class="btn ghost" id="notifBtn">🔔</button>
-        <button class="btn ghost" id="cartBtn">🛒</button>
         <div style="position:relative">
+  <button class="btn ghost" id="cartBtn">🛒</button>
+  <span id="headerCartBadge" style="position:absolute; top:-6px; right:-6px; background:#DC2626; color:#fff; border-radius:999px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">0</span>
+</div>
           <button class="btn ghost" id="profileBtn">👤 Account</button>
           <div id="profileMenu">
             <button class="btn ghost" id="menuProfile">👤 Profile</button>
@@ -443,7 +447,9 @@
     const profileBtn = document.getElementById('profileBtn');
     const profileMenu= document.getElementById('profileMenu');
     notifBtn.onclick = () => showPage('home') || alert('Notifications (coming soon)');
-    cartBtn.onclick  = () => { showPage('marketplace'); renderCart(); cartModal.classList.add('open'); };
+   <script>
+cartBtn.onclick  = () => { showPage('marketplace'); renderCart(); cartModal.classList.add('open'); };
+</script>
     profileBtn.onclick = (e) => { e.stopPropagation(); profileMenu.style.display = profileMenu.style.display==='block' ? 'none' : 'block'; };
     document.addEventListener('click', () => profileMenu.style.display='none');
     document.getElementById('menuProfile').onclick = () => { profileMenu.style.display='none'; showPage('profile'); };
@@ -1057,9 +1063,15 @@
       else cart.items.push({ id:prod.id, title:prod.title, price:prod.price, img:prod.img, qty:1 });
       saveCart(); updateCartCount();
     }
-    function updateCartCount(){
-      const count = cart.items.reduce((a,b)=>a+b.qty,0);
-      cartCountEl.textContent = String(count);
+   <script>
+function updateCartCount(){
+  const count = cart.items.reduce((a,b)=>a+b.qty,0);
+  const cartCountEl = document.getElementById('cartCount');      // marketplace cart button
+  const headerBadge = document.getElementById('headerCartBadge'); // header badge
+  if (cartCountEl) cartCountEl.textContent = String(count);
+  if (headerBadge) headerBadge.textContent = String(count);
+}
+</script>
     }
     function loadCart(){
       try{ return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{ return { items:[] }; }
@@ -1104,7 +1116,8 @@
       cartTotalEl.textContent = total.toFixed(2);
     }
 
-   placeOrderBtn.onclick = async () => {
+  <script>
+placeOrderBtn.onclick = async () => {
   const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
   if (!chkTerms.checked){ alert('Please accept the Terms'); return; }
   if (!chkAddress.value.trim()){ alert('Enter delivery address'); return; }
@@ -1116,32 +1129,41 @@
   };
 
   if (method === 'card') {
-    // Create Stripe Checkout session on backend and redirect
-    try{
-      const r = await fetch(`${BASE_API}/api/payments/checkout-session`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          items: payload.items,
-          // optional metadata you may handle on backend:
-          address: payload.address,
-          successUrl: window.location.origin + '/?checkout=success',
-          cancelUrl: window.location.origin + '/?checkout=cancel',
-        })
-      });
-      const d = await r.json().catch(()=>({}));
-      if (d.url) {
-        // clear cart before redirect to avoid duplicate orders on back
-        cart.items = []; saveCart(); updateCartCount();
-        window.location.href = d.url;
-        return;
-      }
-      alert('Payment session error. Falling back to demo order.');
-    }catch{
-      alert('Payment session error. Falling back to demo order.');
+    // Try common endpoints; use Stripe URL or sessionId
+    const endpoints = [
+      `${BASE_API}/api/payments/checkout-session`,
+      `${BASE_API}/api/payments/create-checkout-session`
+    ];
+    for (const url of endpoints) {
+      try {
+        const r = await fetch(url, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            items: payload.items,
+            address: payload.address,
+            successUrl: window.location.origin + '/?checkout=success',
+            cancelUrl: window.location.origin + '/?checkout=cancel'
+          })
+        });
+        const d = await r.json().catch(()=>({}));
+        if (d && d.url) {
+          cart.items = []; saveCart(); updateCartCount();
+          window.location.href = d.url;
+          return;
+        }
+        if ((d && (d.id || d.sessionId)) && window.Stripe) {
+          const stripe = window.Stripe(STRIPE_PK);
+          cart.items = []; saveCart(); updateCartCount();
+          await stripe.redirectToCheckout({ sessionId: d.id || d.sessionId });
+          return;
+        }
+      } catch {}
     }
+    alert('Payment session error. Falling back to cash/demo flow.');
   }
 
-  // Cash (or fallback): create order and show delivery code/status
+  // Cash (or fallback)
   let orderId, code;
   try{
     const r2 = await fetch(`${BASE_API}/api/marketplace/orders`, {
@@ -1159,6 +1181,8 @@
   checkoutModal.classList.remove('open');
   showOrderStatus(orderId, code, method);
   cart.items = []; saveCart(); updateCartCount();
+};
+</script>
 };
     function showOrderStatus(orderId, code, method){
       orderInfo.innerHTML = `
