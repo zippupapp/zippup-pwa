@@ -4,46 +4,33 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>ZippUp — On‑Demand Services</title>
-
   <meta name="theme-color" content="#2563EB"/>
-  <link rel="manifest" href="manifest.json"/>
 
-  <!-- Maskable icons recommended; you can upload PNGs later -->
-  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect rx="40" width="256" height="256" fill="%232563EB"/><path d="M62 188 L154 68 H86 L94 48 H194 L102 168 H170 L162 188 Z" fill="white"/></svg>'/>
-
-  <!-- Leaflet for live tracking map -->
+  <!-- Leaflet (live tracking map) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    :root {
-      --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF;
-      --text:#111827; --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB;
-      --radius:14px; --shadow:0 8px 24px rgba(17,24,39,.08);
-    }
+    :root { --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF; --text:#111827; --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB; --radius:14px; --shadow:0 8px 24px rgba(17,24,39,.08) }
     * { box-sizing:border-box; margin:0; padding:0 }
     body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif; background:var(--bg); color:var(--text) }
-    .container { max-width:980px; margin:0 auto; padding:16px }
     header { position:sticky; top:0; z-index:20; background:var(--card); border-bottom:1px solid var(--border) }
     header .row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px }
     .greet { display:flex; flex-direction:column }
     .small { color:var(--muted); font-size:13px }
-    .nav { position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around; background:#fff; border-top:1px solid var(--border); padding:8px 0; z-index:15 }
-    .nav button { background:none; border:0; padding:8px 10px; border-radius:10px; color:var(--muted) }
-    .nav button.active { color:var(--primary); background:#EFF6FF }
     .search { padding:16px }
     .search .box { display:flex; gap:8px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:8px 10px }
     .search input { flex:1; border:0; outline:0; font-size:15px }
+    .section { padding:12px 16px }
+    .title { font-weight:700; margin-bottom:10px }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px }
     @media(min-width:720px){ .grid{ grid-template-columns:repeat(3,minmax(0,1fr)) } }
     .card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow) }
     .service { cursor:pointer; transition:transform .1s ease }
     .service:hover { transform:translateY(-2px) }
-    .service h4{ margin-top:6px; margin-bottom:4px }
-    .row { display:flex; gap:10px; align-items:center; }
+    .row { display:flex; gap:10px; align-items:center }
     .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; border-radius:999px; background:#EEF2FF; color:#3730A3 }
     .badge { padding:4px 8px; font-size:12px; border-radius:999px; }
-    .danger { background:#FEF2F2; color:#B91C1C }
     .success{ background:#ECFDF5; color:#065F46 }
     .muted { color:var(--muted) }
     .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:12px; border:0; cursor:pointer; font-weight:600 }
@@ -51,9 +38,10 @@
     .btn.primary:hover { background:var(--primary-600) }
     .btn.ghost { background:#F3F4F6 }
     .btn.block { width:100% }
-    .section { padding:12px 16px }
-    .title { font-weight:700; margin-bottom:10px }
-    .floating-panic { position:fixed; right:16px; bottom:76px; width:60px; height:60px; border-radius:50%; background:var(--danger); color:#fff; border:0; font-size:20px; box-shadow:var(--shadow); z-index:16 }
+    .floating-panic { position:fixed; right:16px; bottom:16px; width:60px; height:60px; border-radius:50%; background:var(--danger); color:#fff; border:0; font-size:20px; box-shadow:var(--shadow); z-index:16 }
+    .nav { position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:space-around; background:#fff; border-top:1px solid var(--border); padding:8px 0; z-index:15 }
+    .nav button { background:none; border:0; padding:8px 10px; border-radius:10px; color:var(--muted) }
+    .nav button.active { color:var(--primary); background:#EFF6FF }
     /* Modals */
     .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:50; padding:16px }
     .modal.open { display:flex }
@@ -62,11 +50,7 @@
     .sheet .body { padding:16px }
     .list { display:flex; flex-direction:column; gap:12px }
     .provider { border:1px solid var(--border); border-radius:14px; padding:12px }
-    .provider .meta { display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:10px }
     .controls { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap }
-    .danger-text { color:var(--danger) }
-    .count { font-weight:700 }
-    /* Map */
     #track-map { width:100%; height:360px; border-radius:12px; border:1px solid var(--border) }
   </style>
 </head>
@@ -87,23 +71,19 @@
   <main>
     <section class="search">
       <div class="box">
-        <input id="search" placeholder="Search transport, food, services, emergency…" />
+        <input id="search" placeholder="Search transport, food, services, emergency…"/>
         <button class="btn primary" id="searchBtn">Search</button>
       </div>
     </section>
 
     <section class="section">
       <div class="title">Emergency</div>
-      <div class="grid" id="emergencyGrid">
-        <!-- Emergency categories behave like providers -->
-      </div>
+      <div class="grid" id="emergencyGrid"></div>
     </section>
 
     <section class="section">
       <div class="title">All Services</div>
-      <div class="grid" id="servicesGrid">
-        <!-- Services -->
-      </div>
+      <div class="grid" id="servicesGrid"></div>
     </section>
 
     <section class="section">
@@ -135,7 +115,7 @@
     </div>
   </div>
 
-  <!-- Booking Form Modal (scheduled) -->
+  <!-- Booking Form Modal -->
   <div class="modal" id="bookingModal">
     <div class="sheet">
       <div class="head">
@@ -177,17 +157,17 @@
       </div>
       <div class="body">
         <div class="card">
-          <div>Time left: <span class="count" id="countdown">90</span>s</div>
+          <div>Time left: <strong id="countdown">90</strong>s</div>
           <div class="small muted" id="instantHint">Waiting for provider to accept…</div>
         </div>
-        <div id="instantActions" class="controls">
+        <div class="controls" style="margin-top:10px">
           <button class="btn ghost" id="findOthers">Find other providers</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Tracking Modal (map) -->
+  <!-- Tracking Modal -->
   <div class="modal" id="trackModal">
     <div class="sheet">
       <div class="head">
@@ -196,27 +176,22 @@
       </div>
       <div class="body">
         <div id="trackStatus" class="small muted">Provider accepted. En route…</div>
-        <div id="trackMapWrap" style="margin-top:10px">
-          <div id="track-map"></div>
-        </div>
+        <div id="trackMapWrap" style="margin-top:10px"><div id="track-map"></div></div>
       </div>
     </div>
   </div>
 
   <script>
-    // Configure your backend
+    // Backend
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
-    // Bump this on deploy to bust cache
-    const BUILD_TAG = '2025-08-10-12';
 
-    // App state
+    // State
     let user = { name:'Guest' };
     let coords = null;
-    let currentCategory = null;
     let selectedProvider = null;
+    let requestId = null;
     let instantTimer = null;
     let instantLeft = 90;
-    let requestId = null;
     let map, userMarker, providerMarker, trackPoll = null;
 
     // Elements
@@ -226,6 +201,43 @@
     const emergencyGrid = document.getElementById('emergencyGrid');
     const recentList = document.getElementById('recentList');
 
+    const providersModal = document.getElementById('providersModal');
+    const providersList  = document.getElementById('providersList');
+    const providersTitle = document.getElementById('providersTitle');
+    document.getElementById('closeProviders').onclick = () => providersModal.classList.remove('open');
+
+    const bookingModal = document.getElementById('bookingModal');
+    const bookingForm  = document.getElementById('bookingForm');
+    document.getElementById('closeBooking').onclick = () => bookingModal.classList.remove('open');
+
+    const instantModal = document.getElementById('instantModal');
+    const countdownEl  = document.getElementById('countdown');
+    document.getElementById('cancelInstant').onclick = cancelInstant;
+    document.getElementById('findOthers').onclick = () => { instantModal.classList.remove('open'); providersModal.classList.add('open'); };
+
+    const trackModal = document.getElementById('trackModal');
+    const trackStatus= document.getElementById('trackStatus');
+    document.getElementById('closeTrack').onclick = () => { stopTracking(); trackModal.classList.remove('open'); };
+
+    document.getElementById('panicBtn').onclick = async () => {
+      const ok = confirm('Confirm PANIC alert?\n\nThis will send your live location to your 5 contacts and the national line.');
+      if (!ok) return;
+      await triggerPanic();
+    };
+
+    document.getElementById('manageBookingsBtn').onclick = () => alert('Open bookings management.');
+    document.getElementById('profileBtn').onclick = () => alert('Open profile.');
+    document.getElementById('searchBtn').onclick = () => alert('Search coming soon.');
+    document.querySelectorAll('.nav button').forEach(b=>{
+      b.onclick = () => {
+        document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        if (b.dataset.page === 'bookings') alert('Open bookings list.');
+        if (b.dataset.page === 'wallet') alert('Open wallet.');
+        if (b.dataset.page === 'profile') alert('Open profile.');
+      };
+    });
+
     // Init
     document.addEventListener('DOMContentLoaded', () => {
       userNameEl.textContent = user.name;
@@ -233,17 +245,10 @@
       renderServices();
       renderEmergency();
       renderRecent();
-      wireNav();
-      wireModals();
-      wirePanic();
-      registerSW();
+      [providersModal, bookingModal, instantModal, trackModal].forEach(m=>{
+        m.addEventListener('click', (e)=>{ if (e.target === m) m.classList.remove('open'); });
+      });
     });
-
-    function registerSW(){
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js?v=' + BUILD_TAG).catch(()=>{});
-      }
-    }
 
     async function initLocation() {
       try {
@@ -257,7 +262,6 @@
         userLocEl.textContent = 'Location unavailable';
       }
     }
-
     async function reverseGeocode(lat,lng){
       try {
         const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
@@ -266,7 +270,7 @@
       } catch { return null; }
     }
 
-    // Services
+    // Catalog
     const SERVICES = [
       { id:'transport', name:'Transport', icon:'🚗', desc:'Ride & moving', instant:true, scheduled:true },
       { id:'food', name:'Food', icon:'🍔', desc:'Restaurant & grocery', instant:true, scheduled:true },
@@ -277,11 +281,11 @@
       { id:'others', name:'Others', icon:'🎯', desc:'Events, tutors, more', instant:false, scheduled:true },
     ];
     const EMERGENCY = [
-      { id:'ambulance', name:'Ambulance', icon:'🚑', cat:'emergency' },
-      { id:'fire',      name:'Fire Service', icon:'🚒', cat:'emergency' },
-      { id:'towing',    name:'Towing', icon:'🚛', cat:'emergency' },
-      { id:'roadside',  name:'Roadside', icon:'🔧', cat:'emergency' },
-      { id:'police',    name:'Police', icon:'👮', cat:'emergency' },
+      { id:'ambulance', name:'Ambulance', icon:'🚑' },
+      { id:'fire',      name:'Fire Service', icon:'🚒' },
+      { id:'towing',    name:'Towing', icon:'🚛' },
+      { id:'roadside',  name:'Roadside', icon:'🔧' },
+      { id:'police',    name:'Police', icon:'👮' },
     ];
 
     function renderServices(){
@@ -310,9 +314,7 @@
         el.innerHTML = `
           <div class="row"><div style="font-size:28px">${e.icon}</div><h4>${e.name}</h4></div>
           <div class="small muted" style="margin-top:6px">Find nearest/available</div>
-          <div class="row" style="margin-top:8px">
-            <span class="pill">Instant</span>
-          </div>
+          <div class="row" style="margin-top:8px"><span class="pill">Instant</span></div>
         `;
         el.onclick = () => openEmergency(e.id, e.name);
         emergencyGrid.appendChild(el);
@@ -321,69 +323,32 @@
 
     function renderRecent(){
       recentList.innerHTML = `
-        <div class="card"><div class="row"><div>🚗 Ride to Airport</div><span class="badge success">completed</span></div><div class="small muted" style="margin-top:6px">2h ago</div></div>
-        <div class="card" style="margin-top:8px"><div class="row"><div>🔧 Phone Repair</div><span class="badge" style="background:#FFF7ED;color:#9A3412">scheduled</span></div><div class="small muted" style="margin-top:6px">Tomorrow 11:00</div></div>
+        <div class="card"><div class="row" style="justify-content:space-between"><div>🚗 Ride to Airport</div><span class="badge success">completed</span></div><div class="small muted" style="margin-top:6px">2h ago</div></div>
+        <div class="card" style="margin-top:8px"><div class="row" style="justify-content:space-between"><div>🔧 Phone Repair</div><span class="badge" style="background:#FFF7ED;color:#9A3412">scheduled</span></div><div class="small muted" style="margin-top:6px">Tomorrow 11:00</div></div>
       `;
     }
 
-    // Providers modal flow
-    const providersModal = document.getElementById('providersModal');
-    const providersList  = document.getElementById('providersList');
-    const providersTitle = document.getElementById('providersTitle');
-    document.getElementById('closeProviders').onclick = () => providersModal.classList.remove('open');
-
+    // Providers
     async function openCategory(catId, label){
-      currentCategory = catId;
       providersTitle.textContent = label + ' — Providers';
       const list = await fetchProviders(catId);
       renderProviders(list);
       providersModal.classList.add('open');
     }
-
     async function openEmergency(emId, label){
-      currentCategory = 'emergency:' + emId;
       providersTitle.textContent = label + ' — Nearest';
       const list = await fetchProviders('emergency', emId);
       renderProviders(list);
       providersModal.classList.add('open');
     }
-
-    function renderProviders(list){
-      providersList.innerHTML = '';
-      if (!list || !list.length){
-        providersList.innerHTML = '<div class="small muted">No providers found nearby.</div>';
-        return;
-      }
-      list.forEach(p => {
-        const el = document.createElement('div');
-        el.className = 'provider';
-        el.innerHTML = `
-          <div class="row" style="justify-content:space-between">
-            <div class="row"><div style="font-size:24px">${p.icon || '👤'}</div><div><strong>${p.name}</strong><div class="small muted">${p.distance || '—'} • ETA ${p.eta || '—'} • Fee ${p.fee || '—'}</div></div></div>
-            <span class="badge ${p.available ? 'success' : ''}">${p.available ? 'available' : 'unavailable'}</span>
-          </div>
-          <div class="controls">
-            <button class="btn primary" data-k="instant">Instant Request</button>
-            <button class="btn ghost" data-k="schedule">Schedule</button>
-          </div>
-        `;
-        const buttons = el.querySelectorAll('button[data-k]');
-        buttons.forEach(b => b.onclick = () => (b.dataset.k === 'instant' ? startInstant(p) : openBooking(p)));
-        providersList.appendChild(el);
-      });
-    }
-
     async function fetchProviders(category, sub=null){
       try{
-        const q = new URLSearchParams({
-          category, sub: sub || '', lat: coords?.lat || '', lng: coords?.lng || ''
-        });
+        const q = new URLSearchParams({ category, sub: sub || '', lat: coords?.lat || '', lng: coords?.lng || '' });
         const r = await fetch(`${BASE_API}/api/providers/nearby?${q.toString()}`);
         if (!r.ok) throw new Error();
         const d = await r.json();
         return d.providers || [];
       }catch{
-        // Fallback demo data
         return [
           { id:'p1', name:'Pro One', icon:'👤', distance:'0.8km', eta:'6-9m', fee:'$8-12', available:true },
           { id:'p2', name:'Quick Help', icon:'⚡', distance:'1.2km', eta:'8-12m', fee:'$10-15', available:true },
@@ -391,24 +356,34 @@
         ];
       }
     }
+    function renderProviders(list){
+      providersList.innerHTML = '';
+      if (!list?.length){ providersList.innerHTML = '<div class="small muted">No providers found nearby.</div>'; return; }
+      list.forEach(p=>{
+        const el = document.createElement('div');
+        el.className = 'provider';
+        el.innerHTML = `
+          <div class="row" style="justify-content:space-between">
+            <div class="row"><div style="font-size:24px">${p.icon || '👤'}</div><div><strong>${p.name}</strong><div class="small muted">${p.distance || '—'} • ETA ${p.eta || '—'} • Fee ${p.fee || '—'}</div></div></div>
+            <span class="badge ${p.available ? 'success':''}">${p.available ? 'available':'unavailable'}</span>
+          </div>
+          <div class="controls">
+            <button class="btn primary" data-k="instant">Instant Request</button>
+            <button class="btn ghost" data-k="schedule">Schedule</button>
+          </div>
+        `;
+        el.querySelectorAll('button[data-k]').forEach(b=>{
+          b.onclick = () => (b.dataset.k === 'instant' ? startInstant(p) : openBooking(p));
+        });
+        providersList.appendChild(el);
+      });
+    }
 
-    // Panic flow
-    document.getElementById('panicBtn').onclick = async () => {
-      const ok = confirm('Confirm PANIC alert?\n\nThis will send your live location to your 5 contacts and the national line.');
-      if (!ok) return;
-      await triggerPanic();
-    };
-
+    // Panic
     async function triggerPanic(){
       try{
-        const body = {
-          type:'panic',
-          location: coords ? { latitude:coords.lat, longitude:coords.lng } : null,
-          message:'User triggered PANIC alert'
-        };
-        const r = await fetch(`${BASE_API}/api/emergency/alert`, {
-          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
-        });
+        const body = { type:'panic', location: coords ? { latitude:coords.lat, longitude:coords.lng } : null, message:'User triggered PANIC alert' };
+        const r = await fetch(`${BASE_API}/api/emergency/alert`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
         const d = await r.json().catch(()=>({}));
         if (r.ok){
           alert('Panic alert sent.');
@@ -417,65 +392,47 @@
         } else {
           alert('Alert sent (fallback).');
         }
-      }catch{
-        alert('Alert sent (no GPS).');
-      }
+      }catch{ alert('Alert sent (no GPS).'); }
     }
 
-    // Instant 90s flow
-    const instantModal = document.getElementById('instantModal');
-    const countdownEl  = document.getElementById('countdown');
-    const cancelInstantBtn = document.getElementById('cancelInstant');
-    const findOthersBtn    = document.getElementById('findOthers');
-
+    // Instant (90s)
     async function startInstant(provider){
       selectedProvider = provider;
       providersModal.classList.remove('open');
-      instantLeft = 90; countdownEl.textContent = String(instantLeft);
+      instantLeft = 90;
+      countdownEl.textContent = String(instantLeft);
       instantModal.classList.add('open');
 
       try{
         const r = await fetch(`${BASE_API}/api/requests`, {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({
-            type:'instant',
-            providerId: provider.id,
-            location: coords ? { latitude:coords.lat, longitude:coords.lng } : null
-          })
+          body: JSON.stringify({ type:'instant', providerId: provider.id, location: coords ? { latitude:coords.lat, longitude:coords.lng } : null })
         });
         const d = await r.json().catch(()=>({}));
         requestId = d.requestId || 'demo-'+Date.now();
-      }catch{
-        requestId = 'demo-'+Date.now();
-      }
+      }catch{ requestId = 'demo-'+Date.now(); }
 
       instantTimer = setInterval(async () => {
-        instantLeft -= 1; countdownEl.textContent = String(instantLeft);
+        instantLeft -= 1;
+        countdownEl.textContent = String(instantLeft);
+
         if (instantLeft % 3 === 0) {
           const status = await getRequestStatus(requestId);
           if (status === 'accepted'){ stopInstant(); openTracking(); return; }
           if (status === 'rejected'){ stopInstant(); alert('Provider rejected.'); instantModal.classList.remove('open'); return; }
         }
         if (instantLeft <= 0) {
-          stopInstant(); alert('No response. Try others.'); instantModal.classList.remove('open');
+          stopInstant(); alert('No response. Try others.');
+          instantModal.classList.remove('open');
         }
       }, 1000);
     }
-
-    function stopInstant(){
-      if (instantTimer) clearInterval(instantTimer);
-      instantTimer = null;
-    }
-
-    cancelInstantBtn.onclick = async () => {
+    function stopInstant(){ if (instantTimer) clearInterval(instantTimer); instantTimer = null; }
+    async function cancelInstant(){
       stopInstant();
-      if (requestId){
-        try{ await fetch(`${BASE_API}/api/requests/${encodeURIComponent(requestId)}`, { method:'DELETE' }); }catch{}
-      }
+      if (requestId){ try{ await fetch(`${BASE_API}/api/requests/${encodeURIComponent(requestId)}`, { method:'DELETE' }); }catch{} }
       instantModal.classList.remove('open');
-    };
-    findOthersBtn.onclick = () => { instantModal.classList.remove('open'); providersModal.classList.add('open'); };
-
+    }
     async function getRequestStatus(id){
       try{
         const r = await fetch(`${BASE_API}/api/requests/${encodeURIComponent(id)}`);
@@ -483,28 +440,22 @@
         const d = await r.json();
         return d.status || 'pending';
       }catch{
-        // Demo: randomly accept after ~12-18s
-        if (instantLeft < 78) return 'accepted';
+        if (instantLeft < 78) return 'accepted'; // demo
         return 'pending';
       }
     }
 
     // Tracking
-    const trackModal = document.getElementById('trackModal');
-    const trackStatus= document.getElementById('trackStatus');
-    document.getElementById('closeTrack').onclick = () => { stopTracking(); trackModal.classList.remove('open'); };
-
     function openTracking(){
+      instantModal.classList.remove('open');
       trackModal.classList.add('open');
       setTimeout(initMap, 50);
       startTracking();
     }
-
     function initMap(){
       if (!map){
         map = L.map('track-map', { zoomControl:true });
-        const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OSM' });
-        tiles.addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OSM' }).addTo(map);
       }
       const userLatLng = coords ? [coords.lat, coords.lng] : [0,0];
       map.setView(userLatLng, 14);
@@ -512,7 +463,6 @@
       userMarker = L.marker(userLatLng, { title:'You' }).addTo(map);
       if (providerMarker) providerMarker.remove();
     }
-
     function startTracking(){
       if (trackPoll) clearInterval(trackPoll);
       trackPoll = setInterval(async () => {
@@ -524,9 +474,7 @@
         trackStatus.textContent = `Provider en route • ${pos.eta || 'ETA —'}`;
       }, 3000);
     }
-
     function stopTracking(){ if (trackPoll) clearInterval(trackPoll); trackPoll = null; }
-
     function defaultIcon(){
       return L.icon({
         iconUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -535,7 +483,6 @@
         iconSize:[25,41], iconAnchor:[12,41]
       });
     }
-
     async function getProviderPosition(id){
       try{
         const r = await fetch(`${BASE_API}/api/requests/${encodeURIComponent(id)}/position`);
@@ -543,38 +490,26 @@
         const d = await r.json();
         return { lat:d.provider?.lat, lng:d.provider?.lng, eta:d.eta };
       }catch{
-        // Demo move
         const base = coords ? { lat: coords.lat + (Math.random()-0.5)/100, lng: coords.lng + (Math.random()-0.5)/100 } : { lat:0, lng:0 };
         return { lat: base.lat, lng: base.lng, eta: '8 min' };
       }
     }
 
-    // Scheduled booking
-    const bookingModal = document.getElementById('bookingModal');
-    const bookingForm  = document.getElementById('bookingForm');
-    document.getElementById('closeBooking').onclick = () => bookingModal.classList.remove('open');
-
-    function openBooking(provider){
-      selectedProvider = provider;
-      bookingModal.classList.add('open');
-    }
-
+    // Scheduled
+    function openBooking(provider){ selectedProvider = provider; bookingModal.classList.add('open'); }
     bookingForm.onsubmit = async (e) => {
       e.preventDefault();
       const date = document.getElementById('bkDate').value;
       const time = document.getElementById('bkTime').value;
       const address = document.getElementById('bkAddress').value;
       const desc = document.getElementById('bkDesc').value;
-
       if (!date || !time){ alert('Pick date and time'); return; }
-
       try{
         const r = await fetch(`${BASE_API}/api/bookings`, {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
             providerId: selectedProvider.id,
-            bookingType:'scheduled',
-            date, time, address, description:desc,
+            bookingType:'scheduled', date, time, address, description:desc,
             location: coords ? { latitude:coords.lat, longitude:coords.lng } : null
           })
         });
@@ -582,38 +517,8 @@
         alert('Booking request sent. Check My Bookings for status.');
       }catch{
         alert('Booking sent (demo). Provider will confirm soon.');
-      } finally {
-        bookingModal.classList.remove('open');
-      }
+      } finally { bookingModal.classList.remove('open'); }
     };
-
-    // Simple navigation wiring (single page feel)
-    function wireNav(){
-      document.querySelectorAll('.nav button').forEach(b=>{
-        b.onclick = () => {
-          document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
-          b.classList.add('active');
-          // Sections can be expanded; for now, keep a single-page with modals
-          if (b.dataset.page === 'bookings') alert('Open bookings list (to be wired to backend).');
-          if (b.dataset.page === 'wallet') alert('Open wallet (card/cash).');
-          if (b.dataset.page === 'profile') alert('Open profile (edit, KYC, provider toggle).');
-        };
-      });
-      document.getElementById('manageBookingsBtn').onclick = () => alert('Open bookings management.');
-      document.getElementById('profileBtn').onclick = () => alert('Open profile.');
-      document.getElementById('searchBtn').onclick = () => alert('Search coming soon.');
-    }
-
-    function wireModals(){
-      // close on backdrop click
-      [providersModal, bookingModal, instantModal, trackModal].forEach(m=>{
-        m.addEventListener('click', (e)=>{ if (e.target === m) m.classList.remove('open'); });
-      });
-    }
-
-    function wirePanic(){
-      // already wired above; kept for grouping
-    }
   </script>
 </body>
 </html>
