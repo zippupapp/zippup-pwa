@@ -3,7 +3,7 @@ const FUNCTIONS_BASE = 'https://<https://xxrtlkyqjqdhkenpkwll>.functions.supabas
 // ZippUp PWA - Main Application Logic (updated)
 class ZippUpApp {
   constructor() {
-    this.baseUrl = 'https://zippup-backend-v3.onrender.com';
+    this.baseUrl = '';
     this.currentUser = null;
     this.authToken = null;
     this.currentPage = 'home';
