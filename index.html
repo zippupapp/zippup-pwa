@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <style>
+  /* Make the Checkout row in the cart modal always visible */
+  #cartModal .sheet .body { max-height: 70vh; overflow: auto; }
+  #cartModal .sheet .body .row:last-child { position: sticky; bottom: 0; background:#fff; padding-top:10px; border-top:1px solid var(--border); }
+  /* Small “active request” bar */
+  .active-request-bar { position: fixed; left:16px; right:16px; bottom:120px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(17,24,39,.08); z-index:1000; padding:10px; display:none }
+  .active-request-bar .btn { padding:8px 12px; border-radius:10px; border:0; font-weight:600; cursor:pointer }
+  .active-request-bar .primary { background:#2563EB; color:#fff }
+  .active-request-bar .ghost { background:#F3F4F6 }
+</style
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>ZippUp — On‑Demand Services</title>
@@ -1247,6 +1257,62 @@
   // - Enable APIs: Maps JavaScript API + Places API
   // - Credentials -> your key -> add your site domain to "Website restrictions" (e.g. https://your-site.com/*)
   // Until then, address suggestions still work where possible; the overlay is from Google, not from this code.
+})();
+</script>
+  <script>
+(function () {
+  // 1) Fast‑tap for Transport/Food (one tap on phone)
+  function openByLabel(txt){txt=(txt||'').toLowerCase(); if(txt.includes('transport')){try{openCategory('transport','Transport')}catch{}} else if(txt.includes('food')){try{openCategory('food','Food')}catch{}}}
+  function svcTap(e){var card=e.target.closest('.card.service'); if(!card) return; var h4=card.querySelector('h4'); if(!h4) return; openByLabel(h4.textContent); }
+  document.addEventListener('click', svcTap, true);
+  document.addEventListener('touchend', svcTap, {capture:true, passive:false});
+
+  // 2) Active request bar (resume/cancel if user navigates away)
+  var bar=document.createElement('div');
+  bar.className='active-request-bar';
+  bar.innerHTML='<div class="row" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div class="small">You have an active request</div><div style="display:flex;gap:6px"><button class="btn ghost" id="arCancel" type="button">Cancel</button><button class="btn primary" id="arResume" type="button">Resume tracking</button></div></div>';
+  document.body.appendChild(bar);
+  function saveActive(id,cat,phone){try{localStorage.setItem('zup_active_req',JSON.stringify({id:id,cat:cat,phone:phone||null}))}catch{}}
+  function loadActive(){try{return JSON.parse(localStorage.getItem('zup_active_req')||'{}')}catch{return{}}}
+  function clearActive(){try{localStorage.removeItem('zup_active_req')}catch{}}
+  function showBar(){bar.style.display='block'}
+  function hideBar(){bar.style.display='none'}
+
+  // Patch instant starters to remember the active request
+  ['startInstantTransport','startInstant'].forEach(function(n){
+    var orig=window[n];
+    if(typeof orig==='function'){
+      window[n]=function(p){
+        var ret=orig.apply(this,arguments);
+        setTimeout(function(){
+          var a=loadActive();
+          var id=window.requestId||a.id||('demo-'+Date.now());
+          var cat=window.lastCategory||a.cat||'general';
+          var phone=p&&p.phone||a.phone||null;
+          saveActive(id,cat,phone); showBar();
+        },300);
+        return ret;
+      }
+    }
+  });
+
+  // Resume/cancel handlers
+  document.getElementById('arResume').onclick=function(){
+    var a=loadActive();
+    try{ openTracking(a.phone||null); }catch{}
+    hideBar();
+  };
+  document.getElementById('arCancel').onclick=async function(){
+    var a=loadActive();
+    try{ typeof cancelInstant==='function' && await cancelInstant('User cancelled', a.cat||'general'); }catch{}
+    clearActive(); hideBar();
+  };
+
+  // Restore bar on load if needed
+  var a0=loadActive(); if(a0&&a0.id) showBar();
+
+  // 3) Note for Google “Do you own this website?” overlay (info only):
+  // Enable billing + Maps JavaScript API + Places API; add your site domain as an allowed referrer on the key.
 })();
 </script>
 </body>
