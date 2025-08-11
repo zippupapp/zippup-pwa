@@ -2,120 +2,144 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>ZippUp Icon Maker</title>
 <style>
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; padding: 24px; background:#f7f7fb; color:#111; }
-  .wrap { max-width: 680px; margin: 0 auto; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px; }
-  h1 { margin: 0 0 12px; }
-  .row { display:flex; gap:12px; flex-wrap:wrap; margin-top: 12px; }
-  button { padding:10px 14px; border-radius:10px; border:0; background:#2563EB; color:#fff; font-weight:700; cursor:pointer }
-  canvas { background:#f0f3ff; border:1px dashed #d0d6f0; border-radius:12px }
-  small { color:#555 }
+  body{font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,sans-serif;background:#f7f8fc;padding:24px;color:#0f172a}
+  .wrap{max-width:720px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 10px 30px rgba(2,6,23,.06);padding:20px}
+  h1{margin:0 0 6px} .row{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+  button{padding:10px 14px;border:0;border-radius:10px;background:#2563EB;color:#fff;font-weight:700;cursor:pointer}
+  button.secondary{background:#10B981}
+  canvas{background:#eef2ff;border:1px dashed #c7d2fe;border-radius:12px}
+  small{color:#475569}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>ZippUp Icon Maker</h1>
-  <p>Click buttons to generate and download PNG icons for your PWA (maskable safe area).</p>
+  <p>Generate PNG icons and a splash image. Then upload them into <code>icons/</code>.</p>
 
   <div class="row">
     <button id="dl192">Download icon-192.png</button>
     <button id="dl512">Download icon-512.png</button>
-    <button id="dl180" style="background:#10B981">Download apple-touch-icon.png (180×180)</button>
+    <button id="dl180" class="secondary">Download apple-touch-icon.png (180×180)</button>
+    <button id="dlSplash" class="secondary">Download splash-1280x640.png</button>
   </div>
 
-  <div class="row" style="align-items:flex-start; margin-top:16px">
+  <div class="row" style="align-items:flex-start">
     <div>
       <canvas id="preview" width="192" height="192"></canvas>
       <div style="text-align:center"><small>Preview (192×192)</small></div>
     </div>
   </div>
 
-  <p style="margin-top:16px">
-    After downloading:
-    <br>- Upload to your repo under: icons/icon-192.png and icons/icon-512.png
-    <br>- Optional iOS icon: icons/apple-touch-icon.png
+  <p style="margin-top:14px">
+    Upload to your repo:
+    <br>- icons/icon-192.png
+    <br>- icons/icon-512.png
+    <br>- icons/apple-touch-icon.png (optional)
+    <br>- icons/splash-1280x640.png (optional for custom splash)
   </p>
 </div>
 
 <script>
-function drawIcon(size, options = {}) {
-  const canvas = document.createElement('canvas');
-  canvas.width = size; canvas.height = size;
-  const ctx = canvas.getContext('2d');
+function rr(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 
-  // Colors
-  const bg = options.bg || '#2563EB';
-  const fg = options.fg || '#FFFFFF';
+function drawIcon(size){
+  const c=document.createElement('canvas'); c.width=size; c.height=size; const ctx=c.getContext('2d');
 
-  // Rounded square (maskable safe area padding ~12%)
-  const pad = Math.round(size * 0.12);
-  const r = Math.round(size * 0.18);
-  const x = pad, y = pad, w = size - pad*2, h = size - pad*2;
+  // background
+  const pad=Math.round(size*0.03), rad=Math.round(size*0.18);
+  const g=ctx.createLinearGradient(0,0,size,size); g.addColorStop(0,'#2563EB'); g.addColorStop(1,'#1D4ED8');
+  ctx.fillStyle=g; rr(ctx,pad,pad,size-pad*2,size-pad*2,rad); ctx.fill();
 
-  ctx.fillStyle = bg;
-  roundRect(ctx, x, y, w, h, r);
+  // Z
+  ctx.fillStyle='#fff';
+  const s=size;
+  ctx.beginPath();
+  ctx.moveTo(s*0.23,s*0.72);
+  ctx.lineTo(s*0.60,s*0.28);
+  ctx.lineTo(s*0.36,s*0.28);
+  ctx.lineTo(s*0.40,s*0.20);
+  ctx.lineTo(s*0.78,s*0.20);
+  ctx.lineTo(s*0.41,s*0.64);
+  ctx.lineTo(s*0.65,s*0.64);
+  ctx.lineTo(s*0.61,s*0.72);
+  ctx.closePath();
   ctx.fill();
 
-  // White "Z"
-  ctx.fillStyle = fg;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = `700 ${Math.round(size * 0.55)}px Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
-  ctx.fillText('Z', size/2, size/2);
-
-  return canvas;
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  r = Math.min(r, w/2, h/2);
+  // Runner
+  ctx.fillStyle='#fff';
+  // head
+  ctx.beginPath(); ctx.arc(s*0.67,s*0.33,s*0.045,0,Math.PI*2); ctx.fill();
+  // body / arms / legs
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
+  ctx.moveTo(s*0.65,s*0.37);
+  ctx.lineTo(s*0.57,s*0.49);
+  ctx.lineTo(s*0.48,s*0.46);
+  ctx.lineTo(s*0.46,s*0.52);
+  ctx.lineTo(s*0.56,s*0.55);
+  ctx.lineTo(s*0.62,s*0.46);
+  ctx.lineTo(s*0.68,s*0.54);
+  ctx.lineTo(s*0.73,s*0.53);
+  ctx.lineTo(s*0.69,s*0.45);
+  ctx.lineTo(s*0.74,s*0.41);
+  ctx.lineTo(s*0.71,s*0.37);
+  ctx.lineTo(s*0.65,s*0.37);
   ctx.closePath();
+  ctx.fill();
+
+  // phone
+  ctx.fillStyle='#0EA5E9';
+  ctx.fillRect(s*0.72, s*0.36, s*0.032, s*0.056);
+  ctx.fillStyle='#22C55E';
+  ctx.fillRect(s*0.725, s*0.365, s*0.022, s*0.028);
+
+  return c;
 }
 
-function downloadPng(canvas, filename) {
-  canvas.toBlob((blob) => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 0);
-  }, 'image/png');
+function drawSplash(w,h){
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const ctx=c.getContext('2d');
+  const g=ctx.createLinearGradient(0,0,w,h); g.addColorStop(0,'#2563EB'); g.addColorStop(1,'#1D4ED8');
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+
+  // phone with GPS
+  ctx.fillStyle='#0B1E4E22';
+  ctx.fillRect(w*0.65,h*0.14,w*0.24,h*0.72);
+  ctx.fillStyle='#0B1E4E';
+  rr(ctx,w*0.66,h*0.16,w*0.22,h*0.68,20); ctx.fill();
+  ctx.fillStyle='#111827';
+  rr(ctx,w*0.668,h*0.18,w*0.204,h*0.60,14); ctx.fill();
+
+  // route line
+  ctx.strokeStyle='#22C55E'; ctx.lineWidth=6; ctx.setLineDash([12,8]);
+  ctx.beginPath(); ctx.moveTo(w*0.69,h*0.22); ctx.lineTo(w*0.84,h*0.70); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#22C55E'; ctx.beginPath(); ctx.arc(w*0.69,h*0.22,10,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(w*0.84,h*0.70,10,0,Math.PI*2); ctx.fill();
+
+  // runner vignette
+  const size = Math.min(w,h)*0.45;
+  const icon = drawIcon(256);
+  ctx.drawImage(icon, w*0.12, h*0.25, size, size);
+
+  // text
+  ctx.fillStyle='#ffffff'; ctx.font='700 ' + Math.round(Math.min(w,h)*0.08) + 'px Inter,system-ui';
+  ctx.fillText('ZippUp', w*0.12, h*0.18);
+  ctx.font='400 ' + Math.round(Math.min(w,h)*0.035) + 'px Inter,system-ui';
+  ctx.fillText('On‑demand services, fast.', w*0.12, h*0.22);
+
+  return c;
 }
 
-// Wire buttons
-document.getElementById('dl192').onclick = () => {
-  const c = drawIcon(192);
-  downloadPng(c, 'icon-192.png');
-  updatePreview();
-};
-document.getElementById('dl512').onclick = () => {
-  const c = drawIcon(512);
-  downloadPng(c, 'icon-512.png');
-  updatePreview();
-};
-document.getElementById('dl180').onclick = () => {
-  const c = drawIcon(180);
-  downloadPng(c, 'apple-touch-icon.png');
-  updatePreview();
-};
+function download(canvas, name){ canvas.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),500); }); }
 
-function updatePreview() {
-  const pv = document.getElementById('preview');
-  const c = drawIcon(192);
-  const ctx = pv.getContext('2d');
-  ctx.clearRect(0,0,pv.width,pv.height);
-  ctx.drawImage(c, 0, 0);
-}
-updatePreview();
+document.getElementById('dl192').onclick = ()=> download(drawIcon(192), 'icon-192.png');
+document.getElementById('dl512').onclick = ()=> download(drawIcon(512), 'icon-512.png');
+document.getElementById('dl180').onclick = ()=> download(drawIcon(180), 'apple-touch-icon.png');
+document.getElementById('dlSplash').onclick = ()=> download(drawSplash(1280,640), 'splash-1280x640.png');
+
+(function preview(){ const p=document.getElementById('preview').getContext('2d'); const c=drawIcon(192); p.clearRect(0,0,192,192); p.drawImage(c,0,0); })();
 </script>
 </body>
 </html>
