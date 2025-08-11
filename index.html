@@ -1117,5 +1117,137 @@
 
     // Transport helpers: Google Places attach on demand
   </script>
+  <script>
+// ZippUp mobile hotfix: sticky checkout, fast Transport/Food, active booking bar
+(function () {
+  // 0) Inject minimal CSS so we don't touch your existing styles
+  const css = `
+    /* Cart modal: scroll body, keep checkout visible */
+    #cartModal .sheet .body { max-height: 70vh; overflow: auto; }
+    #cartModal .sheet .body .checkout-sticky { position: sticky; bottom: 0; background:#fff; padding-top:10px; border-top:1px solid var(--border); }
+
+    /* Active request bar */
+    .active-request-bar { position: fixed; left:16px; right:16px; bottom:120px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(17,24,39,.08); z-index: 1000; padding:10px; display:none }
+    .active-request-bar .row { display:flex; align-items:center; justify-content:space-between; gap:8px }
+    .active-request-bar .btn { padding:8px 12px; border-radius:10px; border:0; font-weight:600; cursor:pointer }
+    .active-request-bar .primary { background:#2563EB; color:#fff }
+    .active-request-bar .ghost { background:#F3F4F6 }
+  `;
+  const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
+
+  // 1) Make Transport/Food cards open on first tap (mobile safe)
+  function openByLabel(text) {
+    const t = (text||'').toLowerCase();
+    if (t.includes('transport')) { try { openCategory('transport','Transport'); } catch {} return true; }
+    if (t.includes('food'))      { try { openCategory('food','Food'); }         catch {} return true; }
+    return false;
+  }
+  function svcTap(e){
+    const card = e.target.closest('.card.service'); if (!card) return;
+    const h4 = card.querySelector('h4'); if (!h4) return;
+    if (openByLabel(h4.textContent)) { e.preventDefault(); e.stopPropagation(); }
+  }
+  ['pointerup','click','touchend'].forEach(ev => document.addEventListener(ev, svcTap, { capture:true, passive:false }));
+
+  // 2) Cart modal: make Checkout row sticky automatically
+  function stickCheckoutRow() {
+    const row = document.querySelector('#cartModal .body #checkoutBtn')?.closest('.row');
+    if (row && !row.classList.contains('checkout-sticky')) row.classList.add('checkout-sticky');
+  }
+  const cartBody = document.querySelector('#cartModal .body');
+  if (cartBody) new MutationObserver(stickCheckoutRow).observe(cartBody, { childList:true, subtree:true });
+  stickCheckoutRow();
+
+  // 3) Active booking bar (persists when user leaves page)
+  const BAR_ID = 'zupActiveBar';
+  function ensureBar() {
+    if (document.getElementById(BAR_ID)) return document.getElementById(BAR_ID);
+    const bar = document.createElement('div');
+    bar.id = BAR_ID;
+    bar.className = 'active-request-bar';
+    bar.innerHTML = `
+      <div class="row">
+        <div id="zupActiveText" class="small">You have an active request</div>
+        <div class="row" style="gap:6px">
+          <button class="btn ghost" id="zupActiveCancel" type="button">Cancel</button>
+          <button class="btn primary" id="zupActiveTrack" type="button">Resume tracking</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(bar);
+    document.getElementById('zupActiveTrack').onclick = () => {
+      try { openTracking(_activeCache?.phone || null); } catch {}
+      bar.style.display = 'none';
+    };
+    document.getElementById('zupActiveCancel').onclick = async () => {
+      // Try to cancel via existing code, else just clear
+      try { typeof cancelInstant === 'function' ? await cancelInstant('User cancelled', _activeCache?.category || 'general') : null; } catch {}
+      clearActive();
+    };
+    return bar;
+  }
+  function saveActive(obj) {
+    localStorage.setItem('zup_active_req', JSON.stringify(obj||{}));
+  }
+  function loadActive() {
+    try { return JSON.parse(localStorage.getItem('zup_active_req')||'{}'); } catch { return {}; }
+  }
+  function showActive(obj) {
+    const bar = ensureBar();
+    const txt = document.getElementById('zupActiveText');
+    if (txt) txt.textContent = `Active ${obj?.category || 'service'} request • tap to resume or cancel`;
+    bar.style.display = 'block';
+  }
+  function clearActive() {
+    localStorage.removeItem('zup_active_req');
+    const bar = document.getElementById(BAR_ID);
+    if (bar) bar.style.display = 'none';
+  }
+
+  // 3a) Monkey‑patch your startInstant/startInstantTransport to persist the active request
+  let _activeCache = loadActive();
+  ['startInstantTransport','startInstant'].forEach(fnName => {
+    const orig = window[fnName];
+    if (typeof orig === 'function') {
+      window[fnName] = function patched(provider) {
+        try {
+          // Call original
+          const ret = orig.apply(this, arguments);
+          // Save active after a tick (requestId gets set shortly after)
+          setTimeout(() => {
+            const obj = {
+              id: (window.requestId || _activeCache?.id || ('demo-'+Date.now())),
+              category: (window.lastCategory || _activeCache?.category || 'general'),
+              phone: provider?.phone || null,
+            };
+            _activeCache = obj; saveActive(obj); showActive(obj);
+          }, 300);
+          return ret;
+        } catch (e) { return orig.apply(this, arguments); }
+      }
+    }
+  });
+  // When tracking closes, clear active (optional: keep until completed)
+  if (typeof window.closeTrack === 'function') {
+    const origClose = window.closeTrack;
+    window.closeTrack = function patchedClose() {
+      try { origClose.apply(this, arguments); } catch {}
+      // keep active so user can resume — comment next line to keep persistent
+      // clearActive();
+    }
+  }
+
+  // 3b) Restore bar on load if there is an active request
+  if (_activeCache && _activeCache.id) { showActive(_activeCache); }
+
+  // 4) Helpful note for Google Maps "Do you own this website?" overlay
+  // That message comes from Google Maps/Places when the key isn't allowed for your domain
+  // or billing isn't enabled. To stop it:
+  // - In Google Cloud Console: enable billing for the project of this key
+  // - Enable APIs: Maps JavaScript API + Places API
+  // - Credentials -> your key -> add your site domain to "Website restrictions" (e.g. https://your-site.com/*)
+  // Until then, address suggestions still work where possible; the overlay is from Google, not from this code.
+})();
+</script>
 </body>
 </html>
