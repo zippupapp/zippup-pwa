@@ -1662,5 +1662,145 @@
   });
 })();
 </script>
+  <script>
+// Safe-mode hotfix: kill old SW/cache, make Transport/Food tap instantly, keep cart editing and checkout working
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // 0) Kill old service worker + old caches (one deploy)
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+  }
+  if (window.caches) {
+    caches.keys().then(keys => keys.forEach(k => { if (/^zippup/i.test(k)) caches.delete(k); }));
+  }
+
+  // 1) Fast-activate Transport/Food (capture phase + mobile-safe)
+  function openServiceByLabel(label) {
+    const t = (label || '').toLowerCase();
+    if (t.includes('transport')) { try { openCategory('transport','Transport'); } catch {} return true; }
+    if (t.includes('food'))      { try { openCategory('food','Food'); }         catch {} return true; }
+    return false;
+  }
+  function serviceTapHandler(e) {
+    const card = e.target.closest('.card.service');
+    if (!card) return;
+    const h4 = card.querySelector('h4');
+    if (!h4) return;
+    const hit = openServiceByLabel(h4.textContent);
+    if (hit) { e.preventDefault(); e.stopPropagation(); }
+  }
+  // Bind in capture for reliability on mobile
+  ['pointerup','click','touchend'].forEach(ev => {
+    document.addEventListener(ev, serviceTapHandler, { capture: true, passive: false });
+  });
+
+  // 2) Make both cart buttons open the same modal, reliably on mobile
+  function openCartModal() {
+    try { showPage('marketplace'); } catch {}
+    try { window.renderCart && window.renderCart(); } catch {}
+    const m = $('cartModal'); if (m) m.classList.add('open');
+  }
+  function bindTap(el, fn) {
+    if (!el) return;
+    const h = (e) => { e.preventDefault(); e.stopPropagation(); fn(e); };
+    el.addEventListener('pointerup', h, { passive:false });
+    el.addEventListener('click',     h, { passive:false });
+    el.addEventListener('touchend',  h, { passive:false });
+  }
+  bindTap($('cartBtn'), openCartModal);
+  bindTap($('openCartBtn'), openCartModal);
+  bindTap($('closeCart'), () => $('cartModal')?.classList.remove('open'));
+
+  // 3) Checkout button opens checkout modal
+  bindTap($('checkoutBtn'), () => { $('cartModal')?.classList.remove('open'); $('checkoutModal')?.classList.add('open'); });
+
+  // 4) Cart edit (+ / − / remove) via delegation (works even if renderCart isn’t called)
+  function readCart() {
+    try { return window.cart && Array.isArray(window.cart.items) ? window.cart : JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }
+    catch { return { items: [] }; }
+  }
+  function writeCart(cart) {
+    if (window.cart) window.cart.items = cart.items;
+    localStorage.setItem('mp_cart', JSON.stringify(cart));
+  }
+  function updateBadges(cart) {
+    const count = cart.items.reduce((a,b)=>a+b.qty,0);
+    const hb = $('headerCartBadge'); const cc = $('cartCount');
+    if (hb) hb.textContent = String(count);
+    if (cc) cc.textContent = String(count);
+  }
+  function rerenderCartUI(cart) {
+    const list = $('cartList'); const totalEl = $('cartTotal');
+    if (!list || !totalEl) return;
+    list.innerHTML = '';
+    if (!cart.items.length) {
+      list.innerHTML = '<div class="small muted">Your cart is empty.</div>';
+      totalEl.textContent = '0.00'; updateBadges(cart); return;
+    }
+    let total = 0;
+    cart.items.forEach(item => {
+      total += item.price * item.qty;
+      const row = document.createElement('div');
+      row.className = 'card'; row.dataset.id = item.id;
+      row.innerHTML = `
+        <div class="row" style="justify-content:space-between; align-items:flex-start">
+          <div class="row">
+            <img src="${item.img}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
+            <div style="margin-left:8px">
+              <strong>${item.title}</strong>
+              <div class="small muted">$${item.price.toFixed(2)}</div>
+            </div>
+          </div>
+          <div class="qty">
+            <button class="btn ghost" data-k="dec" type="button">−</button>
+            <div data-q>${item.qty}</div>
+            <button class="btn ghost" data-k="inc" type="button">＋</button>
+            <button class="btn ghost" data-k="rm" type="button">✖</button>
+          </div>
+        </div>`;
+      list.appendChild(row);
+    });
+    totalEl.textContent = total.toFixed(2);
+    updateBadges(cart);
+  }
+  // Initial sync once the modal is shown
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'openCartBtn') {
+      const cart = readCart(); rerenderCartUI(cart);
+    }
+  }, { passive:false });
+
+  function cartEditHandler(e) {
+    const btn = e.target.closest('#cartList [data-k]');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+
+    const row = btn.closest('.card');
+    const id  = row?.dataset?.id;
+    if (!id) return;
+
+    const cart = readCart();
+    const idx  = cart.items.findIndex(i => i.id === id);
+    if (idx < 0) return;
+
+    const k = btn.getAttribute('data-k');
+    if (k === 'dec') cart.items[idx].qty = Math.max(1, cart.items[idx].qty - 1);
+    if (k === 'inc') cart.items[idx].qty = cart.items[idx].qty + 1;
+    if (k === 'rm')  cart.items.splice(idx, 1);
+
+    writeCart(cart);
+    rerenderCartUI(cart);
+  }
+  document.addEventListener('pointerup', cartEditHandler, { passive:false });
+  document.addEventListener('click',     cartEditHandler, { passive:false });
+  document.addEventListener('touchend',  cartEditHandler, { passive:false });
+
+  // 5) Ensure these are not treated as submit
+  window.addEventListener('DOMContentLoaded', () => {
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id => { const b=$(id); if (b) b.setAttribute('type','button'); });
+  });
+})();
+</script>
 </body>
 </html>
