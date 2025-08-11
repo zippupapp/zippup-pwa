@@ -1784,5 +1784,89 @@
 })();
 </script>
 </script>
+  <script>
+// Mobile cart and checkout hotfix (non-destructive)
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  function onTap(el, handler) {
+    if (!el) return;
+    const h = (e) => { e.preventDefault(); e.stopPropagation(); handler(e); };
+    el.addEventListener('click', h, { passive: false });
+    el.addEventListener('touchend', h, { passive: false });
+  }
+
+  function readCart() {
+    try { return JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); }
+    catch { return { items: [] }; }
+  }
+  function writeCart(cart) {
+    localStorage.setItem('mp_cart', JSON.stringify(cart));
+  }
+  function updateCount(cart) {
+    const count = cart.items.reduce((a,b)=>a+b.qty,0);
+    const hb = $('headerCartBadge'); const cc = $('cartCount');
+    if (hb) hb.textContent = String(count);
+    if (cc) cc.textContent = String(count);
+  }
+
+  function renderCartSafe() {
+    try { window.renderCart && window.renderCart(); } catch {}
+  }
+
+  function openCartModal() {
+    try { showPage('marketplace'); } catch {}
+    renderCartSafe();
+    const m = $('cartModal');
+    if (m) setTimeout(() => m.classList.add('open'), 0);
+  }
+
+  function openCheckoutModal() {
+    $('cartModal')?.classList.remove('open');
+    $('checkoutModal')?.classList.add('open');
+  }
+
+  // Wire header and bottom cart buttons
+  onTap($('cartBtn'), openCartModal);
+  onTap($('openCartBtn'), openCartModal);
+  onTap($('closeCart'), () => $('cartModal')?.classList.remove('open'));
+
+  // Wire checkout from cart
+  onTap($('checkoutBtn'), openCheckoutModal);
+
+  // Delegate + / − / remove inside cart for touch + click
+  function handleCartEdit(e) {
+    const btn = e.target.closest('#cartList [data-k]');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+
+    const row = btn.closest('.card');
+    const id  = row?.dataset?.id;
+    if (!id) return;
+
+    const cart = readCart();
+    const idx  = cart.items.findIndex(i => i.id === id);
+    if (idx < 0) return;
+
+    const k = btn.getAttribute('data-k');
+    if (k === 'dec') cart.items[idx].qty = Math.max(1, cart.items[idx].qty - 1);
+    if (k === 'inc') cart.items[idx].qty = cart.items[idx].qty + 1;
+    if (k === 'rm')  cart.items.splice(idx, 1);
+
+    writeCart(cart);
+    renderCartSafe();
+    updateCount(cart);
+  }
+  document.addEventListener('click', handleCartEdit, { passive: false });
+  document.addEventListener('touchend', handleCartEdit, { passive: false });
+
+  // Ensure buttons are type=button to avoid form submits swallowing taps
+  window.addEventListener('DOMContentLoaded', () => {
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id => {
+      const b = $(id); if (b) b.setAttribute('type','button');
+    });
+  });
+})();
+</script>
 </body>
 </html>
