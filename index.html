@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <meta charset="utf-8"/>
@@ -1788,6 +1789,198 @@
       return _triggerPanic && _triggerPanic();
     }
   };
+})();
+</script>
+  <script>
+// ZippUp hotfix: cart edit + checkout + modal close + pending->tracking + auth (email/pw + Google via Supabase)
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- CART: edit (+/−/remove) + sticky checkout + open checkout ----------
+  // Ensure core cart helpers
+  if (!window.cart) { try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); } catch { window.cart = { items: [] }; } }
+  if (typeof window.saveCart !== 'function') window.saveCart = () => localStorage.setItem('mp_cart', JSON.stringify(window.cart));
+  if (typeof window.updateCartCount !== 'function') window.updateCartCount = () => {
+    const n = window.cart.items.reduce((a,b)=>a+b.qty,0);
+    const hb = $('headerCartBadge'), cc = $('cartCount'); if (hb) hb.textContent=String(n); if (cc) cc.textContent=String(n);
+  };
+  if (typeof window.renderCart !== 'function') window.renderCart = () => {
+    const list=$('cartList'), totalEl=$('cartTotal'); if (!list||!totalEl) return;
+    list.innerHTML=''; if (!window.cart.items.length){ list.innerHTML='<div class="small muted">Your cart is empty.</div>'; totalEl.textContent='0.00'; window.updateCartCount(); return; }
+    let total=0; window.cart.items.forEach(item=>{
+      total+=Number(item.price)*item.qty;
+      const row=document.createElement('div'); row.className='card'; row.dataset.id=item.id;
+      row.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="row"><img src="${item.img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
+        <div style="margin-left:8px"><strong>${item.title}</strong><div class="small muted">$${Number(item.price).toFixed(2)}</div></div></div>
+        <div class="qty"><button class="btn ghost" data-k="dec" type="button">−</button><div>${item.qty}</div><button class="btn ghost" data-k="inc" type="button">＋</button><button class="btn ghost" data-k="rm" type="button">✖</button></div></div>`;
+      list.appendChild(row);
+    });
+    totalEl.textContent=total.toFixed(2); window.updateCartCount();
+  };
+
+  // Sticky checkout row + scroll body
+  (function stickyCheckout(){
+    const body = document.querySelector('#cartModal .sheet .body'); if (!body) return;
+    body.style.maxHeight='70vh'; body.style.overflow='auto';
+    const row = document.querySelector('#cartModal .sheet .body #checkoutBtn')?.closest('.row');
+    if (row) { row.style.position='sticky'; row.style.bottom='0'; row.style.background='#fff'; row.style.paddingTop='10px'; row.style.borderTop='1px solid var(--border)'; }
+  })();
+
+  // Delegate edit clicks
+  function onCartEdit(e){
+    const btn=e.target.closest('#cartList [data-k]'); if(!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    const id=btn.closest('.card')?.dataset?.id; if(!id) return;
+    const i=window.cart.items.findIndex(x=>x.id===id); if(i<0) return;
+    const k=btn.getAttribute('data-k');
+    if(k==='dec') window.cart.items[i].qty=Math.max(1,window.cart.items[i].qty-1);
+    if(k==='inc') window.cart.items[i].qty=window.cart.items[i].qty+1;
+    if(k==='rm')  window.cart.items.splice(i,1);
+    window.saveCart(); window.renderCart(); window.updateCartCount();
+  }
+  document.addEventListener('click', onCartEdit, { passive:false });
+  document.addEventListener('touchend', onCartEdit, { passive:false });
+
+  // Checkout open and submit wiring safety
+  const checkoutBtn=$('checkoutBtn'); if (checkoutBtn) checkoutBtn.onclick=()=>{ $('cartModal')?.classList.remove('open'); $('checkoutModal')?.classList.add('open'); };
+  const closeCart=$('closeCart'); if (closeCart) closeCart.onclick=()=> $('cartModal')?.classList.remove('open');
+
+  // ---------- MODALS: close booking; cancel dialog auto-close ----------
+  // Close any modal on [X] and clicking backdrop
+  document.querySelectorAll('.modal').forEach(m=>{
+    m.addEventListener('click',(e)=>{ if (e.target===m) m.classList.remove('open'); });
+  });
+  const closeBooking=$('closeBooking'); if (closeBooking) closeBooking.onclick=()=> $('bookingModal')?.classList.remove('open');
+
+  // Cancel reasons modal robust handlers
+  (function wireCancelModal(){
+    const modal=$('cancelReasonsModal'); if (!modal) return;
+    const crClose=$('crClose'), crBack=$('crBack'), crConfirm=$('crConfirm');
+    if (crClose) crClose.onclick=()=> modal.classList.remove('open');
+    if (crBack)  crBack.onclick =()=> modal.classList.remove('open');
+    if (crConfirm) {
+      crConfirm.onclick=async ()=>{
+        const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other';
+        const reason=picked==='Other' ? (document.getElementById('crOther')?.value.trim()||'Other') : picked;
+        try{ if (window.requestId) await fetch(`${(window.BASE_API||'')}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason)}`,{method:'DELETE'}); }catch{}
+        modal.classList.remove('open');
+        $('trackModal')?.classList.remove('open');
+      };
+    }
+  })();
+
+  // ---------- Pending service -> open tracking on re-click ----------
+  const ACTIVE_KEY='zup_active_by_service';
+  const getActiveMap=()=>{ try{return JSON.parse(localStorage.getItem(ACTIVE_KEY)||'{}')}catch{return{}} };
+  const setActive=(cat,obj)=>{ const m=getActiveMap(); if(obj) m[cat]=obj; else delete m[cat]; localStorage.setItem(ACTIVE_KEY,JSON.stringify(m)); };
+  const getActive=(cat)=>getActiveMap()[cat];
+  const _openCategory=window.openCategory;
+  if (typeof _openCategory==='function') {
+    window.openCategory=function wrapped(catId,label){
+      const act=getActive(catId);
+      if (act?.id) {
+        try{ window.openTracking && window.openTracking(); }catch{}
+        // ensure Cancel button
+        const tHead=document.querySelector('#trackModal .head');
+        if (tHead && !document.getElementById('trackCancelBtn')) {
+          const btn=document.createElement('button'); btn.id='trackCancelBtn'; btn.className='btn ghost'; btn.type='button'; btn.textContent='Cancel';
+          btn.onclick=()=>{ const m=$('cancelReasonsModal'); if (!m) return; m.classList.add('open'); };
+          tHead.appendChild(btn);
+        }
+        return;
+      }
+      return _openCategory.apply(this,arguments);
+    }
+  }
+
+  // ---------- AUTH: Supabase email/password + Google ----------
+  // Add minimal Auth modal if absent
+  if (!document.getElementById('authModal')) {
+    const m=document.createElement('div'); m.id='authModal'; m.className='modal'; m.innerHTML=`
+      <div class="sheet">
+        <div class="head"><strong>Sign in / Sign up</strong><button class="btn ghost" id="authClose" type="button">✖</button></div>
+        <div class="body">
+          <div class="list">
+            <div class="field"><label class="small">Email</label><input id="authEmail" type="email" placeholder="you@example.com"/></div>
+            <div class="field"><label class="small">Password</label><input id="authPassword" type="password" placeholder="••••••••"/></div>
+            <div class="row" style="gap:8px">
+              <button class="btn primary" id="authSignIn" type="button">Sign in</button>
+              <button class="btn ghost" id="authSignUp" type="button">Sign up</button>
+              <button class="btn ghost" id="authGoogle" type="button">Sign in with Google</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    $('authClose').onclick=()=> m.classList.remove('open');
+  }
+
+  // Config: replace with your Supabase project keys
+  const SUPABASE_URL  = 'https://xxrtlkyqjqdhkenpkwll.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4cnRsa3lxanFkaGtlbnBrd2xsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1OTkyMTEsImV4cCI6MjA3MDE3NTIxMX0.LKBzuOIjjmgoYAjMPHtJ3KkYaNC3A42nh4CHy8aKUp4';
+
+  let supa = null, currentUser = null;
+  function supaInit(){
+    if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON) return false;
+    supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    return true;
+  }
+  async function syncUser(){
+    if (!supa) return;
+    const { data:{ session } } = await supa.auth.getSession();
+    currentUser = session?.user || null;
+    // Update UI
+    const name = currentUser?.user_metadata?.full_name || currentUser?.email || (window.user?.name||'Guest');
+    if (window.user) window.user.name = name;
+    $('userName') && ( $('userName').textContent=name );
+    $('profName') && ( $('profName').textContent=name );
+  }
+  function showAuth(){ document.getElementById('authModal')?.classList.add('open'); }
+  async function signInEmail(){
+    const email=$('authEmail')?.value?.trim(), password=$('authPassword')?.value?.trim();
+    if (!email||!password) return alert('Enter email and password');
+    const { error } = await supa.auth.signInWithPassword({ email, password });
+    if (error) return alert(error.message);
+    await syncUser(); document.getElementById('authModal')?.classList.remove('open');
+  }
+  async function signUpEmail(){
+    const email=$('authEmail')?.value?.trim(), password=$('authPassword')?.value?.trim();
+    if (!email||!password) return alert('Enter email and password');
+    const { error } = await supa.auth.signUp({ email, password, options:{ data:{ full_name: email.split('@')[0] } } });
+    if (error) return alert(error.message);
+    alert('Check your email to confirm.'); await syncUser(); document.getElementById('authModal')?.classList.remove('open');
+  }
+  async function signInGoogle(){
+    const { error } = await supa.auth.signInWithOAuth({ provider:'google' });
+    if (error) alert(error.message);
+  }
+  async function signOut(){
+    if (!supa) return;
+    await supa.auth.signOut(); currentUser=null; alert('Logged out');
+    await syncUser();
+  }
+
+  // Replace "Guest" with auth flow in menu
+  (function wireMenuAuth(){
+    if (!supaInit()) {
+      // Fallback: open auth modal on logout to allow sign-in UX
+      const logout=$('menuLogout'); if (logout) logout.onclick=()=> showAuth();
+      return;
+    }
+    $('menuLogout') && ($('menuLogout').onclick = ()=> signOut());
+    $('profileBtn') && $('profileBtn').addEventListener('dblclick', ()=> showAuth()); // quick open auth
+    $('authSignIn')  && ($('authSignIn').onclick  = ()=> signInEmail());
+    $('authSignUp')  && ($('authSignUp').onclick  = ()=> signUpEmail());
+    $('authGoogle')  && ($('authGoogle').onclick  = ()=> signInGoogle());
+    syncUser();
+  })();
+
+  // Make sure critical buttons are type="button"
+  window.addEventListener('DOMContentLoaded', ()=>{
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn','tiStart','authSignIn','authSignUp','authGoogle'].forEach(id=>{ const b=$(id); if (b) b.setAttribute('type','button'); });
+    window.renderCart(); window.updateCartCount();
+  });
 })();
 </script>
 </body>
