@@ -1300,5 +1300,515 @@
       window.addEventListener('appinstalled', ()=> { deferred=null; banner.style.display='none'; });
     })();
   </script>
+  <script>
+// ZippUp focused hotfix – cart edit + sticky checkout + schedule works + profile edit + active tracking + uploads + top‑up + PWA banner
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // 0) Ensure cart helpers exist
+  if (!window.cart) { try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); } catch { window.cart = { items: [] }; } }
+  if (typeof window.updateCartCount !== 'function') {
+    window.updateCartCount = function updateCartCount() {
+      const n = window.cart.items.reduce((a,b)=>a+b.qty,0);
+      const hb = $('headerCartBadge'), cc = $('cartCount');
+      if (hb) hb.textContent = String(n);
+      if (cc) cc.textContent = String(n);
+    };
+  }
+  if (typeof window.saveCart !== 'function') {
+    window.saveCart = function saveCart() { localStorage.setItem('mp_cart', JSON.stringify(window.cart)); };
+  }
+  if (typeof window.renderCart !== 'function') {
+    window.renderCart = function renderCart() {
+      const list = $('cartList'), totalEl = $('cartTotal');
+      if (!list || !totalEl) return;
+      list.innerHTML = '';
+      if (!window.cart.items.length) {
+        list.innerHTML = '<div class="small muted">Your cart is empty.</div>';
+        totalEl.textContent = '0.00';
+        window.updateCartCount();
+        return;
+      }
+      let total = 0;
+      window.cart.items.forEach(item=>{
+        total += Number(item.price)*item.qty;
+        const row = document.createElement('div');
+        row.className = 'card';
+        row.dataset.id = item.id;
+        row.innerHTML = `
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div class="row">
+              <img src="${item.img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
+              <div style="margin-left:8px">
+                <strong>${item.title}</strong>
+                <div class="small muted">$${Number(item.price).toFixed(2)}</div>
+              </div>
+            </div>
+            <div class="qty">
+              <button class="btn ghost" data-k="dec" type="button">−</button>
+              <div>${item.qty}</div>
+              <button class="btn ghost" data-k="inc" type="button">＋</button>
+              <button class="btn ghost" data-k="rm" type="button">✖</button>
+            </div>
+          </div>`;
+        list.appendChild(row);
+      });
+      totalEl.textContent = total.toFixed(2);
+      window.updateCartCount();
+    };
+  }
+
+  // 1) Make checkout row sticky and the cart body scrollable
+  (function stickyCheckout() {
+    const body = document.querySelector('#cartModal .sheet .body');
+    if (!body) return;
+    body.style.maxHeight = '70vh';
+    body.style.overflow = 'auto';
+    const row = document.querySelector('#cartModal .sheet .body #checkoutBtn')?.closest('.row');
+    if (row) { row.style.position='sticky'; row.style.bottom='0'; row.style.background='#fff'; row.style.paddingTop='10px'; row.style.borderTop='1px solid var(--border)'; }
+  })();
+
+  // 2) Cart edit (+ / − / remove)
+  function onCartEdit(e) {
+    const btn = e.target.closest('#cartList [data-k]'); if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    const row = btn.closest('.card'); const id = row?.dataset?.id; if (!id) return;
+    const idx = window.cart.items.findIndex(i=>i.id===id); if (idx<0) return;
+    const k = btn.getAttribute('data-k');
+    if (k==='dec') window.cart.items[idx].qty = Math.max(1, window.cart.items[idx].qty-1);
+    if (k==='inc') window.cart.items[idx].qty = window.cart.items[idx].qty+1;
+    if (k==='rm')  window.cart.items.splice(idx,1);
+    window.saveCart(); window.renderCart(); window.updateCartCount();
+  }
+  document.addEventListener('click', onCartEdit, { passive:false });
+  document.addEventListener('touchend', onCartEdit, { passive:false });
+
+  // 3) Schedule buttons: open booking modal immediately
+  document.addEventListener('click', (e)=>{
+    const b = e.target.closest('button[data-k="schedule"]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    if (typeof window.openBooking === 'function') { try { window.openBooking(window.selectedProvider||{id:'manual'}); } catch {} }
+    const bm = $('bookingModal'); if (bm) bm.classList.add('open');
+  }, { passive:false });
+
+  // 4) Re-click same service with pending request -> open tracking with Cancel (reasons), not just message
+  const ACTIVE_KEY = 'zup_active_by_service';
+  function getActiveMap(){ try { return JSON.parse(localStorage.getItem(ACTIVE_KEY)||'{}'); } catch { return {}; } }
+  function setActive(cat,obj){ const m=getActiveMap(); if(obj) m[cat]=obj; else delete m[cat]; localStorage.setItem(ACTIVE_KEY, JSON.stringify(m)); }
+  function getActive(cat){ return getActiveMap()[cat]; }
+  const _openCategory = window.openCategory;
+  if (typeof _openCategory === 'function') {
+    window.openCategory = function wrapped(catId, label) {
+      const act = getActive(catId);
+      if (act && act.id) {
+        // show tracking now
+        if (typeof window.openTracking === 'function') try { window.openTracking(); } catch {}
+        const tHead = document.querySelector('#trackModal .head');
+        if (tHead && !document.getElementById('trackCancelBtn')) {
+          const btn = document.createElement('button');
+          btn.id='trackCancelBtn'; btn.className='btn ghost'; btn.type='button'; btn.textContent='Cancel';
+          btn.onclick = ()=> openCancelReasons(catId);
+          tHead.appendChild(btn);
+        }
+        return;
+      }
+      return _openCategory.apply(this, arguments);
+    }
+  }
+  function openCancelReasons(category) {
+    const modal = $('cancelReasonsModal'); if (!modal) return;
+    const list  = $('crList'); modal.classList.add('open'); list.innerHTML='';
+    ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{
+      const row=document.createElement('label'); row.className='row';
+      row.innerHTML=`<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`;
+      list.appendChild(row);
+    });
+    const other=document.createElement('input'); other.id='crOther'; other.placeholder='If Other, describe…';
+    other.style.cssText='width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px'; list.appendChild(other);
+    $('crClose').onclick=()=> modal.classList.remove('open');
+    $('crBack').onclick =()=> modal.classList.remove('open');
+    $('crConfirm').onclick=async ()=>{
+      const picked = document.querySelector('input[name="cr"]:checked')?.value || 'Other';
+      const reason = picked==='Other' ? (other.value.trim()||'Other') : picked;
+      try { if (window.requestId) await fetch(`${(window.BASE_API||'')}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason)}`, { method:'DELETE' }); } catch {}
+      setActive(category, null);
+      modal.classList.remove('open'); // auto-close so it doesn't block UI
+      // also close tracking
+      document.getElementById('trackModal')?.classList.remove('open');
+      alert('Request cancelled');
+    };
+  }
+
+  // 5) Profile Edit (public name + photo)
+  (function wireProfileEdit(){
+    const btn=$('editProfileBtn'); if (!btn) return;
+    btn.onclick = ()=> {
+      // Build a tiny modal
+      let m=document.getElementById('profileEditModal');
+      if (!m) {
+        m=document.createElement('div'); m.id='profileEditModal'; m.className='modal open';
+        m.innerHTML=`
+          <div class="sheet">
+            <div class="head"><strong>Edit Profile</strong><button class="btn ghost" id="peClose" type="button">✖</button></div>
+            <div class="body">
+              <div class="list">
+                <div class="field"><label class="small">Public name</label><input id="peName" value="${user.name||''}"/></div>
+                <div class="field"><label class="small">Photo</label><input id="pePhoto" type="file" accept="image/*"/></div>
+                <button class="btn primary" id="peSave" type="button">Save</button>
+              </div>
+            </div>
+          </div>`;
+        document.body.appendChild(m);
+      } else {
+        m.classList.add('open');
+      }
+      $('peClose').onclick=()=> m.classList.remove('open');
+      $('peSave').onclick=()=>{
+        const name=$('peName').value.trim(); if (name) user.name=name;
+        const f=$('pePhoto').files?.[0];
+        if (f) {
+          const fr=new FileReader();
+          fr.onload=()=>{ localStorage.setItem('zup_profile_photo', fr.result); updateProfileUI(); };
+          fr.readAsDataURL(f);
+        } else updateProfileUI();
+        m.classList.remove('open');
+      };
+    };
+    function updateProfileUI(){
+      $('userName').textContent=user.name||'Guest';
+      const nameEl=$('profName'); if (nameEl) nameEl.textContent=user.name||'Demo User';
+      const imgData=localStorage.getItem('zup_profile_photo');
+      if (imgData) {
+        // If you had an <img> avatar, set src here. Current UI uses emoji, so we skip.
+      }
+    }
+  })();
+
+  // 6) Availability switch green UI
+  (function greenSwitch(){
+    const t=$('availToggle'), knob=$('availKnob'); if (!t||!knob) return;
+    const on=()=>{ knob.style.transform='translateX(20px)'; knob.previousElementSibling.style.background='#10B981'; };
+    const off=()=>{ knob.style.transform='translateX(0)'; knob.previousElementSibling.style.background='#d1d5db'; };
+    if (t.checked) on(); else off();
+    t.onchange=()=> t.checked ? on() : off();
+  })();
+
+  // 7) Manage Services – show uploaded images (base64 persisted)
+  function getUserServices(){ try { return JSON.parse(localStorage.getItem('zup_user_services')||'[]'); } catch { return []; } }
+  function setUserServices(arr){ localStorage.setItem('zup_user_services', JSON.stringify(arr||[])); }
+  if (document.getElementById('msAdd')) {
+    document.getElementById('msAdd').onclick = ()=>{
+      const cat=$('msCategory').value, type=$('msType').value.trim(), details=$('msDetails').value.trim(), price=Number($('msPrice').value||0);
+      if (!type||!details||!price) return alert('Fill category, type, details, price');
+      const id='svc-'+Date.now();
+      const files=Array.from(($('msImages').files||[])).slice(0,4);
+      const images=[];
+      if (files.length) {
+        let pending=files.length;
+        files.forEach(f=>{
+          const fr=new FileReader();
+          fr.onload=()=>{ images.push(fr.result); if(--pending===0) save(); };
+          fr.readAsDataURL(f);
+        });
+      } else save();
+      function save(){
+        const services=getUserServices();
+        services.push({ id, cat, type, details, price, images, publicName:(user.name||'User'), status:'available' });
+        setUserServices(services);
+        loadServicesManage();
+        alert('Service added');
+      }
+    };
+    window.loadServicesManage = function loadServicesManage(){
+      const list=$('msList'); list.innerHTML='';
+      const services=getUserServices();
+      if (!services.length){ list.innerHTML='<div class="small muted">No services yet.</div>'; return; }
+      services.forEach(s=>{
+        const el=document.createElement('div'); el.className='card';
+        const imgs = (s.images||[]).map(src=>`<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+        el.innerHTML=`<div class="list">
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div>
+              <div><strong>${s.type}</strong> <span class="small muted">[${s.cat}]</span></div>
+              <div class="small muted">${s.details}</div>
+              <div class="small"><strong>Price:</strong> $${Number(s.price).toFixed(2)} • <strong>By:</strong> ${s.publicName}</div>
+            </div>
+            <div class="row" style="gap:6px">
+              <button class="btn ghost" data-k="track" data-id="${s.id}">Track</button>
+              <button class="btn ghost" data-k="cancel" data-id="${s.id}">Cancel</button>
+            </div>
+          </div>
+          <div class="row" style="gap:6px;flex-wrap:wrap">${imgs||'<span class="small muted">No catalog images</span>'}</div>
+        </div>`;
+        list.appendChild(el);
+      });
+      list.querySelectorAll('button[data-k="track"]').forEach(b=> b.onclick=()=> { try { openTracking(); } catch { alert('Tracking…'); } });
+      list.querySelectorAll('button[data-k="cancel"]').forEach(b=> b.onclick=()=> openCancelReasons('general'));
+    };
+  }
+
+  // 8) Manage Products – show uploaded images (base64 persisted)
+  function getUserProducts(){ try { return JSON.parse(localStorage.getItem('zup_user_products')||'[]'); } catch { return []; } }
+  function setUserProducts(arr){ localStorage.setItem('zup_user_products', JSON.stringify(arr||[])); }
+  if (document.getElementById('mpAdd')) {
+    document.getElementById('mpAdd').onclick=()=>{
+      const cat=$('mpCatSelect').value, name=$('mpName').value.trim(), desc=$('mpDesc').value.trim(), price=Number($('mpPrice').value||0), stock=Number($('mpStock').value||0);
+      if (!name||!price||!stock) return alert('Fill name, price, stock');
+      const files=Array.from(($('mpImages').files||[])).slice(0,10);
+      const images=[]; if (!files.length){ save(); } else {
+        let left=files.length;
+        files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--left===0) save(); }; fr.readAsDataURL(f); });
+      }
+      function save(){
+        const ups=getUserProducts();
+        const id='prd-'+Date.now();
+        const img=images[0] || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop';
+        ups.push({ id, title:name, cat, price, stock, img, images, desc, seller:(user.name||'User') });
+        setUserProducts(ups);
+        loadProductsManage();
+        alert('Product added');
+      }
+    };
+    window.loadProductsManage = function loadProductsManage(){
+      const box=$('mpManageList'); box.innerHTML='';
+      const ups=getUserProducts();
+      if (!ups.length){ box.innerHTML='<div class="small muted">No products yet.</div>'; return; }
+      ups.forEach(p=>{
+        const imgs=(p.images||[]).map(src=>`<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+        const el=document.createElement('div'); el.className='card';
+        el.innerHTML=`<div class="list">
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div>
+              <div><strong>${p.title}</strong> <span class="small muted">[${p.cat}]</span></div>
+              <div class="small muted">${p.desc||''}</div>
+              <div class="small"><strong>Price:</strong> $${Number(p.price).toFixed(2)} • <strong>Stock:</strong> ${p.stock} • <strong>Seller:</strong> ${p.seller||user.name}</div>
+            </div>
+            <div class="row" style="gap:6px">
+              <button class="btn ghost" data-k="del" data-id="${p.id}">Delete</button>
+            </div>
+          </div>
+          <div class="row" style="gap:6px;flex-wrap:wrap">${imgs||'<span class="small muted">No images</span>'}</div>
+        </div>`;
+        box.appendChild(el);
+      });
+      box.querySelectorAll('button[data-k="del"]').forEach(b=> b.onclick=()=>{ const id=b.dataset.id; const arr=getUserProducts().filter(x=>x.id!==id); setUserProducts(arr); loadProductsManage(); });
+    };
+  }
+
+  // 9) Verify Provider – add multiple upload inputs
+  (function wireVerify(){
+    const pane=document.getElementById('page-verify-provider'); if (!pane) return;
+    const container=pane.querySelector('.list');
+    const idRow=document.createElement('div'); idRow.className='field'; idRow.innerHTML=`<label class="small">ID/Passport documents (multiple)</label><input id="vpIdDocs" type="file" accept="image/*,application/pdf" multiple/>`;
+    const bizRow=document.createElement('div'); bizRow.className='field'; bizRow.innerHTML=`<label class="small">Business/License documents (multiple)</label><input id="vpBizDocs" type="file" accept="image/*,application/pdf" multiple/>`;
+    container.insertBefore(bizRow, document.getElementById('vpSubmit'));
+    container.insertBefore(idRow, bizRow);
+  })();
+
+  // 10) Top‑up flows (minimal dialogs; integrate API later)
+  document.querySelectorAll('[data-topup]').forEach(el=>{
+    el.onclick=()=>{
+      const k=el.dataset.topup;
+      if (k==='airtime') {
+        const net=prompt('Network (e.g., MTN, Vodacom)'); if(!net) return;
+        const num=prompt('Phone number'); if(!num) return;
+        const amt=prompt('Amount'); if(!amt) return;
+        alert(`Airtime order prepared: ${net} • ${num} • ${amt}. Integrate API/Stripe next.`);
+      } else if (k==='data') {
+        const net=prompt('Network'); if(!net) return;
+        const plan=prompt('Data plan (e.g., 1GB, 2GB)'); if(!plan) return;
+        alert(`Data order prepared: ${net} • ${plan}. Integrate API/Stripe next.`);
+      } else {
+        const bill=prompt('Bill type (Electricity, Water, DStv, etc.)'); if(!bill) return;
+        const ref=prompt('Reference / Meter Number'); if(!ref) return;
+        const amt=prompt('Amount'); if(!amt) return;
+        alert(`Bill payment prepared: ${bill} • Ref: ${ref} • ${amt}. Integrate API/Stripe next.`);
+      }
+    };
+  });
+
+  // 11) PWA install banner
+  (function installBanner(){
+    if (document.getElementById('installBanner')) return;
+    const banner=document.createElement('div');
+    banner.id='installBanner';
+    banner.style.cssText='position:fixed;left:16px;right:16px;bottom:80px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 8px 24px rgba(17,24,39,.08);padding:12px;z-index:1000;display:none';
+    banner.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><strong>Install ZippUp</strong><button id="installClose" class="btn ghost" type="button">✖</button></div><div class="small muted" style="margin:8px 0">Add ZippUp to your home screen for a faster experience.</div><button id="installBtn" class="btn primary" type="button">Install App</button>`;
+    document.body.appendChild(banner);
+    let deferred=null;
+    window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferred=e; banner.style.display='block'; });
+    $('installBtn').onclick=async()=>{ if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred=null; banner.style.display='none'; };
+    $('installClose').onclick=()=> banner.style.display='none';
+    window.addEventListener('appinstalled',()=>{ deferred=null; banner.style.display='none'; });
+  })();
+
+  // 12) Safety: button types + initial cart/UI sync
+  window.addEventListener('DOMContentLoaded', ()=>{
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn','tiStart'].forEach(id=>{ const b=$(id); if (b) b.setAttribute('type','button'); });
+    window.renderCart(); window.updateCartCount();
+  });
+})();
+</script>
+  <script>
+// ZippUp targeted hotfix: category chips + search routing + panic to saved contacts
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // 1) Override openItemsModal to use updated chips per category (electrician under Home; Construction expanded)
+  const _openItemsModal = window.openItemsModal;
+  window.openItemsModal = function openItemsModalPatched(kind) {
+    const title = kind==='fastfood'?'Fast Food':kind==='grocery'?'Groceries':'Find Service';
+    const chipsMap = {
+      fastfood:['pizza','burger','fries','chicken','drinks','meat'],
+      grocery: ['milk','bread','eggs','rice','fruits','vegetables','water'],
+      home:    ['electrician','plumber','cleaning','gardening','painting','carpentry','ac repair'],
+      tech:    ['phone repair','computer','tv repair','software','cctv install','network'],
+      auto:    ['mechanic','tires','battery','car wash','towing'],
+      construction:['builder','welder','bricklayer','laborer','mason','roofer','scaffolding'],
+      others:  ['events','tutor','legal','photography','translator','driver hire'],
+      roadside:['flat tire','jumpstart','fuel','lockout'],
+    };
+
+    const itemsTitle = $('itemsTitle');
+    const itemChips  = $('itemChips');
+    const itemSearch = $('itemSearch');
+    const itemGo     = $('itemGo');
+
+    if (!itemsTitle || !itemChips || !itemSearch || !itemGo) return _openItemsModal && _openItemsModal(kind);
+
+    itemsTitle.textContent = title;
+    itemChips.innerHTML = '';
+    (chipsMap[kind]||[]).forEach(text=>{
+      const b=document.createElement('button'); b.className='btn ghost'; b.type='button'; b.textContent=text;
+      b.onclick=()=>{ itemSearch.value=text; itemGo.click(); };
+      itemChips.appendChild(b);
+    });
+    const itemsModal = $('itemsModal'); if (itemsModal) itemsModal.classList.add('open');
+    $('closeItems')?.addEventListener('click', ()=> itemsModal.classList.remove('open'), { once:true });
+
+    $('itemVoice')?.addEventListener('click', ()=> {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert('Voice not supported'); return; }
+      const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult = (e)=>{ itemSearch.value = e.results[0][0].transcript||''; itemGo.click(); };
+      rec.start();
+    }, { once:true });
+
+    itemGo.onclick = async ()=>{
+      const q = (itemSearch.value||'').trim().toLowerCase();
+      itemsModal.classList.remove('open');
+      $('providersTitle').textContent = (q||title) + ' — Providers';
+      const list = await (window.fetchProviders ? fetchProviders(kind, q||kind) : Promise.resolve([]));
+      window.renderProviders && renderProviders(list);
+      $('providersModal')?.classList.add('open');
+    };
+  };
+
+  // 2) Override search routing to send electrician to Home (not Construction)
+  const _runHomeSearch = window.runHomeSearch;
+  window.runHomeSearch = function runHomeSearchPatched() {
+    const q = (document.getElementById('search')?.value||'').trim().toLowerCase();
+    if (!q) return _runHomeSearch && _runHomeSearch();
+
+    const go = (fn) => { try { fn(); } catch {} };
+
+    if (/(ride|taxi|cab|uber|bolt)/.test(q)) return go(()=>openCategory('transport','Transport'));
+    if (/(truck|backie|moving|load)/.test(q)) {
+      go(()=>openCategory('transport','Transport'));
+      go(()=>{ const m=$('categoryOptionsModal'); if (!m) return; $('categoryOptionsTitle').textContent='Transport Options';
+        $('categoryOptionsList').innerHTML='';
+        const el=document.createElement('div'); el.className='provider';
+        el.innerHTML=`<div class="row" style="justify-content:space-between"><div class="row"><div style="font-size:24px">🚚</div><div><strong>Truck / Backie</strong></div></div><button class="btn primary" type="button">Choose</button></div>`;
+        el.querySelector('button').onclick=()=>{ $('categoryOptionsModal').classList.remove('open'); $('providersTitle').textContent='Truck / Backie — Providers'; fetchProviders('transport','moving').then(renderProviders); $('providersModal').classList.add('open'); };
+        $('categoryOptionsList').appendChild(el);
+        m.classList.add('open');
+      });
+      return;
+    }
+    if (/(food|pizza|burger|fries|chicken|drinks)/.test(q)) return go(()=>openItemsModal('fastfood'));
+    if (/(grocery|milk|bread|eggs|rice|fruit|vegetable|veggies|water)/.test(q)) return go(()=>openItemsModal('grocery'));
+    if (/(ambulance|medical)/.test(q)) return go(()=>openEmergency('ambulance','Ambulance'));
+    if (/(fire)/.test(q)) return go(()=>openEmergency('fire','Fire Service'));
+    if (/(towing|tow)/.test(q)) return go(()=>openEmergency('towing','Towing'));
+    if (/(security|police)/.test(q)) return go(()=>openEmergency('security','Security'));
+
+    // electrician belongs to home now
+    if (/(electrician)/.test(q)) return go(()=>openItemsModal('home'));
+    if (/(plumber|clean|garden|paint|carpentry|ac repair)/.test(q)) return go(()=>openItemsModal('home'));
+    if (/(mechanic|tire|tyre|battery|car wash)/.test(q)) return go(()=>openItemsModal('auto'));
+    if (/(phone|computer|laptop|tv|repair|software|cctv)/.test(q)) return go(()=>openItemsModal('tech'));
+    if (/(builder|welder|bricklayer|laborer|mason|roofer|construction)/.test(q)) return go(()=>openItemsModal('construction'));
+    if (/(event|tutor|legal|photo|photography|translator|driver hire)/.test(q)) return go(()=>openItemsModal('others'));
+
+    // fallback
+    const pt=$('providersTitle'); if (pt) pt.textContent = q + ' — Providers';
+    window.fetchProviders && fetchProviders('search', q).then(lst=> window.renderProviders && renderProviders(lst));
+    $('providersModal')?.classList.add('open');
+  };
+
+  // 3) Panic: include saved contacts + live location + “[user] is in danger…”; try Share/SMS; also call backend
+  function loadContacts(){ try { return JSON.parse(localStorage.getItem('zup_contacts')||'[]'); } catch { return []; } }
+  async function reverseGeocode(lat,lng){
+    try {
+      const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+      const d = await r.json(); return (d.locality || d.city || 'Unknown') + ', ' + (d.countryName || '');
+    } catch { return null; }
+  }
+  const _triggerPanic = window.triggerPanic;
+  window.triggerPanic = async function triggerPanicPatched() {
+    try {
+      const contacts = loadContacts().filter(c=>c && (c.phone||c.name)).slice(0,5);
+      const pos = window.coords ? { latitude:coords.lat, longitude:coords.lng } : null;
+      const locName = pos ? await reverseGeocode(pos.latitude,pos.longitude) : 'Unknown location';
+      const gmaps = pos ? `https://maps.google.com/?q=${pos.latitude},${pos.longitude}` : '';
+      const text = `EMERGENCY: ${window.user?.name||'User'} is in danger near ${locName}. Please help. ${gmaps}`;
+
+      // Fire backend alert with contacts snapshot
+      try {
+        await fetch(`${(window.BASE_API||'')}/api/emergency/alert`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ type:'panic', userPublicName:(window.user?.name||'User'), location: pos, contacts, message:text })
+        });
+      } catch {}
+
+      // Try native share first
+      if (navigator.share) {
+        try { await navigator.share({ title:'Emergency', text }); } catch {}
+      } else if (contacts[0]?.phone) {
+        // Try SMS to first contact (platform dependent)
+        const smsLink = `sms:${encodeURIComponent(contacts[0].phone)}?body=${encodeURIComponent(text)}`;
+        window.location.href = smsLink;
+      } else {
+        alert(text);
+      }
+      alert('Panic alert sent.');
+    } catch {
+      return _triggerPanic && _triggerPanic();
+    }
+  };
+})();
+</script>
 </body>
+  <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
+  <svg width="160" height="160" viewBox="0 0 256 256" aria-hidden="true">
+    <defs>
+      <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#2563EB"/>
+        <stop offset="1" stop-color="#1D4ED8"/>
+      </linearGradient>
+    </defs>
+    <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#g2)"/>
+    <path d="M58 184 L152 68 H90 L98 48 H198 L104 168 H170 L162 188 Z" fill="#fff"/>
+    <circle cx="172" cy="82" r="10" fill="#fff"/>
+    <path d="M168 96 L150 120 L128 114 L124 126 L146 132 L160 112 L170 126 L182 124 L174 108 L186 100 L180 92 L168 96 Z" fill="#fff"/>
+    <rect x="182" y="94" width="8" height="14" rx="1.5" fill="#0EA5E9"/>
+    <rect x="184" y="96" width="4" height="8" rx="1" fill="#22C55E"/>
+  </svg>
+  <div style="font-size:28px;font-weight:800;margin-top:12px">ZippUp</div>
+  <div style="opacity:.9;margin-top:4px">On‑demand services, fast.</div>
+</div>
+<script>
+  // Hide splash as soon as app is ready
+  window.addEventListener('load', ()=> setTimeout(()=>{ const s=document.getElementById('splash'); if(s) s.style.opacity='0'; setTimeout(()=>s&&s.remove(),250); }, 250));
+</script>
 </html>
