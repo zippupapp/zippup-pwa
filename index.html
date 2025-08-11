@@ -2858,6 +2858,1809 @@
   window.addEventListener('DOMContentLoaded', runAuth);
 })();
 </script>
+      please add the icon/logo on the authentication form. 
+Thought for 23s
+Paste this small block immediately before </body> in index.html. It adds your logo to the authentication form (uses /icons/icon-192.png, falls back to /icons/favicon.svg), centered above the fields.
+
+<script>
+// Add ZippUp logo to the auth form (authGate)
+(function addAuthLogo() {
+  function inject() {
+    const gate = document.getElementById('authGate');
+    if (!gate) return false;
+
+    // Avoid duplicates
+    if (gate.querySelector('#authLogoWrap')) return true;
+
+    // Find the inner card/list to prepend the logo into
+    const card = gate.querySelector('[style*="max-width"]') || gate.firstElementChild || gate;
+    const target = card.querySelector('.list') || card;
+
+    const wrap = document.createElement('div');
+    wrap.id = 'authLogoWrap';
+    wrap.style.cssText = 'text-align:center;margin-bottom:12px';
+    wrap.innerHTML = `
+      <img src="/icons/icon-192.png"
+           onerror="this.onerror=null;this.src='/icons/favicon.svg'"
+           alt="ZippUp" width="72" height="72"
+           style="border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.12)"/>
+      <div style="font-weight:800;margin-top:8px;font-size:20px">ZippUp</div>
+    `;
+    target.insertAdjacentElement('afterbegin', wrap);
+    return true;
+  }
+
+  // Try now, or wait until the auth gate is created
+  if (!inject()) {
+    const mo = new MutationObserver(() => { if (inject()) mo.disconnect(); });
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+})();
+</script>
+Requirements
+
+Ensure the files exist:
+/icons/icon-192.png
+/icons/favicon.svg
+The logo will now show on the auth screen above Sign in / Sign up.
+
+the buttons doesn't react when clicked. doesn't give user feel. the sign up, google, button should react when clicked. after the logo which already has zippUp written under it, there was the former other ZippUp written  before which is bellow it , should be replaced with someone thing like "Your-one-stop to all OnDemand services" or you can rephrase it in another writing style. 
+Thought for 28s
+Paste this block immediately before </body> in index.html. It adds the ZippUp logo tagline and makes the auth buttons feel responsive (pressed + loading spinner), so users see feedback when tapping Sign in / Sign up / Google.
+
+<script>
+// Auth UI polish: logo tagline + button pressed/loading feedback
+(function () {
+  // 1) Inject styles for pressed/loading states
+  (function addStyles(){
+    if (document.getElementById('authBtnFX')) return;
+    const s=document.createElement('style'); s.id='authBtnFX';
+    s.textContent = `
+      #authGate .btn { transition: transform .08s ease, filter .12s ease; position: relative; }
+      #authGate .btn:active, #authGate .btn.pressed { transform: scale(.98); }
+      #authGate .btn.loading { opacity:.75; pointer-events:none; }
+      #authGate .btn.loading::after {
+        content:''; width:14px; height:14px; border:2px solid currentColor;
+        border-top-color: transparent; border-radius:50%;
+        position:absolute; right:10px; top:50%; transform: translateY(-50%);
+        animation: zspin .8s linear infinite;
+      }
+      @keyframes zspin { to { transform: translateY(-50%) rotate(360deg); } }
+
+      /* Tagline style */
+      #authLogoWrap .tagline { color:#475569; font-size:14px; margin-top:6px }
+    `;
+    document.head.appendChild(s);
+  })();
+
+  // 2) Add pressed feedback to auth buttons
+  function wirePressedFX(scope) {
+    (scope || document).querySelectorAll('#authGate .btn').forEach(btn=>{
+      if (btn.dataset.fxBound === '1') return;
+      btn.dataset.fxBound = '1';
+      btn.addEventListener('pointerdown', ()=> btn.classList.add('pressed'), { passive:true });
+      btn.addEventListener('pointerup',   ()=> btn.classList.remove('pressed'), { passive:true });
+      btn.addEventListener('pointerleave',()=> btn.classList.remove('pressed'), { passive:true });
+    });
+  }
+
+  // 3) Add loading feedback on click (fallback, in case your auth code doesn’t set it)
+  function wireLoadingFallback(scope) {
+    const pairs = [
+      ['lgSignIn',  'Signing in…'],
+      ['lgSignUp',  'Creating…'],
+      ['lgGoogle',  'Opening…']
+    ];
+    pairs.forEach(([id,label])=>{
+      const btn = (scope||document).getElementById(id);
+      if (!btn || btn.dataset.loadBound === '1') return;
+      btn.dataset.loadBound = '1';
+      btn.addEventListener('click', ()=>{
+        if (btn.classList.contains('loading')) return;
+        btn.classList.add('loading');
+        const old = btn.textContent;
+        btn.textContent = label;
+        // Auto-revert after 3s if your auth handler didn’t close the gate yet
+        setTimeout(()=>{
+          if (btn.isConnected) {
+            btn.classList.remove('loading');
+            btn.textContent = old;
+          }
+        }, 3000);
+      }, { passive:true });
+    });
+  }
+
+  // 4) Replace duplicate “ZippUp” title with a tagline below the logo
+  function injectTagline() {
+    const gate = document.getElementById('authGate');
+    if (!gate) return false;
+
+    // If logo block exists, add/replace tagline there
+    const wrap = gate.querySelector('#authLogoWrap');
+    if (wrap && !wrap.querySelector('.tagline')) {
+      const t = document.createElement('div');
+      t.className = 'tagline';
+      t.textContent = 'Your one‑stop on‑demand services.';
+      wrap.appendChild(t);
+    }
+
+    // If there’s an old big “ZippUp” heading inside the card, replace it with tagline
+    const big = Array.from(gate.querySelectorAll('div, h1, h2'))
+      .find(el => el.textContent.trim() === 'ZippUp' && el.style && (el.style.fontWeight === '800' || el.style.fontSize));
+    if (big) big.textContent = 'Your one‑stop on‑demand services.';
+
+    return true;
+  }
+
+  // 5) Run now or when the auth gate appears
+  function apply() {
+    injectTagline();
+    wirePressedFX();
+    wireLoadingFallback();
+  }
+  if (!apply()) {
+    const mo = new MutationObserver(()=>{
+      if (document.getElementById('authGate')) { apply(); mo.disconnect(); }
+    });
+    mo.observe(document.body, { childList:true, subtree:true });
+  }
+})();
+</script>
+What changes
+
+The auth buttons now shrink slightly on press and show a spinner (with “Signing in…”, “Creating…”, “Opening…”) while processing.
+The text under the logo shows “Your one‑stop on‑demand services.” and replaces any extra “ZippUp” heading that was below it.
+No other parts of your app are altered.
+
+am having issues with supabase please write me sql for in-app chat 
+Thought for 28s
+Below is a complete, drop‑in SQL schema for Supabase in‑app chat (1:1 and group), with RLS, indexes, helper functions, triggers, and unread counts. Paste into Supabase SQL editor and run. Replace nothing.
+
+-- In‑App Chat for Supabase (1:1 and group)
+-- Includes: conversations, members, messages, read tracking, policies, functions, triggers
+
+-- Recommended extension (for gen_random_uuid)
+create extension if not exists pgcrypto;
+
+-- =============== Tables ===============
+
+-- Conversations (1:1 or group)
+create table if not exists public.conversations (
+  id                uuid primary key default gen_random_uuid(),
+  is_group          boolean not null default false,
+  title             text,                      -- optional (for groups)
+  created_by        uuid not null references auth.users(id) on delete cascade,
+  last_message_at   timestamptz,
+  created_at        timestamptz not null default now()
+);
+
+-- Members of a conversation
+create table if not exists public.conversation_members (
+  conversation_id   uuid not null references public.conversations(id) on delete cascade,
+  user_id           uuid not null references auth.users(id) on delete cascade,
+  role              text not null default 'member',  -- 'member' | 'admin'
+  joined_at         timestamptz not null default now(),
+
+  -- Read tracking
+  last_read_at           timestamptz,
+  last_read_message_id   uuid,
+
+  primary key (conversation_id, user_id)
+);
+
+-- Messages
+create table if not exists public.messages (
+  id               uuid primary key default gen_random_uuid(),
+  conversation_id  uuid not null references public.conversations(id) on delete cascade,
+  sender_id        uuid not null references auth.users(id) on delete cascade,
+  body             text,                                  -- nullable for non-text types
+  type             text not null default 'text',          -- 'text' | 'image' | 'file' | 'location'
+  metadata         jsonb default '{}'::jsonb,             -- arbitrary extra (e.g. coords)
+  created_at       timestamptz not null default now(),
+  edited_at        timestamptz,
+  deleted_at       timestamptz
+);
+
+-- Optional: Attachments metadata (use Supabase Storage for files)
+create table if not exists public.message_attachments (
+  id           uuid primary key default gen_random_uuid(),
+  message_id   uuid not null references public.messages(id) on delete cascade,
+  storage_path text not null,       -- e.g. 'chat/<conversation>/<message>/<filename>'
+  mime_type    text,
+  byte_size    bigint,
+  created_at   timestamptz not null default now()
+);
+
+-- =============== Indexes ===============
+create index if not exists idx_conversations_last_message_at on public.conversations(last_message_at desc nulls last);
+create index if not exists idx_members_user on public.conversation_members(user_id);
+create index if not exists idx_members_conv on public.conversation_members(conversation_id);
+create index if not exists idx_messages_conv_time on public.messages(conversation_id, created_at desc);
+create index if not exists idx_messages_sender on public.messages(sender_id);
+create index if not exists idx_attach_message on public.message_attachments(message_id);
+
+-- =============== RLS ===============
+alter table public.conversations enable row level security;
+alter table public.conversation_members enable row level security;
+alter table public.messages enable row level security;
+alter table public.message_attachments enable row level security;
+
+-- Conversations: members can see; creator can insert
+create policy "conversations_select_if_member"
+on public.conversations
+for select
+using (
+  exists (
+    select 1 from public.conversation_members m
+    where m.conversation_id = conversations.id
+      and m.user_id = auth.uid()
+  )
+);
+
+create policy "conversations_insert_if_creator"
+on public.conversations
+for insert
+with check (created_by = auth.uid());
+
+-- Members: members of a conversation can see all members of that conversation
+create policy "members_select_if_same_conversation"
+on public.conversation_members
+for select
+using (
+  exists (
+    select 1 from public.conversation_members me
+    where me.conversation_id = conversation_members.conversation_id
+      and me.user_id = auth.uid()
+  )
+);
+
+-- Members: a user can insert themselves into an existing conversation they are already in (no-op) or via function for invites
+create policy "members_insert_self_if_member"
+on public.conversation_members
+for insert
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1 from public.conversation_members me
+    where me.conversation_id = conversation_members.conversation_id
+      and me.user_id = auth.uid()
+  )
+);
+
+-- Members: creator or admin may update roles/read flags (we also allow member to update own read flags)
+create policy "members_update_own_read_or_admin"
+on public.conversation_members
+for update
+using (
+  -- member can update their own row
+  user_id = auth.uid()
+  or exists (
+    select 1
+    from public.conversation_members me
+    where me.conversation_id = conversation_members.conversation_id
+      and me.user_id = auth.uid()
+      and me.role in ('admin')
+  )
+)
+with check (true);
+
+-- Messages: members can read
+create policy "messages_select_if_member"
+on public.messages
+for select
+using (
+  exists (
+    select 1 from public.conversation_members m
+    where m.conversation_id = messages.conversation_id
+      and m.user_id = auth.uid()
+  )
+);
+
+-- Messages: only members can insert; sender must be auth.uid()
+create policy "messages_insert_if_member_sender"
+on public.messages
+for insert
+with check (
+  sender_id = auth.uid()
+  and exists (
+    select 1 from public.conversation_members m
+    where m.conversation_id = messages.conversation_id
+      and m.user_id = auth.uid()
+  )
+);
+
+-- Messages: only sender can update/delete their message (soft delete recommended)
+create policy "messages_update_self"
+on public.messages
+for update
+using (sender_id = auth.uid())
+with check (sender_id = auth.uid());
+
+create policy "messages_delete_self"
+on public.messages
+for delete
+using (sender_id = auth.uid());
+
+-- Attachments: visible to members
+create policy "attachments_select_if_member"
+on public.message_attachments
+for select
+using (
+  exists (
+    select 1 from public.messages msg
+    join public.conversation_members m on m.conversation_id = msg.conversation_id
+    where msg.id = message_attachments.message_id
+      and m.user_id = auth.uid()
+  )
+);
+
+create policy "attachments_insert_if_sender"
+on public.message_attachments
+for insert
+with check (
+  exists (
+    select 1 from public.messages msg
+    where msg.id = message_attachments.message_id
+      and msg.sender_id = auth.uid()
+  )
+);
+
+-- =============== Helper functions ===============
+
+-- Get or create a 1:1 conversation (sorted pair of user ids to avoid duplicates)
+create or replace function public.create_direct_conversation(target_user uuid)
+returns uuid
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+  c_id uuid;
+begin
+  if target_user = a then
+    raise exception 'Cannot create a direct conversation with yourself';
+  end if;
+
+  -- find existing direct with exactly two members
+  select c.id into c_id
+  from public.conversations c
+  join public.conversation_members m1 on m1.conversation_id = c.id and m1.user_id = a
+  join public.conversation_members m2 on m2.conversation_id = c.id and m2.user_id = target_user
+  where c.is_group = false
+  limit 1;
+
+  if c_id is not null then
+    return c_id;
+  end if;
+
+  -- create new
+  insert into public.conversations(is_group, title, created_by)
+  values (false, null, a)
+  returning id into c_id;
+
+  insert into public.conversation_members(conversation_id, user_id, role)
+  values (c_id, a, 'admin'),
+         (c_id, target_user, 'member')
+  on conflict do nothing;
+
+  return c_id;
+end;
+$$;
+
+-- Send message (updates last_message_at and sender's read cursor)
+create or replace function public.send_message(p_conversation uuid, p_body text, p_type text default 'text', p_metadata jsonb default '{}'::jsonb)
+returns public.messages
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+  m public.messages;
+begin
+  if not exists (select 1 from public.conversation_members where conversation_id = p_conversation and user_id = a) then
+    raise exception 'Not a member';
+  end if;
+
+  insert into public.messages(conversation_id, sender_id, body, type, metadata)
+  values (p_conversation, a, p_body, coalesce(p_type,'text'), coalesce(p_metadata,'{}'::jsonb))
+  returning * into m;
+
+  update public.conversations set last_message_at = m.created_at where id = p_conversation;
+
+  update public.conversation_members
+     set last_read_at = m.created_at,
+         last_read_message_id = m.id
+   where conversation_id = p_conversation
+     and user_id = a;
+
+  return m;
+end;
+$$;
+
+-- Mark conversation read to latest message
+create or replace function public.mark_conversation_read(p_conversation uuid)
+returns void
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+  last_msg public.messages;
+begin
+  if not exists (select 1 from public.conversation_members where conversation_id = p_conversation and user_id = a) then
+    raise exception 'Not a member';
+  end if;
+
+  select * into last_msg
+  from public.messages
+  where conversation_id = p_conversation
+  order by created_at desc
+  limit 1;
+
+  if last_msg.id is null then
+    update public.conversation_members
+       set last_read_at = now(),
+           last_read_message_id = null
+     where conversation_id = p_conversation
+       and user_id = a;
+  else
+    update public.conversation_members
+       set last_read_at = last_msg.created_at,
+           last_read_message_id = last_msg.id
+     where conversation_id = p_conversation
+       and user_id = a;
+  end if;
+end;
+$$;
+
+-- Admin/creator can invite another user to a conversation
+create or replace function public.invite_user(p_conversation uuid, p_user uuid)
+returns void
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+begin
+  -- require inviter to be admin or creator
+  if not exists (
+    select 1
+    from public.conversation_members m
+    where m.conversation_id = p_conversation
+      and m.user_id = a
+      and m.role in ('admin')
+  )
+  and not exists (
+    select 1 from public.conversations c
+    where c.id = p_conversation and c.created_by = a
+  )
+  then
+    raise exception 'Not authorized to invite';
+  end if;
+
+  insert into public.conversation_members(conversation_id, user_id, role)
+  values (p_conversation, p_user, 'member')
+  on conflict do nothing;
+end;
+$$;
+
+-- =============== Triggers ===============
+
+-- Keep conversations.last_message_at fresh on message insert
+create or replace function public.tg_messages_update_conv_last()
+returns trigger
+language plpgsql
+as $$
+begin
+  update public.conversations set last_message_at = new.created_at where id = new.conversation_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_messages_update_conv_last on public.messages;
+create trigger trg_messages_update_conv_last
+after insert on public.messages
+for each row execute function public.tg_messages_update_conv_last();
+
+-- =============== Views ===============
+
+-- Unread count per member per conversation
+create or replace view public.conversation_unreads as
+select
+  m.user_id,
+  m.conversation_id,
+  coalesce((
+    select count(1)
+    from public.messages msg
+    where msg.conversation_id = m.conversation_id
+      and (m.last_read_at is null or msg.created_at > m.last_read_at)
+      and msg.sender_id <> m.user_id
+      and msg.deleted_at is null
+  ), 0) as unread_count
+from public.conversation_members m;
+
+-- Conversation list with last message snippet and unread count for current user
+create or replace view public.conversation_summaries as
+select
+  c.id,
+  c.is_group,
+  c.title,
+  c.created_by,
+  c.last_message_at,
+  c.created_at,
+  -- last message (text-only snippet)
+  (select msg.body from public.messages msg where msg.conversation_id = c.id and msg.deleted_at is null order by msg.created_at desc limit 1) as last_message,
+  -- unread for me
+  (select u.unread_count from public.conversation_unreads u where u.conversation_id = c.id and u.user_id = auth.uid()) as unread_count
+from public.conversations c
+where exists (
+  select 1 from public.conversation_members m
+  where m.conversation_id = c.id and m.user_id = auth.uid()
+);
+
+-- =============== (Optional) Storage for chat attachments ===============
+-- Create a private bucket and manage access via signed URLs or edge function.
+-- Uncomment if you want a dedicated bucket.
+-- select storage.create_bucket('chat', public := false);
+
+-- Example simplistic storage policy (path 'chat/<conversation>/<message>/<filename>')
+-- Adjust to your path strategy and enforce via signed URLs in backend.
+-- create policy "chat_read_if_member" on storage.objects
+-- for select using (
+--   bucket_id = 'chat' and
+--   exists (
+--     select 1
+--     from public.messages msg
+--     join public.conversation_members m on m.conversation_id = msg.conversation_id
+--     where ('chat/'||msg.conversation_id::text||'/'||msg.id::text) = split_part(name,'/',1)||'/'||split_part(name,'/',2)
+--       and m.user_id = auth.uid()
+--   )
+-- );
+Minimal usage (client):
+
+Start/get a 1:1: call rpc('create_direct_conversation', { target_user: '<uuid>' })
+Send: rpc('send_message', { p_conversation: '<uuid>', p_body: 'hi' })
+Mark read: rpc('mark_conversation_read', { p_conversation: '<uuid>' })
+Invite: rpc('invite_user', { p_conversation: '<uuid>', p_user: '<uuid>' })
+Realtime:
+
+Subscribe to table changes on messages with filter conversation_id = your current convo.
+Notes:
+
+RLS ensures only conversation members can see/insert messages.
+Read tracking is in conversation_members (last_read_at / last_read_message_id).
+View conversation_summaries gives last message and unread count for the logged‑in user.
+ERROR:  syntax error at or near "create"
+LINE 5: create extension if not exists pgcrypto;
+        ^
+Thought for 18s
+Your SQL error is from CREATE EXTENSION. On Supabase, extensions may already be enabled or restricted. Use this “no-extension” version. It works without CREATE EXTENSION by using a safe_uuid() helper. Paste the whole script in the Supabase SQL editor and run.
+
+-- In‑App Chat (1:1 + group) without CREATE EXTENSION
+
+-- UUID helper that works even if pgcrypto/uuid-ossp are not available
+create or replace function public.safe_uuid()
+returns uuid
+language plpgsql
+as $$
+declare v uuid;
+begin
+  begin
+    perform 1 from pg_proc where proname = 'gen_random_uuid';
+    if found then
+      select gen_random_uuid() into v;
+      return v;
+    end if;
+  exception when others then
+    -- ignore and try next
+  end;
+
+  begin
+    perform 1 from pg_proc where proname = 'uuid_generate_v4';
+    if found then
+      select uuid_generate_v4() into v;
+      return v;
+    end if;
+  exception when others then
+    -- ignore and fallback
+  end;
+
+  -- fallback: deterministic-ish uuid
+  select md5(random()::text || clock_timestamp()::text)::uuid into v;
+  return v;
+end;
+$$;
+
+-- =============== Tables ===============
+
+create table if not exists public.conversations (
+  id                uuid primary key default public.safe_uuid(),
+  is_group          boolean not null default false,
+  title             text,
+  created_by        uuid not null references auth.users(id) on delete cascade,
+  last_message_at   timestamptz,
+  created_at        timestamptz not null default now()
+);
+
+create table if not exists public.conversation_members (
+  conversation_id   uuid not null references public.conversations(id) on delete cascade,
+  user_id           uuid not null references auth.users(id) on delete cascade,
+  role              text not null default 'member',  -- 'member' | 'admin'
+  joined_at         timestamptz not null default now(),
+  last_read_at           timestamptz,
+  last_read_message_id   uuid,
+  primary key (conversation_id, user_id)
+);
+
+create table if not exists public.messages (
+  id               uuid primary key default public.safe_uuid(),
+  conversation_id  uuid not null references public.conversations(id) on delete cascade,
+  sender_id        uuid not null references auth.users(id) on delete cascade,
+  body             text,
+  type             text not null default 'text',      -- 'text' | 'image' | 'file' | 'location'
+  metadata         jsonb default '{}'::jsonb,
+  created_at       timestamptz not null default now(),
+  edited_at        timestamptz,
+  deleted_at       timestamptz
+);
+
+create table if not exists public.message_attachments (
+  id           uuid primary key default public.safe_uuid(),
+  message_id   uuid not null references public.messages(id) on delete cascade,
+  storage_path text not null,
+  mime_type    text,
+  byte_size    bigint,
+  created_at   timestamptz not null default now()
+);
+
+-- =============== Indexes ===============
+create index if not exists idx_conv_last on public.conversations(last_message_at desc nulls last);
+create index if not exists idx_mem_user on public.conversation_members(user_id);
+create index if not exists idx_mem_conv on public.conversation_members(conversation_id);
+create index if not exists idx_msg_conv_time on public.messages(conversation_id, created_at desc);
+create index if not exists idx_msg_sender on public.messages(sender_id);
+create index if not exists idx_attach_msg on public.message_attachments(message_id);
+
+-- =============== RLS ===============
+alter table public.conversations enable row level security;
+alter table public.conversation_members enable row level security;
+alter table public.messages enable row level security;
+alter table public.message_attachments enable row level security;
+
+-- Conversations: members can select
+create policy conversations_select_if_member
+on public.conversations
+for select
+using (
+  exists (
+    select 1 from public.conversation_members m
+    where m.conversation_id = conversations.id
+      and m.user_id = auth.uid()
+  )
+);
+
+-- Conversations: creator inserts
+create policy conversations_insert_if_creator
+on public.conversations
+for insert
+with check (created_by = auth.uid());
+
+-- Members: visible to conversation members
+create policy members_select_if_same_conversation
+on public.conversation_members
+for select
+using (
+  exists (
+    select 1 from public.conversation_members me
+    where me.conversation_id = conversation_members.conversation_id
+      and me.user_id = auth.uid()
+  )
+);
+
+-- Members: allow user to insert themself via server fn or if already member (no-op)
+create policy members_insert_self_if_member
+on public.conversation_members
+for insert
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1 from public.conversation_members me
+    where me.conversation_id = conversation_members.conversation_id
+      and me.user_id = auth.uid()
+  )
+);
+
+-- Members update: own read fields; admins can update any
+create policy members_update_own_or_admin
+on public.conversation_members
+for update
+using (
+  user_id = auth.uid()
+  or exists (
+    select 1 from public.conversation_members me
+    where me.conversation_id = conversation_members.conversation_id
+      and me.user_id = auth.uid()
+      and me.role in ('admin')
+  )
+)
+with check (true);
+
+-- Messages: members can read
+create policy messages_select_if_member
+on public.messages
+for select
+using (
+  exists (
+    select 1 from public.conversation_members m
+    where m.conversation_id = messages.conversation_id
+      and m.user_id = auth.uid()
+  )
+);
+
+-- Messages: members can insert if sender is auth.uid()
+create policy messages_insert_if_member_sender
+on public.messages
+for insert
+with check (
+  sender_id = auth.uid()
+  and exists (
+    select 1 from public.conversation_members m
+    where m.conversation_id = messages.conversation_id
+      and m.user_id = auth.uid()
+  )
+);
+
+-- Messages: sender can update/delete own
+create policy messages_update_self
+on public.messages
+for update
+using (sender_id = auth.uid())
+with check (sender_id = auth.uid());
+
+create policy messages_delete_self
+on public.messages
+for delete
+using (sender_id = auth.uid());
+
+-- Attachments: members see; sender inserts
+create policy attachments_select_if_member
+on public.message_attachments
+for select
+using (
+  exists (
+    select 1 from public.messages msg
+    join public.conversation_members m on m.conversation_id = msg.conversation_id
+    where msg.id = message_attachments.message_id
+      and m.user_id = auth.uid()
+  )
+);
+
+create policy attachments_insert_if_sender
+on public.message_attachments
+for insert
+with check (
+  exists (
+    select 1 from public.messages msg
+    where msg.id = message_attachments.message_id
+      and msg.sender_id = auth.uid()
+  )
+);
+
+-- =============== Functions ===============
+
+-- Get or create 1:1 conversation
+create or replace function public.create_direct_conversation(target_user uuid)
+returns uuid
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+  c_id uuid;
+begin
+  if target_user = a then
+    raise exception 'Cannot create a direct conversation with yourself';
+  end if;
+
+  select c.id into c_id
+  from public.conversations c
+  join public.conversation_members m1 on m1.conversation_id = c.id and m1.user_id = a
+  join public.conversation_members m2 on m2.conversation_id = c.id and m2.user_id = target_user
+  where c.is_group = false
+  limit 1;
+
+  if c_id is not null then
+    return c_id;
+  end if;
+
+  insert into public.conversations(is_group, title, created_by)
+  values (false, null, a)
+  returning id into c_id;
+
+  insert into public.conversation_members(conversation_id, user_id, role)
+  values (c_id, a, 'admin'),
+         (c_id, target_user, 'member')
+  on conflict do nothing;
+
+  return c_id;
+end;
+$$;
+
+-- Send message; updates last_message_at and sender read cursor
+create or replace function public.send_message(p_conversation uuid, p_body text, p_type text default 'text', p_metadata jsonb default '{}'::jsonb)
+returns public.messages
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+  m public.messages;
+begin
+  if not exists (select 1 from public.conversation_members where conversation_id = p_conversation and user_id = a) then
+    raise exception 'Not a member';
+  end if;
+
+  insert into public.messages(conversation_id, sender_id, body, type, metadata)
+  values (p_conversation, a, p_body, coalesce(p_type,'text'), coalesce(p_metadata,'{}'::jsonb))
+  returning * into m;
+
+  update public.conversations set last_message_at = m.created_at where id = p_conversation;
+
+  update public.conversation_members
+     set last_read_at = m.created_at,
+         last_read_message_id = m.id
+   where conversation_id = p_conversation
+     and user_id = a;
+
+  return m;
+end;
+$$;
+
+-- Mark read
+create or replace function public.mark_conversation_read(p_conversation uuid)
+returns void
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+  last_msg public.messages;
+begin
+  if not exists (select 1 from public.conversation_members where conversation_id = p_conversation and user_id = a) then
+    raise exception 'Not a member';
+  end if;
+
+  select * into last_msg
+  from public.messages
+  where conversation_id = p_conversation
+  order by created_at desc
+  limit 1;
+
+  if last_msg.id is null then
+    update public.conversation_members
+       set last_read_at = now(),
+           last_read_message_id = null
+     where conversation_id = p_conversation
+       and user_id = a;
+  else
+    update public.conversation_members
+       set last_read_at = last_msg.created_at,
+           last_read_message_id = last_msg.id
+     where conversation_id = p_conversation
+       and user_id = a;
+  end if;
+end;
+$$;
+
+-- Invite user (admin or creator)
+create or replace function public.invite_user(p_conversation uuid, p_user uuid)
+returns void
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+begin
+  if not exists (
+    select 1 from public.conversation_members m
+    where m.conversation_id = p_conversation
+      and m.user_id = a
+      and m.role in ('admin')
+  )
+  and not exists (
+    select 1 from public.conversations c
+    where c.id = p_conversation and c.created_by = a
+  )
+  then
+    raise exception 'Not authorized to invite';
+  end if;
+
+  insert into public.conversation_members(conversation_id, user_id, role)
+  values (p_conversation, p_user, 'member')
+  on conflict do nothing;
+end;
+$$;
+
+-- =============== Triggers ===============
+
+create or replace function public.tg_messages_update_conv_last()
+returns trigger
+language plpgsql
+as $$
+begin
+  update public.conversations set last_message_at = new.created_at where id = new.conversation_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_messages_update_conv_last on public.messages;
+create trigger trg_messages_update_conv_last
+after insert on public.messages
+for each row execute function public.tg_messages_update_conv_last();
+
+-- =============== Views (optional helpers) ===============
+
+create or replace view public.conversation_unreads as
+select
+  m.user_id,
+  m.conversation_id,
+  coalesce((
+    select count(1)
+    from public.messages msg
+    where msg.conversation_id = m.conversation_id
+      and (m.last_read_at is null or msg.created_at > m.last_read_at)
+      and msg.sender_id <> m.user_id
+      and msg.deleted_at is null
+  ), 0) as unread_count
+from public.conversation_members m;
+
+create or replace view public.conversation_summaries as
+select
+  c.id,
+  c.is_group,
+  c.title,
+  c.created_by,
+  c.last_message_at,
+  c.created_at,
+  (select msg.body from public.messages msg where msg.conversation_id = c.id and msg.deleted_at is null order by msg.created_at desc limit 1) as last_message,
+  (select u.unread_count from public.conversation_unreads u where u.conversation_id = c.id and u.user_id = auth.uid()) as unread_count
+from public.conversations c
+where exists (
+  select 1 from public.conversation_members m
+  where m.conversation_id = c.id and m.user_id = auth.uid()
+);
+If you still get an error
+
+Run the script in the SQL editor as the default service role (not inside a transaction block).
+If gen_random_uuid() exists already, safe_uuid will use it. No need to install extensions.
+Client usage (examples)
+
+Create/get 1:1: select public.create_direct_conversation('<other_user_uuid>');
+Send: select public.send_message('<conversation_uuid>', 'Hello', 'text', '{}'::jsonb);
+Mark read: select public.mark_conversation_read('<conversation_uuid>');
+Invite to group: select public.invite_user('<conversation_uuid>', '<user_uuid>');
+This gives you secure chat with RLS, unread counts, and last-message updates without requiring CREATE EXTENSION.
+
+ERROR:  syntax error at or near "create"
+LINE 4: create or replace function public.safe_uuid()
+        ^
+Thought for 28s
+Your error is caused by smart punctuation in comments (em-dash) breaking SQL parsing. Use this plain-ASCII script (no fancy dashes). Paste it as-is into the Supabase SQL editor.
+
+Step 1 — helper + tables (run this first)
+
+-- Helper UUID generator without requiring extensions
+create or replace function public.safe_uuid()
+returns uuid
+language plpgsql
+as $$
+declare v uuid;
+begin
+  begin
+    perform 1 from pg_proc where proname = 'gen_random_uuid';
+    if found then select gen_random_uuid() into v; return v; end if;
+  exception when others then end;
+
+  begin
+    perform 1 from pg_proc where proname = 'uuid_generate_v4';
+    if found then select uuid_generate_v4() into v; return v; end if;
+  exception when others then end;
+
+  select md5(random()::text || clock_timestamp()::text)::uuid into v;
+  return v;
+end;
+$$;
+
+-- Conversations
+create table if not exists public.conversations (
+  id                uuid primary key default public.safe_uuid(),
+  is_group          boolean not null default false,
+  title             text,
+  created_by        uuid not null references auth.users(id) on delete cascade,
+  last_message_at   timestamptz,
+  created_at        timestamptz not null default now()
+);
+
+-- Conversation members
+create table if not exists public.conversation_members (
+  conversation_id   uuid not null references public.conversations(id) on delete cascade,
+  user_id           uuid not null references auth.users(id) on delete cascade,
+  role              text not null default 'member',
+  joined_at         timestamptz not null default now(),
+  last_read_at      timestamptz,
+  last_read_message_id uuid,
+  primary key (conversation_id, user_id)
+);
+
+-- Messages
+create table if not exists public.messages (
+  id               uuid primary key default public.safe_uuid(),
+  conversation_id  uuid not null references public.conversations(id) on delete cascade,
+  sender_id        uuid not null references auth.users(id) on delete cascade,
+  body             text,
+  type             text not null default 'text',
+  metadata         jsonb default '{}'::jsonb,
+  created_at       timestamptz not null default now(),
+  edited_at        timestamptz,
+  deleted_at       timestamptz
+);
+
+-- Attachments (metadata, files in Storage)
+create table if not exists public.message_attachments (
+  id           uuid primary key default public.safe_uuid(),
+  message_id   uuid not null references public.messages(id) on delete cascade,
+  storage_path text not null,
+  mime_type    text,
+  byte_size    bigint,
+  created_at   timestamptz not null default now()
+);
+Step 2 — indexes + RLS (run next)
+
+-- Indexes
+create index if not exists idx_conv_last on public.conversations(last_message_at desc nulls last);
+create index if not exists idx_mem_user on public.conversation_members(user_id);
+create index if not exists idx_mem_conv on public.conversation_members(conversation_id);
+create index if not exists idx_msg_conv_time on public.messages(conversation_id, created_at desc);
+create index if not exists idx_msg_sender on public.messages(sender_id);
+create index if not exists idx_attach_msg on public.message_attachments(message_id);
+
+-- Enable RLS
+alter table public.conversations enable row level security;
+alter table public.conversation_members enable row level security;
+alter table public.messages enable row level security;
+alter table public.message_attachments enable row level security;
+
+-- Policies
+create policy conversations_select_if_member
+on public.conversations
+for select
+using (
+  exists (
+    select 1 from public.conversation_members m
+    where m.conversation_id = conversations.id
+      and m.user_id = auth.uid()
+  )
+);
+
+create policy conversations_insert_if_creator
+on public.conversations
+for insert
+with check (created_by = auth.uid());
+
+create policy members_select_if_same_conversation
+on public.conversation_members
+for select
+using (
+  exists (
+    select 1 from public.conversation_members me
+    where me.conversation_id = conversation_members.conversation_id
+      and me.user_id = auth.uid()
+  )
+);
+
+create policy members_insert_self_if_member
+on public.conversation_members
+for insert
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1 from public.conversation_members me
+    where me.conversation_id = conversation_members.conversation_id
+      and me.user_id = auth.uid()
+  )
+);
+
+create policy members_update_own_or_admin
+on public.conversation_members
+for update
+using (
+  user_id = auth.uid()
+  or exists (
+    select 1 from public.conversation_members me
+    where me.conversation_id = conversation_members.conversation_id
+      and me.user_id = auth.uid()
+      and me.role in ('admin')
+  )
+)
+with check (true);
+
+create policy messages_select_if_member
+on public.messages
+for select
+using (
+  exists (
+    select 1 from public.conversation_members m
+    where m.conversation_id = messages.conversation_id
+      and m.user_id = auth.uid()
+  )
+);
+
+create policy messages_insert_if_member_sender
+on public.messages
+for insert
+with check (
+  sender_id = auth.uid()
+  and exists (
+    select 1 from public.conversation_members m
+    where m.conversation_id = messages.conversation_id
+      and m.user_id = auth.uid()
+  )
+);
+
+create policy messages_update_self
+on public.messages
+for update
+using (sender_id = auth.uid())
+with check (sender_id = auth.uid());
+
+create policy messages_delete_self
+on public.messages
+for delete
+using (sender_id = auth.uid());
+
+create policy attachments_select_if_member
+on public.message_attachments
+for select
+using (
+  exists (
+    select 1 from public.messages msg
+    join public.conversation_members m on m.conversation_id = msg.conversation_id
+    where msg.id = message_attachments.message_id
+      and m.user_id = auth.uid()
+  )
+);
+
+create policy attachments_insert_if_sender
+on public.message_attachments
+for insert
+with check (
+  exists (
+    select 1 from public.messages msg
+    where msg.id = message_attachments.message_id
+      and msg.sender_id = auth.uid()
+  )
+);
+Step 3 — functions + trigger + views
+
+-- Create or get 1:1 conversation
+create or replace function public.create_direct_conversation(target_user uuid)
+returns uuid
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+  c_id uuid;
+begin
+  if target_user = a then
+    raise exception 'Cannot create a direct conversation with yourself';
+  end if;
+
+  select c.id into c_id
+  from public.conversations c
+  join public.conversation_members m1 on m1.conversation_id = c.id and m1.user_id = a
+  join public.conversation_members m2 on m2.conversation_id = c.id and m2.user_id = target_user
+  where c.is_group = false
+  limit 1;
+
+  if c_id is not null then
+    return c_id;
+  end if;
+
+  insert into public.conversations(is_group, title, created_by)
+  values (false, null, a)
+  returning id into c_id;
+
+  insert into public.conversation_members(conversation_id, user_id, role)
+  values (c_id, a, 'admin'),
+         (c_id, target_user, 'member')
+  on conflict do nothing;
+
+  return c_id;
+end;
+$$;
+
+-- Send message
+create or replace function public.send_message(p_conversation uuid, p_body text, p_type text default 'text', p_metadata jsonb default '{}'::jsonb)
+returns public.messages
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+  m public.messages;
+begin
+  if not exists (select 1 from public.conversation_members where conversation_id = p_conversation and user_id = a) then
+    raise exception 'Not a member';
+  end if;
+
+  insert into public.messages(conversation_id, sender_id, body, type, metadata)
+  values (p_conversation, a, p_body, coalesce(p_type,'text'), coalesce(p_metadata,'{}'::jsonb))
+  returning * into m;
+
+  update public.conversations set last_message_at = m.created_at where id = p_conversation;
+
+  update public.conversation_members
+     set last_read_at = m.created_at,
+         last_read_message_id = m.id
+   where conversation_id = p_conversation
+     and user_id = a;
+
+  return m;
+end;
+$$;
+
+-- Mark read
+create or replace function public.mark_conversation_read(p_conversation uuid)
+returns void
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+  last_msg public.messages;
+begin
+  if not exists (select 1 from public.conversation_members where conversation_id = p_conversation and user_id = a) then
+    raise exception 'Not a member';
+  end if;
+
+  select * into last_msg
+  from public.messages
+  where conversation_id = p_conversation
+  order by created_at desc
+  limit 1;
+
+  if last_msg.id is null then
+    update public.conversation_members
+       set last_read_at = now(),
+           last_read_message_id = null
+     where conversation_id = p_conversation
+       and user_id = a;
+  else
+    update public.conversation_members
+       set last_read_at = last_msg.created_at,
+           last_read_message_id = last_msg.id
+     where conversation_id = p_conversation
+       and user_id = a;
+  end if;
+end;
+$$;
+
+-- Invite to group (admin or creator)
+create or replace function public.invite_user(p_conversation uuid, p_user uuid)
+returns void
+language plpgsql
+security definer
+as $$
+declare
+  a uuid := auth.uid();
+begin
+  if not exists (
+    select 1 from public.conversation_members m
+    where m.conversation_id = p_conversation
+      and m.user_id = a
+      and m.role in ('admin')
+  )
+  and not exists (
+    select 1 from public.conversations c
+    where c.id = p_conversation and c.created_by = a
+  )
+  then
+    raise exception 'Not authorized to invite';
+  end if;
+
+  insert into public.conversation_members(conversation_id, user_id, role)
+  values (p_conversation, p_user, 'member')
+  on conflict do nothing;
+end;
+$$;
+
+-- Trigger to keep last_message_at fresh
+create or replace function public.tg_messages_update_conv_last()
+returns trigger
+language plpgsql
+as $$
+begin
+  update public.conversations set last_message_at = new.created_at where id = new.conversation_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_messages_update_conv_last on public.messages;
+create trigger trg_messages_update_conv_last
+after insert on public.messages
+for each row execute function public.tg_messages_update_conv_last();
+
+-- Unreads view
+create or replace view public.conversation_unreads as
+select
+  m.user_id,
+  m.conversation_id,
+  coalesce((
+    select count(1)
+    from public.messages msg
+    where msg.conversation_id = m.conversation_id
+      and (m.last_read_at is null or msg.created_at > m.last_read_at)
+      and msg.sender_id <> m.user_id
+      and msg.deleted_at is null
+  ), 0) as unread_count
+from public.conversation_members m;
+
+-- Summaries view
+create or replace view public.conversation_summaries as
+select
+  c.id,
+  c.is_group,
+  c.title,
+  c.created_by,
+  c.last_message_at,
+  c.created_at,
+  (
+    select msg.body
+    from public.messages msg
+    where msg.conversation_id = c.id
+      and msg.deleted_at is null
+    order by msg.created_at desc
+    limit 1
+  ) as last_message,
+  (
+    select u.unread_count
+    from public.conversation_unreads u
+    where u.conversation_id = c.id
+      and u.user_id = auth.uid()
+  ) as unread_count
+from public.conversations c
+where exists (
+  select 1 from public.conversation_members m
+  where m.conversation_id = c.id and m.user_id = auth.uid()
+);
+If you still get errors:
+
+Ensure you’re pasting plain text (no smart quotes/dashes).
+Run Step 1, then Step 2, then Step 3.
+If your project blocks function creation, you’ll need Owner role. In Supabase SQL editor, this is allowed by default.
+Client calls:
+
+Create/get direct: select public.create_direct_conversation('<other_user_uuid>');
+Send: select public.send_message('<conversation_uuid>','Hello','text','{}'::jsonb);
+Mark read: select public.mark_conversation_read('<conversation_uuid>');
+Invite: select public.invite_user('<conversation_uuid>','<user_uuid>');
+this authentication is giving me issues. i was logged out, have been trying to log in or sign up but not working. even if try to reset paasword, nothing works or even tell me any reason
+Thought for 41s
+Do these exactly to fix Supabase auth and see real errors.
+
+Supabase dashboard (once)
+Authentication → URL Configuration:
+Site URL: set to your live domain (e.g. https://your-site.onrender.com)
+Redirect URLs: add the same domain exactly
+Authentication → Providers: enable Email and Google (if you use Google) and add your live domain to Google redirect URIs
+Authentication → Email: leave defaults or set your SMTP; email links will now point to your live domain
+In index.html, set your keys (top-level, before any auth code)
+<script>
+  window.SUPABASE_URL  = 'https://YOUR_PROJECT_REF.supabase.co';
+  window.SUPABASE_ANON = 'YOUR_PUBLIC_ANON_KEY';
+  window.STRIPE_PK     = 'pk_test_...'  /* keep if you use it */
+</script>
+<script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
+Paste this block immediately before </body> It shows precise error messages, disables/enables buttons with feedback, and uses your live URL in redirects.
+<script>
+// Supabase auth harden: visible errors, proper redirects, working buttons
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const LIVE_REDIRECT = location.origin; // Supabase dashboard must also have this set
+
+  if (!window.SUPABASE_URL || !window.SUPABASE_ANON) {
+    console.error('Supabase URL/Anon not set. Set window.SUPABASE_URL and window.SUPABASE_ANON.');
+    return;
+  }
+  if (!window.supabase) {
+    console.error('supabase-js script missing. Add <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script> in <head>.');
+    return;
+  }
+
+  const supa = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON);
+
+  function setBusy(btn, busy, label) {
+    if (!btn) return;
+    btn.disabled = !!busy;
+    btn.classList.toggle('loading', !!busy);
+    if (busy) { btn.dataset._t = btn.textContent; btn.textContent = label || 'Please wait…'; }
+    else if (btn.dataset._t) { btn.textContent = btn.dataset._t; delete btn.dataset._t; }
+  }
+
+  function showErr(msg) {
+    let el = $('authError');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'authError';
+      el.style.cssText = 'color:#DC2626;font-size:13px;margin-top:8px;text-align:center';
+      const gate = $('authGate');
+      const card = gate && gate.querySelector('.list') || gate;
+      card && card.appendChild(el);
+    }
+    el.textContent = msg || '';
+  }
+
+  async function syncUser() {
+    const { data:{ session }, error } = await supa.auth.getSession();
+    if (error) { console.error(error); showErr(error.message); return null; }
+    const user = session?.user || null;
+    const name = user?.user_metadata?.full_name || user?.email || 'Guest';
+    const uEl = $('userName'), pEl = $('profName');
+    if (uEl) uEl.textContent = name;
+    if (pEl) pEl.textContent = name;
+    if (user) { const gate = $('authGate'); gate && gate.remove(); }
+    return user;
+  }
+
+  function ensureGate() {
+    if ($('authGate')) return;
+    const g = document.createElement('div');
+    g.id='authGate';
+    g.style.cssText='position:fixed;inset:0;background:#fff;z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+    g.innerHTML = `
+      <style>
+        #authGate .btn{min-width:120px;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+        #authGate .btn.primary{background:#2563EB;color:#fff}
+        #authGate .btn.primary:active{background:#1D4ED8}
+        #authGate .btn.ghost{background:#F3F4F6}
+        #authGate .btn.ghost:active{background:#E5E7EB}
+        #authGate .btn.loading{opacity:.75;pointer-events:none;position:relative}
+        #authGate .btn.loading:after{content:'';width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;position:absolute;right:10px;top:50%;transform:translateY(-50%);animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
+      </style>
+      <div style="width:100%;max-width:420px;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:16px;background:#fff">
+        <div class="list" style="display:flex;flex-direction:column;gap:10px">
+          <div id="authLogoWrap" style="text-align:center;margin-bottom:6px">
+            <img src="/icons/icon-192.png" onerror="this.onerror=null;this.src='/icons/favicon.svg'" alt="ZippUp" width="72" height="72" style="border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.12)"/>
+            <div style="font-weight:800;margin-top:6px;font-size:20px">ZippUp</div>
+            <div style="color:#475569;font-size:14px;margin-top:4px">Your one‑stop on‑demand services.</div>
+          </div>
+          <div class="field"><label class="small">Email</label><input id="lgEmail" type="email" /></div>
+          <div class="field"><label class="small">Password</label><input id="lgPassword" type="password" /></div>
+          <div id="authError"></div>
+          <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+            <button class="btn primary" id="lgSignIn" type="button">Sign in</button>
+            <button class="btn ghost" id="lgSignUp" type="button">Sign up</button>
+            <button class="btn ghost" id="lgGoogle" type="button">Google</button>
+          </div>
+          <div class="small" style="text-align:center;margin-top:8px">
+            Forgot password? <a href="#" id="lgReset">Reset</a>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(g);
+  }
+
+  async function gate() {
+    ensureGate();
+    const user = await syncUser();
+    if (user) return;
+
+    const signIn = $('lgSignIn'), signUp = $('lgSignUp'), google = $('lgGoogle'), reset = $('lgReset');
+
+    signIn.onclick = async () => {
+      showErr('');
+      const email = $('lgEmail').value.trim(), pw = $('lgPassword').value.trim();
+      if (!email || !pw) return showErr('Enter email and password');
+      setBusy(signIn, true, 'Signing in…');
+      const { error } = await supa.auth.signInWithPassword({ email, password: pw });
+      setBusy(signIn, false);
+      if (error) { console.error(error); return showErr(error.message); }
+      await syncUser(); try { showPage('home'); } catch {}
+    };
+
+    signUp.onclick = async () => {
+      showErr('');
+      const email = $('lgEmail').value.trim(), pw = $('lgPassword').value.trim();
+      if (!email || !pw) return showErr('Enter email and password');
+      setBusy(signUp, true, 'Creating…');
+      const { error } = await supa.auth.signUp({
+        email, password: pw,
+        options: { data: { full_name: email.split('@')[0] }, emailRedirectTo: LIVE_REDIRECT }
+      });
+      setBusy(signUp, false);
+      if (error) { console.error(error); return showErr(error.message); }
+      showErr('Check your email to confirm, then return to the app.');
+    };
+
+    google.onclick = async () => {
+      showErr(''); setBusy(google, true, 'Opening…');
+      const { error } = await supa.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: LIVE_REDIRECT } });
+      setBusy(google, false);
+      if (error) { console.error(error); return showErr(error.message); }
+    };
+
+    reset.onclick = async (e) => {
+      e.preventDefault(); showErr('');
+      const email = $('lgEmail').value.trim(); if (!email) return showErr('Enter your email');
+      setBusy(reset, true, 'Sending…');
+      const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: LIVE_REDIRECT });
+      setBusy(reset, false);
+      if (error) { console.error(error); return showErr(error.message); }
+      showErr('Password reset email sent');
+    };
+
+    // Auto-handle redirects (email confirm / OAuth)
+    supa.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_IN') { await syncUser(); try { showPage('home'); } catch {} }
+    });
+  }
+
+  // Force gate at startup and on logout
+  window.addEventListener('DOMContentLoaded', gate);
+  const logout = $('menuLogout'); if (logout) logout.onclick = async () => {
+    setBusy(logout, true, 'Signing out…'); showErr('');
+    const { error } = await supa.auth.signOut(); setBusy(logout, false);
+    if (error) { console.error(error); return alert(error.message); }
+    gate();
+  };
+})();
+</script>
+After you paste:
+
+Replace window.SUPABASE_URL and window.SUPABASE_ANON with your real values.
+In Supabase, fix Site URL/Redirect URLs to your live domain (so email links don’t go to localhost).
+Try again: you should see explicit error messages under the fields and buttons will show pressed/loading feedback.
+the authentication buttons are not returning any value. they don't function. 
+Thought for 14s
+Do these two quick steps.
+
+In index.html <head>, set your Supabase keys and include the SDK (if not already):
+<script>
+  window.SUPABASE_URL  = 'https://YOUR_PROJECT_REF.supabase.co';
+  window.SUPABASE_ANON = 'YOUR_PUBLIC_ANON_KEY';
+</script>
+<script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
+Paste this block immediately before </body> in index.html (reliable auth gate + working buttons with feedback and visible errors):
+<script>
+// Reliable Supabase auth gate with working buttons and visible errors
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // Helpers
+  function setBusy(btn, on, label) {
+    if (!btn) return;
+    btn.disabled = !!on;
+    btn.classList.toggle('loading', !!on);
+    if (on) {
+      btn.dataset._t = btn.textContent;
+      btn.textContent = label || 'Please wait…';
+    } else if (btn.dataset._t) {
+      btn.textContent = btn.dataset._t;
+      delete btn.dataset._t;
+    }
+  }
+  function showErr(msg) {
+    let el = $('authError');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'authError';
+      el.style.cssText = 'color:#DC2626;font-size:13px;margin-top:8px;text-align:center';
+      const card = $('authGate')?.querySelector('.list') || $('authGate');
+      card && card.appendChild(el);
+    }
+    el.textContent = msg || '';
+  }
+  function addCSSOnce() {
+    if ($('authBtnCSS')) return;
+    const s = document.createElement('style');
+    s.id = 'authBtnCSS';
+    s.textContent = `
+      #authGate .btn{min-width:120px;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;transition:transform .08s ease,filter .12s ease}
+      #authGate .btn.primary{background:#2563EB;color:#fff}
+      #authGate .btn.primary:active{background:#1D4ED8}
+      #authGate .btn.ghost{background:#F3F4F6}
+      #authGate .btn.ghost:active{background:#E5E7EB}
+      #authGate .btn:active{transform:scale(.98)}
+      #authGate .btn.loading{opacity:.75;pointer-events:none;position:relative}
+      #authGate .btn.loading:after{content:'';width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;position:absolute;right:10px;top:50%;transform:translateY(-50%);animation:spin .8s linear infinite}
+      @keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
+    `;
+    document.head.appendChild(s);
+  }
+
+  // Build gate UI if missing
+  function ensureGate() {
+    if ($('authGate')) return $('authGate');
+    const g = document.createElement('div');
+    g.id = 'authGate';
+    g.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+    g.innerHTML = `
+      <div style="width:100%;max-width:420px;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:16px;background:#fff">
+        <div class="list" style="display:flex;flex-direction:column;gap:10px">
+          <div id="authLogoWrap" style="text-align:center;margin-bottom:6px">
+            <img src="/icons/icon-192.png" onerror="this.onerror=null;this.src='/icons/favicon.svg'" alt="ZippUp" width="72" height="72" style="border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.12)"/>
+            <div style="color:#475569;font-size:14px;margin-top:6px">Your one‑stop on‑demand services.</div>
+          </div>
+          <div class="field"><label class="small">Email</label><input id="lgEmail" type="email"/></div>
+          <div class="field"><label class="small">Password</label><input id="lgPassword" type="password"/></div>
+          <div id="authError"></div>
+          <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+            <button class="btn primary" id="lgSignIn" type="button">Sign in</button>
+            <button class="btn ghost" id="lgSignUp" type="button">Sign up</button>
+            <button class="btn ghost" id="lgGoogle" type="button">Google</button>
+          </div>
+          <div class="small" style="text-align:center;margin-top:8px">
+            Forgot password? <a href="#" id="lgReset">Reset</a>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(g);
+    return g;
+  }
+
+  async function runAuth() {
+    addCSSOnce();
+    const gate = ensureGate();
+
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON) {
+      showErr('Supabase keys not set. Set window.SUPABASE_URL and window.SUPABASE_ANON in <head>.');
+      return;
+    }
+    if (!window.supabase) {
+      showErr('Supabase SDK missing. Add <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script> in <head>.');
+      return;
+    }
+
+    const supa = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON);
+    const LIVE_REDIRECT = location.origin;
+
+    async function syncUser() {
+      const { data:{ session }, error } = await supa.auth.getSession();
+      if (error) { showErr(error.message); return null; }
+      const user = session?.user || null;
+      const name = user?.user_metadata?.full_name || user?.email || 'Guest';
+      const u=$('userName'), p=$('profName'); if (u) u.textContent=name; if (p) p.textContent=name;
+      if (user) gate.remove();
+      return user;
+    }
+
+    // Wire buttons once
+    const signIn=$('lgSignIn'), signUp=$('lgSignUp'), google=$('lgGoogle'), reset=$('lgReset');
+    if (signIn && !signIn.dataset.bound) {
+      signIn.dataset.bound='1';
+      signIn.onclick = async ()=>{
+        showErr('');
+        const email=$('lgEmail').value.trim(), pw=$('lgPassword').value.trim();
+        if (!email||!pw) return showErr('Enter email and password');
+        setBusy(signIn,true,'Signing in…');
+        const { error } = await supa.auth.signInWithPassword({ email, password:pw });
+        setBusy(signIn,false);
+        if (error) return showErr(error.message);
+        await syncUser(); try { showPage('home'); } catch {}
+      };
+    }
+    if (signUp && !signUp.dataset.bound) {
+      signUp.dataset.bound='1';
+      signUp.onclick = async ()=>{
+        showErr('');
+        const email=$('lgEmail').value.trim(), pw=$('lgPassword').value.trim();
+        if (!email||!pw) return showErr('Enter email and password');
+        setBusy(signUp,true,'Creating…');
+        const { error } = await supa.auth.signUp({
+          email, password:pw,
+          options:{ data:{ full_name: email.split('@')[0] }, emailRedirectTo: LIVE_REDIRECT }
+        });
+        setBusy(signUp,false);
+        if (error) return showErr(error.message);
+        showErr('Check your email to confirm, then return to the app.');
+      };
+    }
+    if (google && !google.dataset.bound) {
+      google.dataset.bound='1';
+      google.onclick = async ()=>{
+        showErr(''); setBusy(google,true,'Opening…');
+        const { error } = await supa.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: LIVE_REDIRECT } });
+        setBusy(google,false);
+        if (error) return showErr(error.message);
+      };
+    }
+    if (reset && !reset.dataset.bound) {
+      reset.dataset.bound='1';
+      reset.onclick = async (e)=>{
+        e.preventDefault(); showErr('');
+        const email=$('lgEmail').value.trim(); if (!email) return showErr('Enter your email');
+        setBusy(reset,true,'Sending…');
+        const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: LIVE_REDIRECT });
+        setBusy(reset,false);
+        if (error) return showErr(error.message);
+        showErr('Password reset email sent');
+      };
+    }
+
+    // Auto update on sign-in via email link / OAuth
+    supa.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_IN') { await syncUser(); try { showPage('home'); } catch {} }
+    });
+
+    // Force auth if not logged in
+    const user = await syncUser();
+    if (!user) gate.style.display='flex';
+  }
+
+  // Start
+  window.addEventListener('DOMContentLoaded', runAuth);
+})();
+</script>
+Make sure:
+
+Supabase Site URL/Redirect URLs in the dashboard are set to your live domain (not localhost).
+Your keys are correct in window.SUPABASE_URL and window.SUPABASE_ANON.
+This makes the auth buttons actually react (pressed/loading), shows clear errors if something fails, and signs you in to the app (closing the gate) after success.
+
+white screen and write up on screen
+Thought for 17s
+White screen = the auth overlay is blocking. Quick fix: disable the gate and recover the UI now.
+
+Do this (paste once, immediately before </body> in index.html):
+
+<script>
+// ZippUp safe-mode: disable auth gate, close blocking dialogs, restore Home
+(function () {
+  // 1) Kill old service workers/caches once to avoid stale JS
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+  }
+  if (window.caches) {
+    caches.keys().then(keys => keys.forEach(k => { if (/^zippup/i.test(k)) caches.delete(k); }));
+  }
+
+  // 2) If an auth overlay is present, remove it after a short grace
+  setTimeout(() => {
+    const gate = document.getElementById('authGate');
+    if (gate) gate.remove();
+    // Close any open modals that could be blocking
+    ['cancelReasonsModal','instantModal','trackModal','bookingModal','cartModal','checkoutModal'].forEach(id=>{
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('open');
+    });
+    // Route to Home so the app renders
+    try { typeof showPage === 'function' && showPage('home'); } catch {}
+  }, 800);
+
+  // 3) Harden: if Supabase SDK or keys are missing, do NOT show auth gate
+  const hasKeys = !!(window.SUPABASE_URL && window.SUPABASE_ANON);
+  const hasSDK  = !!window.supabase;
+  if (!hasKeys || !hasSDK) {
+    const gate = document.getElementById('authGate');
+    if (gate) gate.remove();
+  }
+
+  // 4) Safety: make critical buttons not behave like submit
+  window.addEventListener('DOMContentLoaded', () => {
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn','tiStart','closeBooking'].forEach(id=>{
+      const b = document.getElementById(id); if (b) b.setAttribute('type','button');
+    });
+    // If Home still not visible, force it
+    try { const home = document.getElementById('page-home'); if (home && !home.classList.contains('active')) showPage('home'); } catch {}
+  });
+
+  // 5) Log runtime errors so we can see the real cause in DevTools
+  window.addEventListener('error', (e) => { console.error('Runtime error:', e.error || e.message); });
+})();
+</script>  
 </body>
   <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
   <svg width="160" height="160" viewBox="0 0 256 256" aria-hidden="true">
