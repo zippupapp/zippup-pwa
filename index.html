@@ -1,16 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <style>
-  /* Make the Checkout row in the cart modal always visible */
-  #cartModal .sheet .body { max-height: 70vh; overflow: auto; }
-  #cartModal .sheet .body .row:last-child { position: sticky; bottom: 0; background:#fff; padding-top:10px; border-top:1px solid var(--border); }
-  /* Small “active request” bar */
-  .active-request-bar { position: fixed; left:16px; right:16px; bottom:120px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(17,24,39,.08); z-index:1000; padding:10px; display:none }
-  .active-request-bar .btn { padding:8px 12px; border-radius:10px; border:0; font-weight:600; cursor:pointer }
-  .active-request-bar .primary { background:#2563EB; color:#fff }
-  .active-request-bar .ghost { background:#F3F4F6 }
-</style
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>ZippUp — On‑Demand Services</title>
@@ -23,9 +13,6 @@
 
   <!-- Stripe -->
   <script defer src="https://js.stripe.com/v3"></script>
-
-  <!-- Google Places (autocomplete for transport addresses) -->
-  <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6IF-c6Ce0iSpEDITpaUGJ20y7_ZZxHl0&libraries=places"></script>
 
   <style>
     :root { --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF; --text:#111827; --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB; --radius:14px; --shadow:0 8px 24px rgba(17,24,39,.08) }
@@ -72,29 +59,20 @@
     #track-map { width:100%; height:360px; border-radius:12px; border:1px solid var(--border) }
     #profileMenu { position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:180px; z-index:30 }
     #profileMenu .btn { width:100%; justify-content:flex-start }
+    .product { display:flex; flex-direction:column; gap:8px }
+    .product img { width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--border) }
+    .price { font-weight:700; color:#111 }
+    .cart-fab { position:fixed; right:16px; bottom:140px; z-index:16 }
+    .qty { display:flex; gap:8px; align-items:center }
+    .qty button { width:30px; height:30px; border-radius:8px; }
+    .terms { display:flex; gap:8px; align-items:flex-start; font-size:13px; color:#333 }
     .avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--border); background:#eef2ff; display:flex; align-items:center; justify-content:center; font-size:18px }
     .rating { color:#F59E0B; font-size:12px }
     .verify { color:#2563EB; font-size:14px }
     .stop-row { display:flex; gap:8px; align-items:center }
-    /* Toggle switch */
-    .switch { position:relative; display:inline-block; width:48px; height:28px }
-    .switch input { display:none }
-    .slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#d1d5db; transition:.2s; border-radius:999px }
-    .slider:before { position:absolute; content:""; height:22px; width:22px; left:3px; top:3px; background:#fff; transition:.2s; border-radius:999px }
-    .switch input:checked + .slider { background:#10B981 }
-    .switch input:checked + .slider:before { transform:translateX(20px) }
   </style>
 </head>
 <body>
-  <!-- One-time SW off to prevent stale cache on phone -->
-  <script>
-    (function(){
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
-      }
-    })();
-  </script>
-
   <header>
     <div class="row">
       <div class="greet">
@@ -193,7 +171,7 @@
           <div class="row">
             <div style="width:48px;height:48px;border-radius:50%;background:#E5EDFF;display:flex;align-items:center;justify-content:center">👤</div>
             <div style="margin-left:8px">
-              <div><strong id="profName">Demo User</strong> <span class="small muted">(Public name used in bookings)</span></div>
+              <div><strong id="profName">Demo User</strong> <span class="small muted">(Public name)</span></div>
               <div class="small" id="profEmail">demo@zippup.com</div>
             </div>
           </div>
@@ -204,9 +182,10 @@
       <div class="card" style="margin-top:12px">
         <div class="row" style="justify-content:space-between; align-items:center">
           <div><strong>Availability</strong><div class="small muted">Go Offline / Available</div></div>
-          <label class="switch">
-            <input type="checkbox" id="availToggle" />
-            <span class="slider"></span>
+          <label style="position:relative;display:inline-block;width:48px;height:28px">
+            <input id="availToggle" type="checkbox" style="display:none"/>
+            <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#d1d5db;border-radius:999px"></span>
+            <span style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:#fff;border-radius:999px;transition:.2s" id="availKnob"></span>
           </label>
         </div>
       </div>
@@ -240,94 +219,6 @@
       </div>
     </section>
   </main>
-
-  <!-- Manage Services -->
-  <main id="page-manage-services" class="page">
-    <section class="section">
-      <div class="title">Manage Services</div>
-      <div class="list">
-        <div class="card">
-          <div class="row" style="justify-content:space-between">
-            <div>
-              <div><strong>Your Services</strong></div>
-              <div class="small muted">Add, edit or remove services you offer</div>
-            </div>
-            <button class="btn primary" id="addServiceBtn" type="button">+ Add Service</button>
-          </div>
-        </div>
-        <div id="servicesManageList" class="list"></div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Manage Products -->
-  <main id="page-manage-products" class="page">
-    <section class="section">
-      <div class="title">Manage Products</div>
-      <div class="card">
-        <div class="row" style="justify-content:space-between">
-          <div>
-            <div><strong>Your Products</strong></div>
-            <div class="small muted">Add, edit or remove marketplace products (up to 10 images)</div>
-          </div>
-          <button class="btn primary" id="addProductBtn" type="button">+ Add Product</button>
-        </div>
-      </div>
-      <div id="productsManageList" class="list" style="margin-top:12px"></div>
-    </section>
-  </main>
-
-  <!-- Emergency Contacts -->
-  <main id="page-emergency-contacts" class="page">
-    <section class="section">
-      <div class="title">Emergency Contacts</div>
-      <div class="card">
-        <div class="small muted">Add up to 5 contacts who receive panic alerts.</div>
-        <div id="contactsList" class="list" style="margin-top:10px"></div>
-        <button class="btn primary" id="addContactBtn" type="button">+ Add Contact</button>
-      </div>
-    </section>
-  </main>
-
-  <!-- Verify Provider -->
-  <main id="page-verify-provider" class="page">
-    <section class="section">
-      <div class="title">Become Verified Provider</div>
-      <div class="card">
-        <div class="small muted">Upload ID and documents. Admin will review and approve or decline.</div>
-        <div class="list" style="margin-top:10px">
-          <input placeholder="Full name" id="vpName" style="padding:10px;border:1px solid var(--border);border-radius:10px"/>
-          <input placeholder="Service category (e.g., Driver, Plumber)" id="vpCategory" style="padding:10px;border:1px solid var(--border);border-radius:10px"/>
-          <input placeholder="ID number" id="vpId" style="padding:10px;border:1px solid var(--border);border-radius:10px"/>
-          <button class="btn primary" id="vpSubmit" type="button">Submit for Verification</button>
-        </div>
-      </div>
-      <div id="vpStatus" class="small" style="margin-top:10px;color:#2563EB"></div>
-    </section>
-  </main>
-
-  <!-- Contact Support -->
-  <main id="page-support" class="page">
-    <section class="section">
-      <div class="title">Contact Support</div>
-      <div class="card">
-        <div class="list">
-          <input id="supSubject" placeholder="Subject" style="padding:10px;border:1px solid var(--border);border-radius:10px"/>
-          <textarea id="supMessage" rows="5" placeholder="Describe your issue or question…" style="padding:10px;border:1px solid var(--border);border-radius:10px"></textarea>
-          <button class="btn primary" id="supSend" type="button">Send Message</button>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <button class="floating-panic" id="panicBtn" type="button">🚨</button>
-
-  <nav class="nav">
-    <button data-page="home" class="active" type="button">🏠 Home</button>
-    <button data-page="services" type="button">🔧 Services</button>
-    <button data-page="bookings" type="button">📋 Bookings</button>
-    <button data-page="marketplace" type="button">🛍️ Marketplace</button>
-  </nav>
 
   <!-- Providers Modal -->
   <div class="modal" id="providersModal">
@@ -375,7 +266,7 @@
     </div>
   </div>
 
-  <!-- Transport Instant Booking Modal -->
+  <!-- Transport Instant Booking Modal (stops ONLY for transport) -->
   <div class="modal" id="tiModal">
     <div class="sheet">
       <div class="head">
@@ -387,7 +278,7 @@
           <div>
             <div class="small">Pickup address</div>
             <div class="row" style="gap:8px">
-              <input id="tiPickup" placeholder="Detecting current location…" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+              <input id="tiPickup" placeholder="Your current or preferred pickup…" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px"/>
               <button class="btn ghost" id="tiUseCurrent" type="button">📍 Use current</button>
             </div>
           </div>
@@ -396,13 +287,12 @@
             <input id="tiDestination" placeholder="Where are you going?" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
           </div>
           <div>
-            <div class="small">Stops (optional)</div>
+            <div class="small">Stops (optional, max 5)</div>
             <div id="tiStops" class="list"></div>
             <div class="row" style="gap:8px;margin-top:6px">
               <button class="btn ghost" id="tiAddStop" type="button">＋ Add stop</button>
               <button class="btn ghost" id="tiRemoveStop" type="button">− Remove stop</button>
             </div>
-            <div class="small muted">Up to 5 stops, each with suggestions.</div>
           </div>
           <button class="btn primary" id="tiStart" type="button">Start Instant Request</button>
         </div>
@@ -438,10 +328,6 @@
       </div>
       <div class="body">
         <div id="trackStatus" class="small muted">Provider accepted. En route…</div>
-        <div class="row" style="gap:8px;margin:8px 0">
-          <button class="btn ghost" id="trackChatBtn" type="button">💬 Chat</button>
-          <a class="btn ghost" id="trackCallBtn" href="#" type="button">📞 Call</a>
-        </div>
         <div id="trackMapWrap" style="margin-top:10px"><div id="track-map"></div></div>
       </div>
     </div>
@@ -469,7 +355,7 @@
       </div>
       <div class="body">
         <div class="row" style="gap:8px;margin-bottom:10px">
-          <input id="itemSearch" placeholder="Say or type what you need (e.g., pizza, plumber, tire)…" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+          <input id="itemSearch" placeholder="Say or type what you need…" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px"/>
           <button class="btn ghost" id="itemVoice" type="button">🎤</button>
           <button class="btn primary" id="itemGo" type="button">Search</button>
         </div>
@@ -531,8 +417,8 @@
           <div>
             <div class="small">Payment Method</div>
             <div class="controls">
-              <label><input type="radio" name="payMethod" value="card" checked/> Card (funds held until delivery)</label>
-              <label><input type="radio" name="payMethod" value="cash"/> Cash (you accept the risk)</label>
+              <label><input type="radio" name="payMethod" value="card" checked/> Card</label>
+              <label><input type="radio" name="payMethod" value="cash"/> Cash</label>
             </div>
           </div>
           <label class="terms">
@@ -558,6 +444,15 @@
     </div>
   </div>
 
+  <button class="floating-panic" id="panicBtn" type="button">🚨</button>
+
+  <nav class="nav">
+    <button data-page="home" class="active" type="button">🏠 Home</button>
+    <button data-page="services" type="button">🔧 Services</button>
+    <button data-page="bookings" type="button">📋 Bookings</button>
+    <button data-page="marketplace" type="button">🛍️ Marketplace</button>
+  </nav>
+
   <script>
     // Config
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
@@ -574,21 +469,20 @@
     let lastCategory = null;
     const activeRequests = {};
 
-    // Elements / helpers
     const $ = (id)=>document.getElementById(id);
     function showPage(page){
       document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
       (document.getElementById('page-'+page) || document.getElementById('page-home')).classList.add('active');
     }
 
-    // Header/menu buttons
+    // Header/menu
     $('notifBtn').onclick = ()=>alert('Notifications (coming soon)');
     $('profileBtn').onclick = (e)=>{ e.stopPropagation(); const m=$('profileMenu'); m.style.display = (m.style.display==='block'?'none':'block'); };
     document.addEventListener('click', ()=>{ const m=$('profileMenu'); if (m) m.style.display='none'; });
     $('menuProfile').onclick = ()=>{ $('profileMenu').style.display='none'; showPage('profile'); };
     $('menuWallet').onclick  = ()=>{ $('profileMenu').style.display='none'; showPage('wallet'); };
     $('menuTopup').onclick   = ()=>{ $('profileMenu').style.display='none'; showPage('topup'); };
-    $('menuSupport').onclick = ()=>{ $('profileMenu').style.display='none'; showPage('support'); };
+    $('menuSupport').onclick = ()=>{ $('profileMenu').style.display='none'; alert('Support: help@zippup.com'); };
     $('menuLogout').onclick  = ()=>{ $('profileMenu').style.display='none'; alert('Logged out'); };
 
     // Footer nav
@@ -596,19 +490,14 @@
       b.onclick = ()=>{ document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); showPage(b.dataset.page); };
     });
 
-    // Profile page buttons
-    $('manageServicesBtn').onclick   = ()=>showPage('manage-services');
-    $('manageProductsBtn').onclick   = ()=>showPage('manage-products');
-    $('emergencyContactsBtn').onclick= ()=>showPage('emergency-contacts');
-    $('providerVerifyBtn').onclick   = ()=>showPage('verify-provider');
-    $('supportBtn').onclick          = ()=>showPage('support');
+    // Availability switch (visual)
+    const availKey='zippup_availability';
+    const knob=$('availKnob'); const toggle=$('availToggle');
+    toggle.checked = localStorage.getItem(availKey) === 'on';
+    knob.style.transform = toggle.checked ? 'translateX(20px)' : 'translateX(0)';
+    toggle.onchange = (e)=>{ localStorage.setItem(availKey, e.target.checked?'on':'off'); knob.style.transform = e.target.checked?'translateX(20px)':'translateX(0)'; };
 
-    // Availability switch
-    const availKey = 'zippup_availability';
-    $('availToggle').checked = localStorage.getItem(availKey) === 'on';
-    $('availToggle').onchange = (e)=>{ localStorage.setItem(availKey, e.target.checked ? 'on' : 'off'); alert('Availability: ' + (e.target.checked ? 'Available' : 'Offline')); };
-
-    // Panic button
+    // Panic
     $('panicBtn').onclick = async () => {
       if (!confirm('Confirm PANIC alert?')) return;
       try{
@@ -620,14 +509,14 @@
       }catch{ alert('Alert sent (no GPS).'); }
     };
 
-    // Init user/location
+    // Init
     document.addEventListener('DOMContentLoaded', () => {
       $('userName').textContent = user.name;
       initLocation();
       renderServices(); renderEmergency(); renderRecent(); renderServicesAll(); renderBookings();
       initMarketplace();
 
-      // Cart/Checkout bindings
+      // Cart bindings
       $('cartBtn').onclick = (e)=>{ e.preventDefault(); showPage('marketplace'); renderCart(); $('cartModal').classList.add('open'); };
       $('openCartBtn').onclick = ()=>{ renderCart(); $('cartModal').classList.add('open'); };
       $('closeCart').onclick = ()=> $('cartModal').classList.remove('open');
@@ -651,7 +540,6 @@
       } catch { return null; }
     }
 
-    // Services / Emergency
     const SERVICES = [
       { id:'transport',    name:'Transport',         icon:'🚗', desc:'Ride & moving',               instant:true,  scheduled:true },
       { id:'food',         name:'Food',              icon:'🍔', desc:'Restaurant & grocery',       instant:true,  scheduled:true },
@@ -707,7 +595,6 @@
         <div class="card" style="margin-top:8px"><div class="row" style="justify-content:space-between"><div>🚗 Ride to Airport</div><span class="badge success">completed</span></div><div class="small muted" style="margin-top:6px">2h ago</div></div>`;
     }
 
-    // Category flow
     function openCategory(catId, label){
       lastCategory = catId;
       if (activeRequests[catId]) { alert(`You already have a pending ${label} request.`); return; }
@@ -750,39 +637,6 @@
       $('closeCategoryOptions').onclick=()=>$('categoryOptionsModal').classList.remove('open');
     }
 
-    // Items modal (search chips)
-    function openItemsModal(kind){
-      $('itemsTitle').textContent = (kind==='fastfood'?'Fast Food':kind==='grocery'?'Groceries':'Find Service');
-      const chipsMap = {
-        fastfood:['pizza','burger','fries','chicken','drinks','meat'],
-        grocery: ['milk','bread','eggs','rice','fruits','vegetables','water'],
-        home:    ['cleaning','gardening','painting','plumber','electrician'],
-        tech:    ['phone repair','computer','tv repair','software'],
-        auto:    ['mechanic','tires','battery','car wash'],
-        construction:['builder','carpenter','electrician','plumber'],
-        others:  ['events','tutor','legal','photography'],
-        roadside:['flat tire','jumpstart','fuel','lockout'],
-      };
-      $('itemChips').innerHTML='';
-      (chipsMap[kind]||[]).forEach(text=>{
-        const b=document.createElement('button'); b.className='btn ghost'; b.type='button'; b.textContent=text;
-        b.onclick=()=>{ $('itemSearch').value=text; $('itemGo').click(); };
-        $('itemChips').appendChild(b);
-      });
-      $('itemsModal').classList.add('open');
-      $('closeItems').onclick=()=>$('itemsModal').classList.remove('open');
-      $('itemVoice').onclick = ()=> voiceToInput($('itemSearch'), ()=>$('itemGo').click());
-      $('itemGo').onclick = async ()=>{
-        const q = ($('itemSearch').value||'').trim().toLowerCase();
-        $('itemsModal').classList.remove('open');
-        $('providersTitle').textContent = (q||'Results') + ' — Providers';
-        const list = await fetchProviders(kind, q||kind);
-        renderProviders(list);
-        $('providersModal').classList.add('open');
-      };
-    }
-
-    // Providers
     $('closeProviders').onclick = ()=>$('providersModal').classList.remove('open');
     async function fetchProviders(category, sub=null){
       try{
@@ -791,9 +645,9 @@
         if (!r.ok) throw 0; const d = await r.json(); return d.providers||[];
       }catch{
         return [
-          { id:'p1', publicName:'Alex M.', jobTitle:'Driver', verified:true, rating:4.8, rides:120, phone:'+123456789', photoUrl:'', icon:'👤', distance:'0.8km', eta:'6-9m', fareMin:120, fareMax:130, currency:'$', available:true },
-          { id:'p2', publicName:'Quick Help', jobTitle:'Mechanic', verified:false, rating:4.5, rides:74, phone:null, photoUrl:'', icon:'⚡', distance:'1.2km', eta:'8-12m', fareMin:10, fareMax:15, currency:'$', available:true },
-          { id:'p3', publicName:'Nearby Tech', jobTitle:'Plumber', verified:true, rating:4.2, rides:55, phone:null, photoUrl:'', icon:'🔧', distance:'2.1km', eta:'12-18m', fareMin:12, fareMax:18, currency:'$', available:true },
+          { id:'p1', publicName:'Alex M.', jobTitle:'Driver', verified:true, rating:4.8, phone:'+123456789', icon:'👤', distance:'0.8km', eta:'6-9m', fareMin:120, fareMax:130, currency:'$', available:true },
+          { id:'p2', publicName:'Quick Help', jobTitle:'Mechanic', verified:false, rating:4.5, phone:null, icon:'⚡', distance:'1.2km', eta:'8-12m', fareMin:10, fareMax:15, currency:'$', available:true },
+          { id:'p3', publicName:'Nearby Tech', jobTitle:'Plumber', verified:true, rating:4.2, phone:null, icon:'🔧', distance:'2.1km', eta:'12-18m', fareMin:12, fareMax:18, currency:'$', available:true },
         ];
       }
     }
@@ -805,7 +659,7 @@
         const title= p.jobTitle ? ` • ${p.jobTitle}` : '';
         const verified = p.verified ? `<span class="verify">✔️</span>` : `<span class="small muted">unverified</span>`;
         const rating = p.rating ? ` <span class="rating">★ ${(+p.rating).toFixed ? (+p.rating).toFixed(1) : p.rating}</span>` : '';
-        const avatar = p.photoUrl ? `<img src="${p.photoUrl}" class="avatar" alt="${name}"/>` : `<div class="avatar">${(p.icon||'👤')}</div>`;
+        const avatar = `<div class="avatar">${(p.icon||'👤')}</div>`;
         const fare = (p.fareMin && p.fareMax) ? `${p.currency||'$'}${p.fareMin}‑${p.fareMax}` : (p.fee||'—');
 
         const el=document.createElement('div'); el.className='provider';
@@ -832,7 +686,7 @@
       });
     }
 
-    // Speech-to-text
+    // Voice + Search
     $('voiceBtn').onclick = ()=> voiceToInput($('search'), ()=>runHomeSearch());
     function voiceToInput(inputEl, onResult){
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -865,13 +719,11 @@
       if (/(phone|computer|laptop|tv|repair|software)/.test(q)) return openItemsModal('tech');
       if (/(builder|carpenter|construction)/.test(q)) return openItemsModal('construction');
       if (/(event|tutor|legal|photo|photography)/.test(q)) return openItemsModal('others');
-      if (/(flat|jumpstart|fuel|lockout|road)/.test(q)) return openItemsModal('roadside');
       $('providersTitle').textContent = q + ' — Providers';
       fetchProviders('search', q).then(renderProviders);
       $('providersModal').classList.add('open');
     }
 
-    // Emergency open
     async function openEmergency(emId, label){
       $('providersTitle').textContent = label + ' — Nearest';
       const list = await fetchProviders('emergency', emId);
@@ -879,7 +731,7 @@
       $('providersModal').classList.add('open');
     }
 
-    // Transport instant entry
+    // Transport instant entry (stops ONLY here)
     const tiModal = $('tiModal'), tiPickup=$('tiPickup'), tiDestination=$('tiDestination'), tiStops=$('tiStops');
     let tiStopCount=0;
     $('tiClose').onclick = ()=> tiModal.classList.remove('open');
@@ -892,23 +744,20 @@
       tiStopCount++;
       const wrap=document.createElement('div'); wrap.className='stop-row';
       wrap.innerHTML=`<label class="small" style="min-width:56px">Stop ${tiStopCount}</label><input class="tiStopInput" placeholder="Enter stop ${tiStopCount} address" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px"/>`;
-      tiStops.appendChild(wrap); attachAutocomplete(wrap.querySelector('.tiStopInput'));
+      tiStops.appendChild(wrap);
+      bindAddrInput(wrap.querySelector('.tiStopInput'));
     };
     $('tiRemoveStop').onclick = ()=>{ if (tiStopCount<=0) return; tiStops.removeChild(tiStops.lastElementChild); tiStopCount--; };
 
-    function attachAutocomplete(inputEl){
-      if (!inputEl) return;
-      function init(){ if (!window.google?.maps?.places) return setTimeout(init,300); new google.maps.places.Autocomplete(inputEl,{fields:['formatted_address','geometry','name'],types:['geocode']}); }
-      init();
-    }
     function startInstantEntry(provider){
       selectedProvider = provider;
       if (lastCategory==='transport'){
         tiModal.classList.add('open');
-        attachAutocomplete(tiPickup); attachAutocomplete(tiDestination);
-        if (coords && !tiPickup.value) reverseGeocode(coords.lat, coords.lng).then(n=>tiPickup.value=n||'');
-        $('tiStart').onclick = ()=> startInstantTransport(provider);
+        // Bind fallback suggestions (no Google overlay)
+        bindAddrInput(tiPickup);
+        bindAddrInput(tiDestination);
       } else startInstant(provider);
+      $('tiStart').onclick = ()=> startInstantTransport(provider);
     }
     async function startInstantTransport(provider){
       const pickup=(tiPickup.value||'').trim(), destination=(tiDestination.value||'').trim();
@@ -923,7 +772,7 @@
         });
         const d=await r.json().catch(()=>({})); requestId=d.requestId||('demo-'+Date.now());
       }catch{ requestId='demo-'+Date.now(); }
-      startInstantCountdown('transport', provider.phone);
+      startInstantCountdown('transport');
     }
     async function startInstant(provider){
       activeRequests[lastCategory||'general']=true;
@@ -935,19 +784,19 @@
         });
         const d=await r.json().catch(()=>({})); requestId=d.requestId||('demo-'+Date.now());
       }catch{ requestId='demo-'+Date.now(); }
-      startInstantCountdown(lastCategory||'general', provider.phone);
+      startInstantCountdown(lastCategory||'general');
     }
     function startInstantCountdownInit(){
       $('providersModal').classList.remove('open');
       instantLeft=90; $('countdown').textContent=String(instantLeft); $('instantHint').textContent='Waiting for provider to accept…'; $('instantModal').classList.add('open');
     }
-    function startInstantCountdown(key, phone){
+    function startInstantCountdown(key){
       $('cancelInstant').onclick = ()=>{ $('instantModal').classList.remove('open'); activeRequests[key]=false; };
       instantTimer=setInterval(async ()=>{
         instantLeft-=1; $('countdown').textContent=String(instantLeft);
         if (instantLeft%3===0){
           const status=await getRequestStatus(requestId);
-          if (status==='accepted'){ stopInstant(); openTracking(phone); return; }
+          if (status==='accepted'){ stopInstant(); openTracking(); return; }
           if (status==='rejected'){ stopInstant(); alert('Provider rejected.'); $('instantModal').classList.remove('open'); activeRequests[key]=false; return; }
         }
         if (instantLeft<=0){ stopInstant(); alert('No response. Try others.'); $('instantModal').classList.remove('open'); activeRequests[key]=false; }
@@ -960,11 +809,9 @@
       catch{ return (instantLeft<78)?'accepted':'pending'; }
     }
 
-    // Tracking
-    function openTracking(phone){
+    // Tracking (Leaflet)
+    function openTracking(){
       $('instantModal').classList.remove('open'); $('trackModal').classList.add('open'); setTimeout(initMap,50); startTracking();
-      if (phone){ $('trackCallBtn').href=`tel:${phone}`; } else { $('trackCallBtn').href='#'; }
-      $('trackChatBtn').onclick = ()=>alert('In‑app chat coming soon');
     }
     function initMap(){
       if (!map){ map=L.map('track-map',{zoomControl:true}); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OSM' }).addTo(map); }
@@ -999,6 +846,38 @@
       }catch{ alert('Booking sent (demo).'); }
       $('bookingModal').classList.remove('open');
     };
+
+    // Items modal / search chips (used by non-transport flows)
+    function openItemsModal(kind){
+      $('itemsTitle').textContent = (kind==='fastfood'?'Fast Food':kind==='grocery'?'Groceries':'Find Service');
+      const chipsMap = {
+        fastfood:['pizza','burger','fries','chicken','drinks','meat'],
+        grocery: ['milk','bread','eggs','rice','fruits','vegetables','water'],
+        home:    ['cleaning','gardening','painting','plumber','electrician'],
+        tech:    ['phone repair','computer','tv repair','software'],
+        auto:    ['mechanic','tires','battery','car wash'],
+        construction:['builder','carpenter','electrician','plumber'],
+        others:  ['events','tutor','legal','photography'],
+        roadside:['flat tire','jumpstart','fuel','lockout'],
+      };
+      $('itemChips').innerHTML='';
+      (chipsMap[kind]||[]).forEach(text=>{
+        const b=document.createElement('button'); b.className='btn ghost'; b.type='button'; b.textContent=text;
+        b.onclick=()=>{ $('itemSearch').value=text; $('itemGo').click(); };
+        $('itemChips').appendChild(b);
+      });
+      $('itemsModal').classList.add('open');
+      $('closeItems').onclick=()=>$('itemsModal').classList.remove('open');
+      $('itemVoice').onclick = ()=> voiceToInput($('itemSearch'), ()=>$('itemGo').click());
+      $('itemGo').onclick = async ()=>{
+        const q = ($('itemSearch').value||'').trim().toLowerCase();
+        $('itemsModal').classList.remove('open');
+        $('providersTitle').textContent = (q||'Results') + ' — Providers';
+        const list = await fetchProviders(kind, q||kind);
+        renderProviders(list);
+        $('providersModal').classList.add('open');
+      };
+    }
 
     // Marketplace
     const MP_CATEGORIES = [
@@ -1119,682 +998,96 @@
       const ord=$('ordStatus'); let t=0; const poll=setInterval(async()=>{ t+=3; let s; try{ const r=await fetch(`${BASE_API}/api/marketplace/orders/${encodeURIComponent(orderId)}`); const d=await r.json().catch(()=>({})); s=d.status; }catch{ if (t>=6&&t<12) s='accepted'; else if (t>=12&&t<18) s='out_for_delivery'; else if (t>=18) s='delivered'; else s='pending'; } ord.textContent=s||'pending'; if (s==='delivered'||t>=24) clearInterval(poll); },3000);
     }
 
-    // Profile sub-pages (dummy interactions)
-    $('addServiceBtn').onclick = ()=> alert('Add Service form (to implement)');
-    $('addProductBtn').onclick = ()=> alert('Add Product form (to implement)');
-    $('vpSubmit').onclick = ()=>{ $('vpStatus').textContent='Submitted. Awaiting admin review.'; };
-    $('supSend').onclick = ()=>{ if(!$('supSubject').value.trim()||!$('supMessage').value.trim()) return alert('Enter subject and message'); alert('Support message sent'); $('supSubject').value=''; $('supMessage').value=''; };
+    // Transport-only address suggestions (country/area-limited; no Google)
+    (function transportAddressFallback() {
+      const tiModal = document.getElementById('tiModal');
+      if (!tiModal) return;
 
-    // Transport helpers: Google Places attach on demand
-  </script>
-  <script>
-// ZippUp mobile hotfix: sticky checkout, fast Transport/Food, active booking bar
-(function () {
-  // 0) Inject minimal CSS so we don't touch your existing styles
-  const css = `
-    /* Cart modal: scroll body, keep checkout visible */
-    #cartModal .sheet .body { max-height: 70vh; overflow: auto; }
-    #cartModal .sheet .body .checkout-sticky { position: sticky; bottom: 0; background:#fff; padding-top:10px; border-top:1px solid var(--border); }
-
-    /* Active request bar */
-    .active-request-bar { position: fixed; left:16px; right:16px; bottom:120px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(17,24,39,.08); z-index: 1000; padding:10px; display:none }
-    .active-request-bar .row { display:flex; align-items:center; justify-content:space-between; gap:8px }
-    .active-request-bar .btn { padding:8px 12px; border-radius:10px; border:0; font-weight:600; cursor:pointer }
-    .active-request-bar .primary { background:#2563EB; color:#fff }
-    .active-request-bar .ghost { background:#F3F4F6 }
-  `;
-  const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
-
-  // 1) Make Transport/Food cards open on first tap (mobile safe)
-  function openByLabel(text) {
-    const t = (text||'').toLowerCase();
-    if (t.includes('transport')) { try { openCategory('transport','Transport'); } catch {} return true; }
-    if (t.includes('food'))      { try { openCategory('food','Food'); }         catch {} return true; }
-    return false;
-  }
-  function svcTap(e){
-    const card = e.target.closest('.card.service'); if (!card) return;
-    const h4 = card.querySelector('h4'); if (!h4) return;
-    if (openByLabel(h4.textContent)) { e.preventDefault(); e.stopPropagation(); }
-  }
-  ['pointerup','click','touchend'].forEach(ev => document.addEventListener(ev, svcTap, { capture:true, passive:false }));
-
-  // 2) Cart modal: make Checkout row sticky automatically
-  function stickCheckoutRow() {
-    const row = document.querySelector('#cartModal .body #checkoutBtn')?.closest('.row');
-    if (row && !row.classList.contains('checkout-sticky')) row.classList.add('checkout-sticky');
-  }
-  const cartBody = document.querySelector('#cartModal .body');
-  if (cartBody) new MutationObserver(stickCheckoutRow).observe(cartBody, { childList:true, subtree:true });
-  stickCheckoutRow();
-
-  // 3) Active booking bar (persists when user leaves page)
-  const BAR_ID = 'zupActiveBar';
-  function ensureBar() {
-    if (document.getElementById(BAR_ID)) return document.getElementById(BAR_ID);
-    const bar = document.createElement('div');
-    bar.id = BAR_ID;
-    bar.className = 'active-request-bar';
-    bar.innerHTML = `
-      <div class="row">
-        <div id="zupActiveText" class="small">You have an active request</div>
-        <div class="row" style="gap:6px">
-          <button class="btn ghost" id="zupActiveCancel" type="button">Cancel</button>
-          <button class="btn primary" id="zupActiveTrack" type="button">Resume tracking</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(bar);
-    document.getElementById('zupActiveTrack').onclick = () => {
-      try { openTracking(_activeCache?.phone || null); } catch {}
-      bar.style.display = 'none';
-    };
-    document.getElementById('zupActiveCancel').onclick = async () => {
-      // Try to cancel via existing code, else just clear
-      try { typeof cancelInstant === 'function' ? await cancelInstant('User cancelled', _activeCache?.category || 'general') : null; } catch {}
-      clearActive();
-    };
-    return bar;
-  }
-  function saveActive(obj) {
-    localStorage.setItem('zup_active_req', JSON.stringify(obj||{}));
-  }
-  function loadActive() {
-    try { return JSON.parse(localStorage.getItem('zup_active_req')||'{}'); } catch { return {}; }
-  }
-  function showActive(obj) {
-    const bar = ensureBar();
-    const txt = document.getElementById('zupActiveText');
-    if (txt) txt.textContent = `Active ${obj?.category || 'service'} request • tap to resume or cancel`;
-    bar.style.display = 'block';
-  }
-  function clearActive() {
-    localStorage.removeItem('zup_active_req');
-    const bar = document.getElementById(BAR_ID);
-    if (bar) bar.style.display = 'none';
-  }
-
-  // 3a) Monkey‑patch your startInstant/startInstantTransport to persist the active request
-  let _activeCache = loadActive();
-  ['startInstantTransport','startInstant'].forEach(fnName => {
-    const orig = window[fnName];
-    if (typeof orig === 'function') {
-      window[fnName] = function patched(provider) {
+      let countryCode = null;
+      let bounds = null;
+      function initGeoBias() {
         try {
-          // Call original
-          const ret = orig.apply(this, arguments);
-          // Save active after a tick (requestId gets set shortly after)
-          setTimeout(() => {
-            const obj = {
-              id: (window.requestId || _activeCache?.id || ('demo-'+Date.now())),
-              category: (window.lastCategory || _activeCache?.category || 'general'),
-              phone: provider?.phone || null,
-            };
-            _activeCache = obj; saveActive(obj); showActive(obj);
-          }, 300);
-          return ret;
-        } catch (e) { return orig.apply(this, arguments); }
-      }
-    }
-  });
-  // When tracking closes, clear active (optional: keep until completed)
-  if (typeof window.closeTrack === 'function') {
-    const origClose = window.closeTrack;
-    window.closeTrack = function patchedClose() {
-      try { origClose.apply(this, arguments); } catch {}
-      // keep active so user can resume — comment next line to keep persistent
-      // clearActive();
-    }
-  }
-
-  // 3b) Restore bar on load if there is an active request
-  if (_activeCache && _activeCache.id) { showActive(_activeCache); }
-
-  // 4) Helpful note for Google Maps "Do you own this website?" overlay
-  // That message comes from Google Maps/Places when the key isn't allowed for your domain
-  // or billing isn't enabled. To stop it:
-  // - In Google Cloud Console: enable billing for the project of this key
-  // - Enable APIs: Maps JavaScript API + Places API
-  // - Credentials -> your key -> add your site domain to "Website restrictions" (e.g. https://your-site.com/*)
-  // Until then, address suggestions still work where possible; the overlay is from Google, not from this code.
-})();
-</script>
-  <script>
-(function () {
-  // 1) Fast‑tap for Transport/Food (one tap on phone)
-  function openByLabel(txt){txt=(txt||'').toLowerCase(); if(txt.includes('transport')){try{openCategory('transport','Transport')}catch{}} else if(txt.includes('food')){try{openCategory('food','Food')}catch{}}}
-  function svcTap(e){var card=e.target.closest('.card.service'); if(!card) return; var h4=card.querySelector('h4'); if(!h4) return; openByLabel(h4.textContent); }
-  document.addEventListener('click', svcTap, true);
-  document.addEventListener('touchend', svcTap, {capture:true, passive:false});
-
-  // 2) Active request bar (resume/cancel if user navigates away)
-  var bar=document.createElement('div');
-  bar.className='active-request-bar';
-  bar.innerHTML='<div class="row" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div class="small">You have an active request</div><div style="display:flex;gap:6px"><button class="btn ghost" id="arCancel" type="button">Cancel</button><button class="btn primary" id="arResume" type="button">Resume tracking</button></div></div>';
-  document.body.appendChild(bar);
-  function saveActive(id,cat,phone){try{localStorage.setItem('zup_active_req',JSON.stringify({id:id,cat:cat,phone:phone||null}))}catch{}}
-  function loadActive(){try{return JSON.parse(localStorage.getItem('zup_active_req')||'{}')}catch{return{}}}
-  function clearActive(){try{localStorage.removeItem('zup_active_req')}catch{}}
-  function showBar(){bar.style.display='block'}
-  function hideBar(){bar.style.display='none'}
-
-  // Patch instant starters to remember the active request
-  ['startInstantTransport','startInstant'].forEach(function(n){
-    var orig=window[n];
-    if(typeof orig==='function'){
-      window[n]=function(p){
-        var ret=orig.apply(this,arguments);
-        setTimeout(function(){
-          var a=loadActive();
-          var id=window.requestId||a.id||('demo-'+Date.now());
-          var cat=window.lastCategory||a.cat||'general';
-          var phone=p&&p.phone||a.phone||null;
-          saveActive(id,cat,phone); showBar();
-        },300);
-        return ret;
-      }
-    }
-  });
-
-  // Resume/cancel handlers
-  document.getElementById('arResume').onclick=function(){
-    var a=loadActive();
-    try{ openTracking(a.phone||null); }catch{}
-    hideBar();
-  };
-  document.getElementById('arCancel').onclick=async function(){
-    var a=loadActive();
-    try{ typeof cancelInstant==='function' && await cancelInstant('User cancelled', a.cat||'general'); }catch{}
-    clearActive(); hideBar();
-  };
-
-  // Restore bar on load if needed
-  var a0=loadActive(); if(a0&&a0.id) showBar();
-
-  // 3) Note for Google “Do you own this website?” overlay (info only):
-  // Enable billing + Maps JavaScript API + Places API; add your site domain as an allowed referrer on the key.
-})();
-</script>
-  <script>
-// ZippUp combined hotfix: checkout sticky + cart edit + fast Transport/Food + search suggestions + fallback address suggestions
-(function () {
-  const $ = (id) => document.getElementById(id);
-
-  // 0) Sticky checkout row (cart modal) + scroll body
-  (function makeCheckoutSticky() {
-    const body = document.querySelector('#cartModal .sheet .body');
-    if (!body) return;
-    body.style.maxHeight = '70vh';
-    body.style.overflow = 'auto';
-    const row = document.querySelector('#cartModal .sheet .body #checkoutBtn')?.closest('.row');
-    if (row) {
-      row.style.position = 'sticky';
-      row.style.bottom = '0';
-      row.style.background = '#fff';
-      row.style.paddingTop = '10px';
-      row.style.borderTop = '1px solid var(--border)';
-    }
-  })();
-
-  // 1) Cart edit (+/−/✖) via delegation, non-destructive
-  function readCart() {
-    try { return (window.cart && Array.isArray(window.cart.items)) ? window.cart : JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); }
-    catch { return { items: [] }; }
-  }
-  function writeCart(c) {
-    if (window.cart) window.cart.items = c.items;
-    localStorage.setItem('mp_cart', JSON.stringify(c));
-  }
-  function updateCounts(c) {
-    const n = c.items.reduce((a,b)=>a+b.qty,0);
-    const hb = $('headerCartBadge'), cc = $('cartCount');
-    if (hb) hb.textContent = String(n);
-    if (cc) cc.textContent = String(n);
-  }
-  function renderCartSafe() {
-    try { window.renderCart && window.renderCart(); } catch {}
-    updateCounts(readCart());
-  }
-  function editCartHandler(e) {
-    const btn = e.target.closest('#cartList [data-k]');
-    if (!btn) return;
-    e.preventDefault(); e.stopPropagation();
-
-    const row = btn.closest('.card');
-    const id  = row?.dataset?.id;
-    if (!id) return;
-
-    const c = readCart();
-    const i = c.items.findIndex(x => x.id === id);
-    if (i < 0) return;
-
-    const k = btn.getAttribute('data-k');
-    if (k === 'dec') c.items[i].qty = Math.max(1, c.items[i].qty - 1);
-    if (k === 'inc') c.items[i].qty = c.items[i].qty + 1;
-    if (k === 'rm')  c.items.splice(i, 1);
-
-    writeCart(c);
-    renderCartSafe();
-  }
-  document.addEventListener('click', editCartHandler, { passive:false });
-  document.addEventListener('touchend', editCartHandler, { passive:false });
-
-  // 2) Ensure both cart buttons open the same modal, checkout opens reliably
-  function openCartModal() {
-    try { showPage('marketplace'); } catch {}
-    renderCartSafe();
-    const m = $('cartModal'); if (m) m.classList.add('open');
-  }
-  function bindTap(el, fn){
-    if (!el) return;
-    const h=(e)=>{ e.preventDefault(); e.stopPropagation(); fn(e); };
-    el.addEventListener('click', h, { passive:false });
-    el.addEventListener('touchend', h, { passive:false });
-  }
-  bindTap($('cartBtn'), openCartModal);
-  bindTap($('openCartBtn'), openCartModal);
-  bindTap($('closeCart'), ()=> $('cartModal')?.classList.remove('open'));
-  bindTap($('checkoutBtn'), ()=> { $('cartModal')?.classList.remove('open'); $('checkoutModal')?.classList.add('open'); });
-
-  // 3) Fast-activate Transport/Food on first tap (does not change your handlers)
-  function openByLabel(text) {
-    const t = (text||'').toLowerCase();
-    if (t.includes('transport')) { try { openCategory('transport','Transport'); } catch {} return true; }
-    if (t.includes('food'))      { try { openCategory('food','Food'); }         catch {} return true; }
-    return false;
-  }
-  function svcTap(e){
-    const card = e.target.closest('.card.service'); if (!card) return;
-    const h4 = card.querySelector('h4'); if (!h4) return;
-    if (openByLabel(h4.textContent)) { e.preventDefault(); e.stopPropagation(); }
-  }
-  document.addEventListener('click', svcTap, { capture:true, passive:false });
-  document.addEventListener('touchend', svcTap, { capture:true, passive:false });
-
-  // 4) Search suggestions + redirect (AI-like)
-  (function wireSearch() {
-    const input = $('search');
-    const btn   = $('searchBtn');
-    if (!input || !btn) return;
-
-    let panel = document.getElementById('zupSuggest');
-    if (!panel) {
-      panel = document.createElement('div');
-      panel.id = 'zupSuggest';
-      panel.style.cssText = 'position:fixed;left:16px;right:16px;top:86px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);z-index:60;display:none;max-height:260px;overflow:auto';
-      document.body.appendChild(panel);
-    }
-    const MAP = {
-      transport: /(transport|ride|taxi|cab|uber|bolt|truck|backie|moving|load)/i,
-      fastfood:  /(food|pizza|burger|fries|chicken|kfc|shawarma|drinks|meal)/i,
-      grocery:   /(grocery|market|milk|bread|eggs|rice|fruit|vegetable|veggies|water)/i,
-      emergency: /(ambulance|medical|fire|towing|tow|security|police|roadside|flat|jumpstart|fuel|lockout)/i,
-      home:      /(clean|garden|painting|plumber|electrician|home service)/i,
-      tech:      /(phone|computer|laptop|tv|repair|software|tech)/i,
-      auto:      /(mechanic|tire|tyre|battery|car wash|auto)/i,
-      construct: /(builder|carpenter|construction)/i,
-      others:    /(event|tutor|legal|photo|photography|other)/i
-    };
-    function hide(){ panel.style.display='none'; panel.innerHTML=''; }
-    function navigate(term) {
-      const q = (term || input.value || '').trim().toLowerCase();
-      if (!q) return;
-      if (MAP.transport.test(q)) { try { openCategory('transport','Transport'); } catch {} return hide(); }
-      if (MAP.fastfood.test(q))  { try { openItemsModal('fastfood'); }           catch {} return hide(); }
-      if (MAP.grocery.test(q))   { try { openItemsModal('grocery'); }            catch {} return hide(); }
-      if (MAP.emergency.test(q)) {
-        if (/ambulance|medical/.test(q)) { try { openEmergency('ambulance','Ambulance'); } catch {} }
-        else if (/fire/.test(q))         { try { openEmergency('fire','Fire Service'); }   catch {} }
-        else if (/towing|tow/.test(q))   { try { openEmergency('towing','Towing'); }       catch {} }
-        else                             { try { openEmergency('security','Security'); }   catch {} }
-        return hide();
-      }
-      if (MAP.home.test(q))      { try { openItemsModal('home'); }        catch {} return hide(); }
-      if (MAP.tech.test(q))      { try { openItemsModal('tech'); }        catch {} return hide(); }
-      if (MAP.auto.test(q))      { try { openItemsModal('auto'); }        catch {} return hide(); }
-      if (MAP.construct.test(q)) { try { openItemsModal('construction'); }catch {} return hide(); }
-      if (MAP.others.test(q))    { try { openItemsModal('others'); }      catch {} return hide(); }
-      try {
-        document.getElementById('providersTitle').textContent = q + ' — Providers';
-        fetchProviders('search', q).then(renderProviders);
-        document.getElementById('providersModal').classList.add('open');
-      } catch {}
-      hide();
-    }
-    let t = 0;
-    function suggest() {
-      clearTimeout(t);
-      const q = input.value.trim();
-      if (!q) return hide();
-      t = setTimeout(async () => {
-        panel.innerHTML=''; panel.style.display='block';
-        let items = [];
-        try {
-          const r = await fetch(`${(window.BASE_API||'')}/api/search/suggestions?q=${encodeURIComponent(q)}`);
-          const d = await r.json().catch(()=>({}));
-          items = Array.isArray(d?.suggestions) ? d.suggestions.slice(0,8) : [];
+          if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
+            const lat = coords.lat, lng = coords.lng;
+            const d = 0.6;
+            bounds = { minLon: lng - d, minLat: lat - d, maxLon: lng + d, maxLat: lat + d };
+          } else {
+            fetch('https://ipapi.co/json/')
+              .then(r=>r.json()).then(d=>{ if (d && d.country_code) countryCode = String(d.country_code).toLowerCase(); })
+              .catch(()=>{});
+          }
         } catch {}
-        if (!items.length) {
-          const seed = ['Transport','Ride','Truck / Backie','Fast Food','Groceries','Plumber','Electrician','Mechanic','Security','Towing'];
-          items = seed.filter(s=>s.toLowerCase().includes(q.toLowerCase())).slice(0,8);
-          if (!items.length) items = seed.slice(0,6);
-        }
-        items.forEach(text=>{
-          const row=document.createElement('button');
-          row.type='button';
-          row.style.cssText='display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:#fff;border-bottom:1px solid var(--border);cursor:pointer';
-          row.textContent=text;
-          row.onclick=()=>{ input.value=text; navigate(text); };
-          panel.appendChild(row);
-        });
-        const more=document.createElement('button');
-        more.type='button';
-        more.style.cssText='display:block;width:100%;text-align:center;padding:10px 12px;border:0;background:#F3F4F6;cursor:pointer;font-weight:600';
-        more.textContent='Search';
-        more.onclick=()=>navigate(q);
-        panel.appendChild(more);
-      }, 180);
-    }
-    input.addEventListener('input', suggest, { passive:true });
-    input.addEventListener('focus', suggest, { passive:true });
-    input.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); navigate(); }});
-    document.addEventListener('click',(e)=>{ if(!panel.contains(e.target) && e.target!==input) hide(); },{passive:true});
-    btn.onclick = ()=>navigate();
-  })();
-
-  // 5) Fallback address suggestions (Pickup/Destination/Stops) without Google Maps
-  (function wireAddressFallback() {
-    // Create one floating suggestion panel
-    const panel = document.createElement('div');
-    panel.id = 'addrSuggest';
-    panel.style.cssText = 'position:fixed;max-height:240px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);z-index:70;display:none';
-    document.body.appendChild(panel);
-
-    let activeInput = null, debounce = 0;
-
-    function positionPanel(input) {
-      const r = input.getBoundingClientRect();
-      panel.style.left   = Math.round(r.left) + 'px';
-      panel.style.top    = Math.round(r.bottom + 6) + 'px';
-      panel.style.width  = Math.round(r.width) + 'px';
-    }
-    function hidePanel(){ panel.style.display='none'; panel.innerHTML=''; activeInput=null; }
-
-    async function queryAddresses(q) {
-      // Nominatim fallback (no key). Respect rate-limits, keep it short.
-      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=' + encodeURIComponent(q);
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
-      return await res.json().catch(()=>[]);
-    }
-    function bindInput(input) {
-      if (!input || input.dataset.addrBound === '1') return;
-      input.dataset.addrBound = '1';
-      input.setAttribute('autocomplete','off');
-      input.addEventListener('input', () => {
-        clearTimeout(debounce);
-        const q = input.value.trim();
-        if (q.length < 3) { hidePanel(); return; }
-        debounce = setTimeout(async () => {
-          try {
-            const items = await queryAddresses(q);
-            if (!items || !items.length) { hidePanel(); return; }
-            activeInput = input;
-            panel.innerHTML=''; positionPanel(input);
-            items.forEach(it=>{
-              const line = it.display_name || [it.name, it.address && (it.address.city || it.address.town || it.address.village), it.address && it.address.country].filter(Boolean).join(', ');
-              const btn  = document.createElement('button');
-              btn.type='button';
-              btn.style.cssText='display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:#fff;border-bottom:1px solid var(--border);cursor:pointer';
-              btn.textContent = line;
-              btn.onclick = ()=>{ input.value = line; hidePanel(); };
-              panel.appendChild(btn);
-            });
-            panel.style.display='block';
-          } catch { hidePanel(); }
-        }, 220);
-      }, { passive:true });
-      input.addEventListener('focus', () => { if (input.value.trim().length >= 3) positionPanel(input); }, { passive:true });
-      input.addEventListener('blur', () => setTimeout(hidePanel, 150));
-    }
-
-    function bindAll() {
-      const pickup = document.getElementById('tiPickup');
-      const dest   = document.getElementById('tiDestination');
-      bindInput(pickup); bindInput(dest);
-      document.querySelectorAll('.tiStopInput').forEach(bindInput);
-    }
-    // Initial bind, plus observe dynamically added stop fields
-    bindAll();
-    const observer = new MutationObserver(() => bindAll());
-    observer.observe(document.body, { childList:true, subtree:true });
-    // Close on outside click
-    document.addEventListener('click', (e)=>{ if (!panel.contains(e.target) && e.target !== activeInput) hidePanel(); }, { passive:true });
-  })();
-
-  // 6) Final safety: make critical buttons type=button
-  window.addEventListener('DOMContentLoaded', ()=>{
-    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id => { const b=$(id); if (b) b.setAttribute('type','button'); });
-    renderCartSafe();
-  });
-})();
-</script>
-  <script>
-// ZippUp targeted hotfix: cart edit + sticky checkout + fast Transport/Food + transport-only address suggestions (country-limited) + Google overlay fallback
-(function () {
-  const $ = (id) => document.getElementById(id);
-
-  // 0) Sticky checkout row + scrollable cart items
-  (function makeCheckoutSticky() {
-    const body = document.querySelector('#cartModal .sheet .body');
-    if (!body) return;
-    body.style.maxHeight = '70vh';
-    body.style.overflow = 'auto';
-    const row = document.querySelector('#cartModal .sheet .body #checkoutBtn')?.closest('.row');
-    if (row) {
-      row.style.position = 'sticky';
-      row.style.bottom = '0';
-      row.style.background = '#fff';
-      row.style.paddingTop = '10px';
-      row.style.borderTop = '1px solid var(--border)';
-    }
-  })();
-
-  // 1) Cart editing (+ / − / ✖) with totals/badge updates (non-destructive)
-  function readCart() {
-    try { return (window.cart && Array.isArray(window.cart.items)) ? window.cart : JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); }
-    catch { return { items: [] }; }
-  }
-  function writeCart(c) {
-    if (window.cart) window.cart.items = c.items;
-    localStorage.setItem('mp_cart', JSON.stringify(c));
-  }
-  function updateCounts(c) {
-    const n = c.items.reduce((a,b)=>a+b.qty,0);
-    const hb = $('headerCartBadge'), cc = $('cartCount');
-    if (hb) hb.textContent = String(n);
-    if (cc) cc.textContent = String(n);
-  }
-  function rerenderCartUI() {
-    try { window.renderCart && window.renderCart(); } catch {}
-    updateCounts(readCart());
-  }
-  function editCartHandler(e) {
-    const btn = e.target.closest('#cartList [data-k]');
-    if (!btn) return;
-    e.preventDefault(); e.stopPropagation();
-
-    const row = btn.closest('.card');
-    let id  = row?.dataset?.id || '';
-    const c = readCart();
-
-    if (!id) {
-      // Fallback match by title text if dataset is missing
-      const title = (row.querySelector('strong')?.textContent || '').trim();
-      const found = c.items.find(i => i.title === title);
-      if (found) id = found.id;
-    }
-    if (!id) return;
-
-    const i = c.items.findIndex(x => x.id === id);
-    if (i < 0) return;
-
-    const k = btn.getAttribute('data-k');
-    if (k === 'dec') c.items[i].qty = Math.max(1, c.items[i].qty - 1);
-    if (k === 'inc') c.items[i].qty = c.items[i].qty + 1;
-    if (k === 'rm')  c.items.splice(i, 1);
-
-    writeCart(c);
-    rerenderCartUI();
-  }
-  document.addEventListener('click', editCartHandler, { passive:false });
-  document.addEventListener('touchend', editCartHandler, { passive:false });
-
-  // 2) Make BOTH cart buttons open modal; checkout opens reliably
-  function openCartModal() {
-    try { showPage('marketplace'); } catch {}
-    rerenderCartUI();
-    $('cartModal')?.classList.add('open');
-  }
-  function bindTap(el, fn){
-    if (!el) return;
-    const h=(e)=>{ e.preventDefault(); e.stopPropagation(); fn(e); };
-    el.addEventListener('click', h, { passive:false });
-    el.addEventListener('touchend', h, { passive:false });
-  }
-  bindTap($('cartBtn'), openCartModal);
-  bindTap($('openCartBtn'), openCartModal);
-  bindTap($('closeCart'), ()=> $('cartModal')?.classList.remove('open'));
-  bindTap($('checkoutBtn'), ()=> { $('cartModal')?.classList.remove('open'); $('checkoutModal')?.classList.add('open'); });
-
-  // 3) Fast-activate Transport/Food on one tap (does not change your handlers)
-  function openByLabel(text) {
-    const t = (text||'').toLowerCase();
-    if (t.includes('transport')) { try { openCategory('transport','Transport'); } catch {} return true; }
-    if (t.includes('food'))      { try { openCategory('food','Food'); }         catch {} return true; }
-    return false;
-  }
-  function svcTap(e){
-    const card = e.target.closest('.card.service'); if (!card) return;
-    const h4 = card.querySelector('h4'); if (!h4) return;
-    if (openByLabel(h4.textContent)) { e.preventDefault(); e.stopPropagation(); }
-  }
-  document.addEventListener('click', svcTap, { capture:true, passive:false });
-  document.addEventListener('touchend', svcTap, { capture:true, passive:false });
-
-  // 4) Transport-only fallback address suggestions (no Google overlay; country-limited)
-  // If Google key is blocked, this takes over. Only binds inside the transport modal (#tiModal).
-  window.gm_authFailure = function() { window.__zupGoogleBlocked = true; };
-  (function transportAddressFallback() {
-    const tiModal = document.getElementById('tiModal');
-    if (!tiModal) return;
-
-    // Country/area bias: prefer coords if available; otherwise try IP country
-    let countryCode = null;
-    let bounds = null; // { minLon, minLat, maxLon, maxLat } around current coords
-    function initGeoBias() {
-      try {
-        if (window.coords && typeof window.coords.lat === 'number' && typeof window.coords.lng === 'number') {
-          const lat = window.coords.lat, lng = window.coords.lng;
-          const d = 0.6; // ~60-70km bbox
-          bounds = { minLon: lng - d, minLat: lat - d, maxLon: lng + d, maxLat: lat + d };
-        } else {
-          // Light IP lookup to get country code (used by Nominatim)
-          fetch('https://ipapi.co/json/')
-            .then(r=>r.json()).then(d=>{ if (d && d.country_code) countryCode = String(d.country_code).toLowerCase(); })
-            .catch(()=>{});
-        }
-      } catch {}
-    }
-    initGeoBias();
-
-    const panel = document.createElement('div');
-    panel.id = 'addrSuggest';
-    panel.style.cssText = 'position:fixed;max-height:240px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);z-index:70;display:none';
-    document.body.appendChild(panel);
-
-    let activeInput = null, debounce = 0;
-    function positionPanel(input) {
-      const r = input.getBoundingClientRect();
-      panel.style.left   = Math.round(r.left) + 'px';
-      panel.style.top    = Math.round(r.bottom + 6) + 'px';
-      panel.style.width  = Math.round(r.width) + 'px';
-    }
-    function hidePanel(){ panel.style.display='none'; panel.innerHTML=''; activeInput=null; }
-
-    async function queryAddresses(q) {
-      // Nominatim with bias
-      const params = new URLSearchParams({ format:'json', limit:'5', addressdetails:'1', q });
-      if (bounds) {
-        params.set('viewbox', `${bounds.minLon},${bounds.maxLat},${bounds.maxLon},${bounds.minLat}`);
-        params.set('bounded', '1');
-      } else if (countryCode) {
-        params.set('countrycodes', countryCode);
       }
-      const url = `https://nominatim.openstreetmap.org/search?${params.toString()}`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
-      return await res.json().catch(()=>[]);
-    }
+      initGeoBias();
 
-    function bindInput(input) {
-      if (!input || input.dataset.addrBound === '1') return;
-      input.dataset.addrBound = '1';
-      input.setAttribute('autocomplete','off');
-      input.addEventListener('input', () => {
-        clearTimeout(debounce);
-        const q = input.value.trim();
-        if (q.length < 3) { hidePanel(); return; }
-        debounce = setTimeout(async () => {
-          try {
-            const items = await queryAddresses(q);
-            if (!items || !items.length) { hidePanel(); return; }
-            activeInput = input;
-            panel.innerHTML=''; positionPanel(input);
-            items.forEach(it=>{
-              const line = it.display_name || [it.name, it.address && (it.address.city || it.address.town || it.address.village), it.address && it.address.country].filter(Boolean).join(', ');
-              const btn  = document.createElement('button');
-              btn.type='button';
-              btn.style.cssText='display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:#fff;border-bottom:1px solid var(--border);cursor:pointer';
-              btn.textContent = line;
-              btn.onclick = ()=>{ input.value = line; hidePanel(); };
-              panel.appendChild(btn);
-            });
-            panel.style.display='block';
-          } catch { hidePanel(); }
-        }, 220);
-      }, { passive:true });
-      input.addEventListener('focus', () => { if (input.value.trim().length >= 3) positionPanel(input); }, { passive:true });
-      input.addEventListener('blur', () => setTimeout(hidePanel, 150));
-    }
+      const panel = document.createElement('div');
+      panel.id = 'addrSuggest';
+      panel.style.cssText = 'position:fixed;max-height:240px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);z-index:70;display:none';
+      document.body.appendChild(panel);
 
-    function bindTransportInputs() {
-      // Bind ONLY inside Transport modal
-      const pickup = document.getElementById('tiPickup');
-      const dest   = document.getElementById('tiDestination');
-      if (pickup) bindInput(pickup);
-      if (dest)   bindInput(dest);
-      document.querySelectorAll('#tiModal .tiStopInput').forEach(bindInput);
-    }
+      let activeInput = null, debounce = 0;
+      function positionPanel(input) {
+        const r = input.getBoundingClientRect();
+        panel.style.left   = Math.round(r.left) + 'px';
+        panel.style.top    = Math.round(r.bottom + 6) + 'px';
+        panel.style.width  = Math.round(r.width) + 'px';
+      }
+      function hidePanel(){ panel.style.display='none'; panel.innerHTML=''; activeInput=null; }
 
-    // Observe the transport modal only (stops remain transport-only)
-    const mo = new MutationObserver(() => bindTransportInputs());
-    mo.observe(tiModal, { childList:true, subtree:true });
-    bindTransportInputs();
+      async function queryAddresses(q) {
+        const params = new URLSearchParams({ format:'json', limit:'5', addressdetails:'1', q });
+        if (bounds) {
+          params.set('viewbox', `${bounds.minLon},${bounds.maxLat},${bounds.maxLon},${bounds.minLat}`);
+          params.set('bounded', '1');
+        } else if (countryCode) {
+          params.set('countrycodes', countryCode);
+        }
+        const url = `https://nominatim.openstreetmap.org/search?${params.toString()}`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
+        return await res.json().catch(()=>[]);
+      }
 
-    // If Google key is blocked, prevent your attachAutocomplete from trying to use it
-    const origAttach = window.attachAutocomplete;
-    window.attachAutocomplete = function(inputEl){
-      if (window.__zupGoogleBlocked) return; // no-op; fallback takes over
-      try { if (typeof origAttach === 'function') origAttach(inputEl); } catch {}
-    };
-  })();
+      function bindInput(input) {
+        if (!input || input.dataset.addrBound === '1') return;
+        input.dataset.addrBound = '1';
+        input.setAttribute('autocomplete','off');
+        input.addEventListener('input', () => {
+          clearTimeout(debounce);
+          const q = input.value.trim();
+          if (q.length < 3) { hidePanel(); return; }
+          debounce = setTimeout(async () => {
+            try {
+              const items = await queryAddresses(q);
+              if (!items || !items.length) { hidePanel(); return; }
+              activeInput = input;
+              panel.innerHTML=''; positionPanel(input);
+              items.forEach(it=>{
+                const line = it.display_name || [it.name, it.address && (it.address.city || it.address.town || it.address.village), it.address && it.address.country].filter(Boolean).join(', ');
+                const btn  = document.createElement('button');
+                btn.type='button';
+                btn.style.cssText='display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:#fff;border-bottom:1px solid var(--border);cursor:pointer';
+                btn.textContent = line;
+                btn.onclick = ()=>{ input.value = line; hidePanel(); };
+                panel.appendChild(btn);
+              });
+              panel.style.display='block';
+            } catch { hidePanel(); }
+          }, 220);
+        }, { passive:true });
+        input.addEventListener('focus', () => { if (input.value.trim().length >= 3) positionPanel(input); }, { passive:true });
+        input.addEventListener('blur', () => setTimeout(hidePanel, 150));
+      }
 
-  // 5) Safety: ensure key buttons are not treated as form submit on mobile
-  window.addEventListener('DOMContentLoaded', ()=>{
-    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id => { const b=$(id); if (b) b.setAttribute('type','button'); });
-    // Initial badge sync
-    updateCounts(readCart());
-  });
-})();
-</script>
+      function bindTransportInputs() {
+        const pickup = document.getElementById('tiPickup');
+        const dest   = document.getElementById('tiDestination');
+        if (pickup) bindInput(pickup);
+        if (dest)   bindInput(dest);
+        document.querySelectorAll('#tiModal .tiStopInput').forEach(bindInput);
+      }
+      bindTransportInputs();
+      new MutationObserver(() => bindTransportInputs()).observe(tiModal, { childList:true, subtree:true });
+    })();
+  </script>
 </body>
 </html>
