@@ -14,6 +14,9 @@
   <!-- Stripe.js -->
   <script defer src="https://js.stripe.com/v3"></script>
 
+  <!-- Google Maps Places (autocomplete) -->
+  <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6IF-c6Ce0iSpEDITpaUGJ20y7_ZZxHl0&libraries=places"></script>
+
   <style>
     :root { --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF; --text:#111827; --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB; --radius:14px; --shadow:0 8px 24px rgba(17,24,39,.08) }
     * { box-sizing:border-box; margin:0; padding:0 }
@@ -67,6 +70,10 @@
     .qty { display:flex; gap:8px; align-items:center }
     .qty button { width:30px; height:30px; border-radius:8px; }
     .terms { display:flex; gap:8px; align-items:flex-start; font-size:13px; color:#333 }
+    .avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--border); background:#eef2ff; display:flex; align-items:center; justify-content:center; font-size:18px }
+    .rating { color:#F59E0B; font-size:12px }
+    .verify { color:#2563EB; font-size:14px }
+    .stop-row { display:flex; gap:8px; align-items:center }
   </style>
 </head>
 <body>
@@ -226,7 +233,7 @@
     </div>
   </div>
 
-  <!-- Booking Form Modal -->
+  <!-- Booking Form Modal (Scheduled) -->
   <div class="modal" id="bookingModal">
     <div class="sheet">
       <div class="head">
@@ -238,16 +245,16 @@
           <div class="row" style="gap:12px">
             <div style="flex:1">
               <div class="small">Date</div>
-              <input id="bkDate" type="date" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+              <input id="bkDate" type="date" required style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
             </div>
             <div style="flex:1">
               <div class="small">Time</div>
-              <input id="bkTime" type="time" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+              <input id="bkTime" type="time" required style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
             </div>
           </div>
           <div>
-            <div class="small">Address or use current</div>
-            <input id="bkAddress" placeholder="Enter address (optional)" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+            <div class="small">Address</div>
+            <input id="bkAddress" required placeholder="Enter address" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
           </div>
           <div>
             <div class="small">Details</div>
@@ -255,6 +262,41 @@
           </div>
           <button class="btn primary block" type="submit">Send Booking Request</button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transport Instant Booking Modal -->
+  <div class="modal" id="tiModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Ride Details</strong>
+        <button class="btn ghost" id="tiClose" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="list">
+          <div>
+            <div class="small">Pickup address</div>
+            <div class="row" style="gap:8px">
+              <input id="tiPickup" placeholder="Detecting current location…" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+              <button class="btn ghost" id="tiUseCurrent" type="button">📍 Use current</button>
+            </div>
+          </div>
+          <div>
+            <div class="small">Destination address</div>
+            <input id="tiDestination" placeholder="Where are you going?" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+          </div>
+          <div>
+            <div class="small">Stops (optional)</div>
+            <div id="tiStops" class="list"></div>
+            <div class="row" style="gap:8px;margin-top:6px">
+              <button class="btn ghost" id="tiAddStop" type="button">＋ Add stop</button>
+              <button class="btn ghost" id="tiRemoveStop" type="button">− Remove stop</button>
+            </div>
+            <div class="small muted">You can add up to 5 stops. Each stop has Google suggestions.</div>
+          </div>
+          <button class="btn primary" id="tiStart" type="button">Start Instant Request</button>
+        </div>
       </div>
     </div>
   </div>
@@ -278,6 +320,23 @@
     </div>
   </div>
 
+  <!-- Cancel Reason Modal -->
+  <div class="modal" id="cancelReasonModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Cancel request</strong>
+        <button class="btn ghost" id="cancelReasonClose" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="list" id="cancelReasonsList"></div>
+        <div class="row" style="justify-content:flex-end;gap:8px">
+          <button class="btn ghost" id="cancelReasonBack" type="button">Back</button>
+          <button class="btn primary" id="cancelReasonConfirm" type="button">Confirm cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Tracking Modal -->
   <div class="modal" id="trackModal">
     <div class="sheet">
@@ -287,20 +346,11 @@
       </div>
       <div class="body">
         <div id="trackStatus" class="small muted">Provider accepted. En route…</div>
+        <div class="row" style="gap:8px;margin:8px 0">
+          <button class="btn ghost" id="trackChatBtn" type="button">💬 Chat</button>
+          <a class="btn ghost" id="trackCallBtn" href="#" type="button">📞 Call</a>
+        </div>
         <div id="trackMapWrap" style="margin-top:10px"><div id="track-map"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Category Options Modal (Transport / Food) -->
-  <div class="modal" id="categoryOptionsModal">
-    <div class="sheet">
-      <div class="head">
-        <strong id="categoryOptionsTitle">Options</strong>
-        <button class="btn ghost" id="closeCategoryOptions" type="button">✖</button>
-      </div>
-      <div class="body">
-        <div id="categoryOptionsList" class="list"></div>
       </div>
     </div>
   </div>
@@ -407,15 +457,17 @@
     // Config
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
     const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
-    const FALLBACK_PAYMENT_LINK = ''; // optional
+    const FALLBACK_PAYMENT_LINK = '';
 
-    let user = { name:'Guest', email:'demo@zippup.com' };
+    let user = { name:'Guest', email:'demo@zippup.com' }; // public name used in requests
     let coords = null;
     let selectedProvider = null;
     let requestId = null;
     let instantTimer = null;
     let instantLeft = 90;
     let map, userMarker, providerMarker, trackPoll = null;
+    let lastCategory = null;
+    const activeRequests = {}; // e.g., { transport: true }
 
     // Elements
     const userNameEl = document.getElementById('userName');
@@ -435,19 +487,32 @@
     const bookingForm  = document.getElementById('bookingForm');
     document.getElementById('closeBooking').onclick = () => bookingModal.classList.remove('open');
 
+    const tiModal = document.getElementById('tiModal');
+    const tiPickup = document.getElementById('tiPickup');
+    const tiDestination = document.getElementById('tiDestination');
+    const tiStops = document.getElementById('tiStops');
+    const tiAddStop = document.getElementById('tiAddStop');
+    const tiRemoveStop = document.getElementById('tiRemoveStop');
+    const tiUseCurrent = document.getElementById('tiUseCurrent');
+    const tiStart = document.getElementById('tiStart');
+    document.getElementById('tiClose').onclick = () => tiModal.classList.remove('open');
+
     const instantModal = document.getElementById('instantModal');
     const countdownEl  = document.getElementById('countdown');
-    document.getElementById('cancelInstant').onclick = cancelInstant;
+    const instantHint  = document.getElementById('instantHint');
     document.getElementById('findOthers').onclick = () => { instantModal.classList.remove('open'); providersModal.classList.add('open'); };
+
+    const cancelReasonModal = document.getElementById('cancelReasonModal');
+    const cancelReasonsList = document.getElementById('cancelReasonsList');
+    document.getElementById('cancelReasonClose').onclick = () => cancelReasonModal.classList.remove('open');
+    document.getElementById('cancelReasonBack').onclick = () => { cancelReasonModal.classList.remove('open'); instantModal.classList.add('open'); };
+    document.getElementById('cancelReasonConfirm').onclick = confirmCancelWithReason;
 
     const trackModal = document.getElementById('trackModal');
     const trackStatus= document.getElementById('trackStatus');
+    const trackChatBtn = document.getElementById('trackChatBtn');
+    const trackCallBtn = document.getElementById('trackCallBtn');
     document.getElementById('closeTrack').onclick = () => { stopTracking(); trackModal.classList.remove('open'); };
-
-    const categoryOptionsModal = document.getElementById('categoryOptionsModal');
-    const categoryOptionsTitle = document.getElementById('categoryOptionsTitle');
-    const categoryOptionsList  = document.getElementById('categoryOptionsList');
-    document.getElementById('closeCategoryOptions').onclick = () => categoryOptionsModal.classList.remove('open');
 
     const itemsModal = document.getElementById('itemsModal');
     const itemsTitle = document.getElementById('itemsTitle');
@@ -489,7 +554,7 @@
       el.onclick = () => alert('Top-up: ' + el.dataset.topup);
     });
 
-    // Cart / checkout elements
+    // Marketplace elements
     const mpSearch = document.getElementById('mpSearch');
     const mpVoice  = document.getElementById('mpVoice');
     const mpSearchBtn = document.getElementById('mpSearchBtn');
@@ -540,12 +605,9 @@
       try { renderServicesAll(); } catch (e) { console.error(e); }
       try { renderBookings(); } catch (e) { console.error(e); }
       try { initMarketplace(); } catch (e) { console.error(e); }
-      [providersModal, bookingModal, instantModal, trackModal, categoryOptionsModal, itemsModal, cartModal, checkoutModal, orderModal]
+      [providersModal, bookingModal, instantModal, trackModal, tiModal, cancelReasonModal, itemsModal, cartModal, checkoutModal, orderModal]
         .forEach(m => m && m.addEventListener('click', (e)=>{ if (e.target === m) m.classList.remove('open'); }));
-      // PWA: register service worker
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(()=>{});
-      }
+      if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
     });
 
     // Pages
@@ -642,6 +704,7 @@
         coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         const name = await reverseGeocode(coords.lat, coords.lng);
         userLocEl.textContent = name || 'Unknown';
+        if (tiPickup && !tiPickup.value) tiPickup.value = name || '';
       } catch {
         userLocEl.textContent = 'Location unavailable';
       }
@@ -656,7 +719,16 @@
 
     // Category flows
     async function openCategory(catId, label){
+      // Prevent duplicate instant in same category
+      if (activeRequests[catId]) {
+        alert(`You already have a pending ${label} request. Cancel it before creating another.`);
+        return;
+      }
+
+      lastCategory = catId;
+
       if (catId === 'transport') {
+        // Transport requires option (ride/moving) then instant form or schedule
         openCategoryOptions('Transport Options', [
           { id:'ride',   name:'Ride / Taxi', icon:'🚗' },
           { id:'moving', name:'Truck / Backie', icon:'🚚' },
@@ -761,6 +833,54 @@
       providersModal.classList.add('open');
     }
 
+    // Google Places Autocomplete helper
+    function attachAutocomplete(inputEl){
+      if (!inputEl) return;
+      function init() {
+        if (!window.google || !window.google.maps || !window.google.maps.places) { setTimeout(init, 300); return; }
+        const ac = new google.maps.places.Autocomplete(inputEl, { fields: ['formatted_address','geometry','name'], types: ['geocode'] });
+        // No-op listeners needed; we read input values on submit
+        ac.addListener('place_changed', () => {});
+      }
+      init();
+    }
+
+    // Transport instant modal wiring
+    let tiStopCount = 0;
+    function addStopField(){
+      if (tiStopCount >= 5) { alert('Maximum of 5 stops'); return; }
+      tiStopCount += 1;
+      const wrap = document.createElement('div');
+      wrap.className = 'stop-row';
+      wrap.innerHTML = `
+        <label class="small" style="min-width:56px">Stop ${tiStopCount}</label>
+        <input class="tiStopInput" placeholder="Enter stop ${tiStopCount} address" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px"/>
+      `;
+      tiStops.appendChild(wrap);
+      attachAutocomplete(wrap.querySelector('.tiStopInput'));
+    }
+    function removeStopField(){
+      if (tiStopCount <= 0) return;
+      tiStops.removeChild(tiStops.lastElementChild);
+      tiStopCount -= 1;
+    }
+
+    tiAddStop.onclick = addStopField;
+    tiRemoveStop.onclick = removeStopField;
+    tiUseCurrent.onclick = async () => {
+      if (coords) {
+        const name = await reverseGeocode(coords.lat, coords.lng);
+        tiPickup.value = name || '';
+      } else {
+        await initLocation();
+        if (coords) {
+          const name = await reverseGeocode(coords.lat, coords.lng);
+          tiPickup.value = name || '';
+        }
+      }
+    };
+
+    // Providers fetch/render
     async function fetchProviders(category, sub=null){
       try{
         const q = new URLSearchParams({ category, sub: sub || '', lat: coords?.lat || '', lng: coords?.lng || '' });
@@ -769,10 +889,11 @@
         const d = await r.json();
         return d.providers || [];
       }catch{
+        // Demo data enhanced
         return [
-          { id:'p1', name:'Pro One', icon:'👤', distance:'0.8km', eta:'6-9m', fee:'$8-12', available:true },
-          { id:'p2', name:'Quick Help', icon:'⚡', distance:'1.2km', eta:'8-12m', fee:'$10-15', available:true },
-          { id:'p3', name:'Nearby Tech', icon:'🔧', distance:'2.1km', eta:'12-18m', fee:'$12-18', available:true },
+          { id:'p1', publicName:'Alex M.', jobTitle:'Driver', verified:true, rating:4.8, rides:120, phone:'+123456789', photoUrl:'', icon:'👤', distance:'0.8km', eta:'6-9m', fareMin:120, fareMax:130, currency:'$', available:true },
+          { id:'p2', publicName:'Quick Help', jobTitle:'Mechanic', verified:false, rating:4.5, rides:74, phone:null, photoUrl:'', icon:'⚡', distance:'1.2km', eta:'8-12m', fareMin:10, fareMax:15, currency:'$', available:true },
+          { id:'p3', publicName:'Nearby Tech', jobTitle:'Plumber', verified:true, rating:4.2, rides:55, phone:null, photoUrl:'', icon:'🔧', distance:'2.1km', eta:'12-18m', fareMin:12, fareMax:18, currency:'$', available:true },
         ];
       }
     }
@@ -780,11 +901,25 @@
       providersList.innerHTML = '';
       if (!list?.length){ providersList.innerHTML = '<div class="small muted">No providers found nearby.</div>'; return; }
       list.forEach(p=>{
+        const name = p.publicName || p.name || 'Provider';
+        const title= p.jobTitle ? ` • ${p.jobTitle}` : '';
+        const verified = p.verified ? `<span class="verify">✔️</span>` : `<span class="small muted">unverified</span>`;
+        const rating = (p.rating ? ` <span class="rating">★ ${p.rating.toFixed ? p.rating.toFixed(1) : p.rating}</span>` : '');
+        const avatar = p.photoUrl ? `<img src="${p.photoUrl}" class="avatar" alt="${name}"/>` : `<div class="avatar">${(p.icon||'👤')}</div>`;
+        const fare = (p.fareMin && p.fareMax) ? `${p.currency||'$'}${p.fareMin}‑${p.fareMax}` : (p.fee || '—');
+
         const el = document.createElement('div');
         el.className = 'provider';
         el.innerHTML = `
-          <div class="row" style="justify-content:space-between">
-            <div class="row"><div style="font-size:24px">${p.icon || '👤'}</div><div><strong>${p.name}</strong><div class="small muted">${p.distance || '—'} • ETA ${p.eta || '—'} • Fee ${p.fee || '—'}</div></div></div>
+          <div class="row" style="justify-content:space-between; align-items:flex-start">
+            <div class="row" style="align-items:center">
+              ${avatar}
+              <div>
+                <div><strong>${name}</strong> ${verified} ${rating}</div>
+                <div class="small muted">${p.distance || '—'} • ETA ${p.eta || '—'}${title}</div>
+                <div class="small"><strong>Est. fare:</strong> ${fare}</div>
+              </div>
+            </div>
             <span class="badge ${p.available ? 'success':''}">${p.available ? 'available':'unavailable'}</span>
           </div>
           <div class="controls">
@@ -793,15 +928,16 @@
           </div>
         `;
         el.querySelectorAll('button[data-k]').forEach(b=>{
-          b.onclick = () => (b.dataset.k === 'instant' ? startInstant(p) : openBooking(p));
+          b.onclick = () => (b.dataset.k === 'instant' ? startInstantEntry(p) : openBooking(p));
         });
         providersList.appendChild(el);
       });
     }
 
+    // Panic
     async function triggerPanic(){
       try{
-        const body = { type:'panic', location: coords ? { latitude:coords.lat, longitude:coords.lng } : null, message:'User triggered PANIC alert' };
+        const body = { type:'panic', userPublicName: user.name, location: coords ? { latitude:coords.lat, longitude:coords.lng } : null, message:'User triggered PANIC alert' };
         const r = await fetch(`${BASE_API}/api/emergency/alert`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
         const d = await r.json().catch(()=>({}));
         if (r.ok){
@@ -814,43 +950,163 @@
       }catch{ alert('Alert sent (no GPS).'); }
     }
 
-    async function startInstant(provider){
+    // Instant request entry point (shows transport form if needed)
+    function startInstantEntry(provider){
       selectedProvider = provider;
-      providersModal.classList.remove('open');
-      instantLeft = 90;
-      countdownEl.textContent = String(instantLeft);
+      if (lastCategory === 'transport') {
+        // Prepare transport form
+        tiModal.classList.add('open');
+        // Attach autocomplete
+        attachAutocomplete(tiPickup);
+        attachAutocomplete(tiDestination);
+        // Prefill pickup with current location if available
+        if (coords && !tiPickup.value) {
+          reverseGeocode(coords.lat, coords.lng).then(name => { tiPickup.value = name || ''; });
+        }
+        tiStart.onclick = () => startInstantTransport(provider);
+      } else {
+        startInstant(provider);
+      }
+    }
+
+    // Transport instant start
+    async function startInstantTransport(provider){
+      const pickup = (tiPickup.value||'').trim();
+      const destination = (tiDestination.value||'').trim();
+      if (!pickup || !destination) { alert('Pickup and Destination are required'); return; }
+      const stops = Array.from(document.querySelectorAll('.tiStopInput')).map(i => i.value.trim()).filter(Boolean);
+      if (stops.length > 5) stops.length = 5;
+
+      // Prevent double instant booking for transport
+      activeRequests['transport'] = true;
+
+      tiModal.classList.remove('open');
+      instantLeft = 90; countdownEl.textContent = String(instantLeft);
+      instantHint.textContent = 'Waiting for provider to accept…';
       instantModal.classList.add('open');
 
       try{
         const r = await fetch(`${BASE_API}/api/requests`, {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ type:'instant', providerId: provider.id, location: coords ? { latitude:coords.lat, longitude:coords.lng } : null })
+          body: JSON.stringify({
+            type:'instant',
+            category:'transport',
+            providerId: provider.id,
+            userPublicName: user.name,
+            phone: provider.phone || null,
+            pickup, destination, stops,
+            location: coords ? { latitude:coords.lat, longitude:coords.lng } : null
+          })
         });
         const d = await r.json().catch(()=>({}));
         requestId = d.requestId || 'demo-'+Date.now();
       }catch{ requestId = 'demo-'+Date.now(); }
 
+      // poll status
+      startInstantCountdown('transport');
+    }
+
+    // Generic instant (non-transport)
+    async function startInstant(provider){
+      selectedProvider = provider;
+      activeRequests[lastCategory || 'general'] = true;
+
+      providersModal.classList.remove('open');
+      instantLeft = 90;
+      countdownEl.textContent = String(instantLeft);
+      instantHint.textContent = 'Waiting for provider to accept…';
+      instantModal.classList.add('open');
+
+      try{
+        const r = await fetch(`${BASE_API}/api/requests`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            type:'instant', category: lastCategory || 'general',
+            providerId: provider.id,
+            userPublicName: user.name,
+            location: coords ? { latitude:coords.lat, longitude:coords.lng } : null
+          })
+        });
+        const d = await r.json().catch(()=>({}));
+        requestId = d.requestId || 'demo-'+Date.now();
+      }catch{ requestId = 'demo-'+Date.now(); }
+
+      startInstantCountdown(lastCategory || 'general');
+    }
+
+    function startInstantCountdown(categoryKey){
       instantTimer = setInterval(async () => {
         instantLeft -= 1;
         countdownEl.textContent = String(instantLeft);
 
         if (instantLeft % 3 === 0) {
           const status = await getRequestStatus(requestId);
-          if (status === 'accepted'){ stopInstant(); openTracking(); return; }
-          if (status === 'rejected'){ stopInstant(); alert('Provider rejected.'); instantModal.classList.remove('open'); return; }
+          if (status === 'accepted'){
+            stopInstant();
+            openTracking();
+            return;
+          }
+          if (status === 'rejected'){
+            stopInstant();
+            alert('Provider rejected.');
+            instantModal.classList.remove('open');
+            activeRequests[categoryKey] = false;
+            return;
+          }
         }
         if (instantLeft <= 0) {
-          stopInstant(); alert('No response. Try others.');
+          stopInstant();
+          alert('No response. Try others.');
           instantModal.classList.remove('open');
+          activeRequests[categoryKey] = false;
         }
       }, 1000);
+
+      // Cancel hook shows reasons
+      document.getElementById('cancelInstant').onclick = () => openCancelReasons(categoryKey);
     }
+
     function stopInstant(){ if (instantTimer) clearInterval(instantTimer); instantTimer = null; }
-    async function cancelInstant(){
-      stopInstant();
-      if (requestId){ try{ await fetch(`${BASE_API}/api/requests/${encodeURIComponent(requestId)}`, { method:'DELETE' }); }catch{} }
+
+    function openCancelReasons(categoryKey){
       instantModal.classList.remove('open');
+      cancelReasonsList.innerHTML = '';
+      const reasons = ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'];
+      reasons.forEach((r,i)=>{
+        const row = document.createElement('label');
+        row.className = 'row';
+        row.style.alignItems='center';
+        row.innerHTML = `<input type="radio" name="cancelReason" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`;
+        cancelReasonsList.appendChild(row);
+      });
+      const otherWrap = document.createElement('div');
+      otherWrap.innerHTML = `<input id="cancelOther" placeholder="If Other, describe…" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px"/>`;
+      cancelReasonsList.appendChild(otherWrap);
+
+      cancelReasonModal.dataset.categoryKey = categoryKey;
+      cancelReasonModal.classList.add('open');
     }
+
+    async function confirmCancelWithReason(){
+      const categoryKey = cancelReasonModal.dataset.categoryKey || (lastCategory || 'general');
+      const val = (document.querySelector('input[name="cancelReason"]:checked')?.value)||'Other';
+      const other = (document.getElementById('cancelOther')?.value||'').trim();
+      const reason = val === 'Other' ? (other || 'Other') : val;
+      await cancelInstant(reason, categoryKey);
+      cancelReasonModal.classList.remove('open');
+    }
+
+    async function cancelInstant(reason, categoryKey){
+      stopInstant();
+      try{
+        if (requestId){
+          await fetch(`${BASE_API}/api/requests/${encodeURIComponent(requestId)}?reason=${encodeURIComponent(reason||'')}`, { method:'DELETE' });
+        }
+      }catch{}
+      instantModal.classList.remove('open');
+      activeRequests[categoryKey] = false;
+    }
+
     async function getRequestStatus(id){
       try{
         const r = await fetch(`${BASE_API}/api/requests/${encodeURIComponent(id)}`);
@@ -868,7 +1124,19 @@
       trackModal.classList.add('open');
       setTimeout(initMap, 50);
       startTracking();
+
+      // Call/Chat wiring
+      const phone = selectedProvider?.phone;
+      if (phone) {
+        trackCallBtn.href = `tel:${phone}`;
+        trackCallBtn.classList.remove('disabled');
+      } else {
+        trackCallBtn.href = '#';
+        trackCallBtn.classList.add('disabled');
+      }
+      trackChatBtn.onclick = () => alert('In‑app chat coming soon');
     }
+
     function initMap(){
       if (!map){
         map = L.map('track-map', { zoomControl:true });
@@ -912,20 +1180,22 @@
       }
     }
 
+    // Scheduled booking
     function openBooking(provider){ selectedProvider = provider; bookingModal.classList.add('open'); }
     bookingForm.onsubmit = async (e) => {
       e.preventDefault();
       const date = document.getElementById('bkDate').value;
       const time = document.getElementById('bkTime').value;
-      const address = document.getElementById('bkAddress').value;
-      const desc = document.getElementById('bkDesc').value;
-      if (!date || !time){ alert('Pick date and time'); return; }
+      const address = document.getElementById('bkAddress').value.trim();
+      const desc = document.getElementById('bkDesc').value.trim();
+      if (!date || !time || !address){ alert('Date, time and address are required'); return; }
       try{
         const r = await fetch(`${BASE_API}/api/bookings`, {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
             providerId: selectedProvider.id,
             bookingType:'scheduled', date, time, address, description:desc,
+            userPublicName: user.name,
             location: coords ? { latitude:coords.lat, longitude:coords.lng } : null
           })
         });
@@ -951,6 +1221,7 @@
       rec.start();
     }
 
+    // Home search
     function runHomeSearch(){
       const q = (searchInp.value||'').trim().toLowerCase();
       if (!q) return;
@@ -990,7 +1261,7 @@
       `;
     }
 
-    // Marketplace
+    // Marketplace (kept from previous working version)
     const MP_CATEGORIES = [
       { id:'electronics', name:'Electronics' },
       { id:'fashion',     name:'Fashion' },
@@ -1016,19 +1287,8 @@
       { id:'p700', title:'Gift Box',         cat:'others',      price:12,  stock:50, img:'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop' },
       { id:'p701', title:'Photo Frame',      cat:'others',      price:15,  stock:33, img:'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?q=80&w=800&auto=format&fit=crop' },
     ];
-
-    // Cart store
     let cart = loadCart();
-    function loadCart(){ try{ return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{ return { items:[] }; } }
-    function saveCart(){ localStorage.setItem('mp_cart', JSON.stringify(cart)); }
-    function updateCartCount(){
-      const count = cart.items.reduce((a,b)=>a+b.qty,0);
-      const headerBadge = document.getElementById('headerCartBadge');
-      if (cartCountEl) cartCountEl.textContent = String(count);
-      if (headerBadge) headerBadge.textContent = String(count);
-    }
 
-    // Marketplace init/search/render
     mpVoice.onclick = () => voiceToInput(mpSearch, () => runMarketplaceSearch());
     mpSearchBtn.onclick = runMarketplaceSearch;
 
@@ -1085,6 +1345,17 @@
       else cart.items.push({ id:prod.id, title:prod.title, price:prod.price, img:prod.img, qty:1 });
       saveCart(); updateCartCount();
     }
+    function updateCartCount(){
+      const count = cart.items.reduce((a,b)=>a+b.qty,0);
+      const headerBadge = document.getElementById('headerCartBadge');
+      if (cartCountEl) cartCountEl.textContent = String(count);
+      if (headerBadge) headerBadge.textContent = String(count);
+    }
+    function loadCart(){
+      try{ return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{ return { items:[] }; }
+    }
+    function saveCart(){ localStorage.setItem('mp_cart', JSON.stringify(cart)); }
+
     function renderCart(){
       cartList.innerHTML = '';
       if (!cart.items.length){
@@ -1097,6 +1368,7 @@
         total += item.price * item.qty;
         const row = document.createElement('div');
         row.className = 'card';
+        row.dataset.id = item.id;
         row.innerHTML = `
           <div class="row" style="justify-content:space-between; align-items:flex-start">
             <div class="row">
@@ -1168,33 +1440,32 @@
             window.location.href = FALLBACK_PAYMENT_LINK;
             return;
           }
-          alert('Payment session error. Falling back to cash/demo flow.');
+          alert('Payment session error. Try Cash or contact support.');
         } catch {
           if (FALLBACK_PAYMENT_LINK) {
             cart.items = []; saveCart(); updateCartCount();
             window.location.href = FALLBACK_PAYMENT_LINK;
             return;
           }
-          alert('Payment session error. Falling back to cash/demo flow.');
+          alert('Payment session error. Try Cash or contact support.');
         }
+      } else {
+        // Cash (or fallback)
+        let orderId = 'demo-' + Date.now();
+        let code = String(Math.floor(100000 + Math.random()*900000));
+        try {
+          const r2 = await fetch(`${BASE_API}/api/marketplace/orders`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ ...payload, paymentMethod: method })
+          });
+          const d2 = await r2.json().catch(()=>({}));
+          orderId = d2.orderId || orderId;
+          code = d2.deliveryCode || code;
+        } catch {}
+        checkoutModal.classList.remove('open');
+        showOrderStatus(orderId, code, method);
+        cart.items = []; saveCart(); updateCartCount();
       }
-
-      // Cash (or fallback)
-      let orderId = 'demo-' + Date.now();
-      let code = String(Math.floor(100000 + Math.random()*900000));
-      try {
-        const r2 = await fetch(`${BASE_API}/api/marketplace/orders`, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ ...payload, paymentMethod: method })
-        });
-        const d2 = await r2.json().catch(()=>({}));
-        orderId = d2.orderId || orderId;
-        code = d2.deliveryCode || code;
-      } catch {}
-
-      checkoutModal.classList.remove('open');
-      showOrderStatus(orderId, code, method);
-      cart.items = []; saveCart(); updateCartCount();
     };
 
     function showOrderStatus(orderId, code, method){
@@ -1232,641 +1503,5 @@
       }, 3000);
     }
   </script>
-  <script>
-// Checkout hotfix: reliably opens checkout modal and redirects to Stripe (card) or creates cash order
-(function () {
-  function $(id){ return document.getElementById(id); }
-
-  const cartModal      = $('cartModal');
-  const checkoutModal  = $('checkoutModal');
-  const checkoutBtn    = $('checkoutBtn');
-  const placeOrderBtn  = $('placeOrderBtn');
-
-  const chkName    = $('chkName');
-  const chkPhone   = $('chkPhone');
-  const chkAddress = $('chkAddress');
-  const chkUnit    = $('chkUnit');
-  const chkNotes   = $('chkNotes');
-  const chkTerms   = $('chkTerms');
-
-  // Ensure cart store/helpers exist
-  if (!window.cart) {
-    try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); } catch { window.cart = { items: [] }; }
-  }
-  if (typeof window.saveCart !== 'function') {
-    window.saveCart = function saveCart() { localStorage.setItem('mp_cart', JSON.stringify(window.cart)); };
-  }
-  if (typeof window.updateCartCount !== 'function') {
-    window.updateCartCount = function updateCartCount() {
-      const count = window.cart.items.reduce((a,b)=>a+b.qty,0);
-      const headerBadge = document.getElementById('headerCartBadge');
-      const cartCountEl = document.getElementById('cartCount');
-      if (headerBadge) headerBadge.textContent = String(count);
-      if (cartCountEl)  cartCountEl.textContent  = String(count);
-    };
-  }
-
-  // Open checkout modal from cart
-  if (checkoutBtn) {
-    checkoutBtn.onclick = (e) => {
-      e.preventDefault();
-      if (cartModal)   cartModal.classList.remove('open');
-      if (checkoutModal) checkoutModal.classList.add('open');
-    };
-  }
-
-  async function placeOrder() {
-    try {
-      // Validate
-      const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
-      if (!chkTerms?.checked)            { alert('Please accept the Terms'); return; }
-      if (!chkAddress?.value?.trim())    { alert('Enter delivery address'); return; }
-      if (!chkName?.value?.trim() || !chkPhone?.value?.trim()) { alert('Enter name and phone'); return; }
-      if (!window.cart.items.length)     { alert('Cart is empty'); return; }
-
-      const payload = {
-        items: window.cart.items.map(i=>({ id:i.id, title:i.title, qty:i.qty, price:i.price })),
-        name: (chkName.value||'').trim(),
-        phone: (chkPhone.value||'').trim(),
-        address: (chkAddress.value||'').trim(),
-        unit: (chkUnit?.value||'').trim(),
-        notes: (chkNotes?.value||'').trim(),
-      };
-
-      // Card → create checkout session and redirect
-      if (method === 'card') {
-        const r = await fetch(`${BASE_API}/api/payments/checkout-session`, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({
-            ...payload,
-            successUrl: window.location.origin + '/?checkout=success',
-            cancelUrl:  window.location.origin + '/?checkout=cancel'
-          })
-        });
-        const d = await r.json().catch(()=>({}));
-
-        if (d?.url) {
-          window.cart.items = []; window.saveCart(); window.updateCartCount();
-          window.location.href = d.url;
-          return;
-        }
-        if ((d?.id || d?.sessionId) && window.Stripe && typeof STRIPE_PK === 'string' && STRIPE_PK) {
-          const stripe = window.Stripe(STRIPE_PK);
-          window.cart.items = []; window.saveCart(); window.updateCartCount();
-          await stripe.redirectToCheckout({ sessionId: d.id || d.sessionId });
-          return;
-        }
-        if (typeof FALLBACK_PAYMENT_LINK === 'string' && FALLBACK_PAYMENT_LINK) {
-          window.cart.items = []; window.saveCart(); window.updateCartCount();
-          window.location.href = FALLBACK_PAYMENT_LINK;
-          return;
-        }
-        alert('Payment session error. Please try again or select Cash.');
-        return;
-      }
-
-      // Cash (or fallback)
-      let orderId = 'demo-' + Date.now();
-      let code = String(Math.floor(100000 + Math.random()*900000));
-      try {
-        const r2 = await fetch(`${BASE_API}/api/marketplace/orders`, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ ...payload, paymentMethod: method })
-        });
-        const d2 = await r2.json().catch(()=>({}));
-        orderId = d2.orderId || orderId;
-        code    = d2.deliveryCode || code;
-      } catch {}
-
-      if (checkoutModal) checkoutModal.classList.remove('open');
-      // Show status modal (reuse existing function if present)
-      if (typeof window.showOrderStatus === 'function') {
-        window.showOrderStatus(orderId, code, method);
-      } else {
-        alert(`Order created (${orderId}). Delivery code: ${code}`);
-      }
-      window.cart.items = []; window.saveCart(); window.updateCartCount();
-    } catch (err) {
-      alert('Checkout error. Please try again.');
-    }
-  }
-
-  if (placeOrderBtn) {
-    placeOrderBtn.onclick = async (e) => { e.preventDefault(); await placeOrder(); };
-  }
-
-  // Ensure wiring on load (in case earlier scripts set other handlers)
-  window.addEventListener('DOMContentLoaded', () => {
-    if (checkoutBtn && (!checkoutBtn.onclick || checkoutBtn.onclick.toString().includes('showPage'))) {
-      checkoutBtn.onclick = (e) => {
-        e.preventDefault();
-        if (cartModal)   cartModal.classList.remove('open');
-        if (checkoutModal) checkoutModal.classList.add('open');
-      };
-    }
-    if (placeOrderBtn && (!placeOrderBtn.onclick || placeOrderBtn.onclick.length === 0)) {
-      placeOrderBtn.onclick = async (e) => { e.preventDefault(); await placeOrder(); };
-    }
-  });
-})();
-</script>
-  <script>
-// Checkout fix (delegated, non-destructive)
-(function () {
-  const get = (id) => document.getElementById(id);
-  const FALLBACK = (typeof FALLBACK_PAYMENT_LINK === 'string') ? FALLBACK_PAYMENT_LINK : '';
-  const API = (typeof BASE_API === 'string' && BASE_API) ? BASE_API : '';
-
-  // Helpers
-  function readCart() {
-    try { return JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); }
-    catch { return { items: [] }; }
-  }
-  function writeCart(cart) {
-    localStorage.setItem('mp_cart', JSON.stringify(cart));
-  }
-  function updateCount(cart) {
-    const count = cart.items.reduce((a,b)=>a+b.qty,0);
-    const badge = get('headerCartBadge'); const cnt = get('cartCount');
-    if (badge) badge.textContent = String(count);
-    if (cnt)   cnt.textContent   = String(count);
-  }
-  async function createStripeSession(payload) {
-    const res = await fetch(`${API}/api/payments/checkout-session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      mode: 'cors',
-      credentials: 'omit',
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || 'Failed to create checkout session');
-    return data;
-  }
-  async function createCashOrder(payload) {
-    try {
-      const res = await fetch(`${API}/api/marketplace/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, paymentMethod: 'cash' }),
-        mode: 'cors',
-        credentials: 'omit',
-      });
-      return await res.json().catch(() => ({}));
-    } catch {
-      return {};
-    }
-  }
-
-  // Open Checkout modal from Cart (reliable)
-  document.addEventListener('click', (e) => {
-    if (e.target && e.target.id === 'checkoutBtn') {
-      e.preventDefault();
-      const cartModal = get('cartModal');
-      const checkoutModal = get('checkoutModal');
-      if (cartModal) cartModal.classList.remove('open');
-      if (checkoutModal) checkoutModal.classList.add('open');
-    }
-  });
-
-  // Place Order (Card -> Stripe; Cash -> Order + code)
-  document.addEventListener('click', async (e) => {
-    if (!(e.target && e.target.id === 'placeOrderBtn')) return;
-    e.preventDefault();
-
-    const cart = readCart();
-    const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
-    const name    = get('chkName')?.value?.trim();
-    const phone   = get('chkPhone')?.value?.trim();
-    const address = get('chkAddress')?.value?.trim();
-    const unit    = get('chkUnit')?.value?.trim() || '';
-    const notes   = get('chkNotes')?.value?.trim() || '';
-    const termsOk = !!get('chkTerms')?.checked;
-
-    if (!cart.items.length)         return alert('Cart is empty');
-    if (!termsOk)                   return alert('Please accept the Terms');
-    if (!name || !phone || !address)return alert('Enter name, phone and address');
-
-    const payload = {
-      items: cart.items.map(i => ({ id:i.id, title:i.title, qty:i.qty, price:i.price })),
-      name, phone, address, unit, notes,
-      successUrl: window.location.origin + '/?checkout=success',
-      cancelUrl:  window.location.origin + '/?checkout=cancel',
-    };
-
-    try {
-      if (method === 'card') {
-        const data = await createStripeSession(payload);
-        // Redirect preference order
-        if (data?.url) {
-          cart.items = []; writeCart(cart); updateCount(cart);
-          return (window.location.href = data.url);
-        }
-        if ((data?.id || data?.sessionId) && window.Stripe && typeof STRIPE_PK === 'string' && STRIPE_PK) {
-          const stripe = window.Stripe(STRIPE_PK);
-          cart.items = []; writeCart(cart); updateCount(cart);
-          const sid = data.id || data.sessionId;
-          const { error } = await stripe.redirectToCheckout({ sessionId: sid });
-          if (error) throw error;
-          return;
-        }
-        if (FALLBACK) {
-          cart.items = []; writeCart(cart); updateCount(cart);
-          return (window.location.href = FALLBACK);
-        }
-        throw new Error('Stripe session not returned. Try Cash or contact support.');
-      } else {
-        const data = await createCashOrder(payload);
-        const orderId = data?.orderId || ('demo-' + Date.now());
-        const code    = data?.deliveryCode || String(Math.floor(100000 + Math.random()*900000));
-        const checkoutModal = get('checkoutModal');
-        if (checkoutModal) checkoutModal.classList.remove('open');
-        if (typeof window.showOrderStatus === 'function') {
-          window.showOrderStatus(orderId, code, 'cash');
-        } else {
-          alert(`Order created (${orderId}). Delivery code: ${code}`);
-        }
-        cart.items = []; writeCart(cart); updateCount(cart);
-      }
-    } catch (err) {
-      if (FALLBACK && method === 'card') {
-        cart.items = []; writeCart(cart); updateCount(cart);
-        return (window.location.href = FALLBACK);
-      }
-      alert((err && err.message) ? err.message : 'Checkout error. Please try again.');
-    }
-  });
-
-  // Ensure header cart opens cart + stays on marketplace
-  const headerCart = document.getElementById('cartBtn');
-  if (headerCart) {
-    headerCart.addEventListener('click', (e) => {
-      e.preventDefault(); e.stopPropagation();
-      try { showPage('marketplace'); } catch {}
-      try { window.renderCart && window.renderCart(); } catch {}
-      const cartModal = get('cartModal');
-      if (cartModal) setTimeout(() => cartModal.classList.add('open'), 0);
-    });
-  }
-})();
-</script>
-  <script>
-// Cart edit hotfix (inc/dec/remove) — non-destructive
-(function () {
-  const $ = (id) => document.getElementById(id);
-
-  function ensureCart() {
-    if (!window.cart) {
-      try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); }
-      catch { window.cart = { items: [] }; }
-    }
-  }
-  function save() {
-    localStorage.setItem('mp_cart', JSON.stringify(window.cart));
-  }
-  function updateCount() {
-    const count = window.cart.items.reduce((a,b)=>a+b.qty,0);
-    const badge = $('headerCartBadge');
-    const cnt   = $('cartCount');
-    if (badge) badge.textContent = String(count);
-    if (cnt)   cnt.textContent   = String(count);
-  }
-  function annotateRows() {
-    const list = $('cartList');
-    if (!list) return;
-    list.querySelectorAll('.card').forEach(row => {
-      if (row.dataset.id) return;
-      const title = row.querySelector('strong')?.textContent?.trim();
-      if (!title) return;
-      const item = window.cart.items.find(i => i.title === title);
-      if (item) {
-        row.dataset.id = item.id;
-        const qtyEl = row.querySelector('.qty div');
-        if (qtyEl) qtyEl.textContent = String(item.qty);
-      }
-    });
-  }
-
-  // Keep rows annotated whenever cart UI re-renders
-  const cartListEl = $('cartList');
-  if (cartListEl) {
-    new MutationObserver(annotateRows).observe(cartListEl, { childList: true, subtree: true });
-  }
-
-  // Delegate clicks for + / − / remove
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('#cartList [data-k]');
-    if (!btn) return;
-
-    e.preventDefault();
-    ensureCart();
-
-    const row = btn.closest('.card');
-    if (!row) return;
-
-    let id = row.dataset.id;
-    if (!id) {
-      // Fallback by title if data-id missing
-      const title = row.querySelector('strong')?.textContent?.trim();
-      const found = window.cart.items.find(i => i.title === title);
-      if (found) id = found.id;
-    }
-    if (!id) return;
-
-    const idx = window.cart.items.findIndex(i => i.id === id);
-    if (idx < 0) return;
-
-    const action = btn.getAttribute('data-k');
-    if (action === 'dec') window.cart.items[idx].qty = Math.max(1, window.cart.items[idx].qty - 1);
-    if (action === 'inc') window.cart.items[idx].qty = window.cart.items[idx].qty + 1;
-    if (action === 'rm')  window.cart.items.splice(idx, 1);
-
-    save(); updateCount();
-
-    // Re-render using your existing function if present
-    if (typeof window.renderCart === 'function') {
-      window.renderCart();
-    } else {
-      annotateRows();
-      const totalEl = $('cartTotal');
-      if (totalEl) {
-        const total = window.cart.items.reduce((s, i) => s + i.price * i.qty, 0);
-        totalEl.textContent = total.toFixed(2);
-      }
-    }
-  });
-
-  // Initialize
-  window.addEventListener('DOMContentLoaded', () => {
-    ensureCart(); updateCount(); annotateRows();
-  });
-})();
-</script>
-  <script>
-// Cart unified fix: open modal (header + bottom), edit qty (inc/dec/remove), update totals, open checkout
-(function () {
-  const $  = (id) => document.getElementById(id);
-  const qs = (sel, ctx=document) => ctx.querySelector(sel);
-
-  // Ensure cart store
-  function readCart() { try { return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); } catch { return { items: [] }; } }
-  function writeCart(cart) { localStorage.setItem('mp_cart', JSON.stringify(cart)); }
-  function updateCount(cart) {
-    const count = cart.items.reduce((a,b)=>a+b.qty,0);
-    const header = $('headerCartBadge'); const foot = $('cartCount');
-    if (header) header.textContent = String(count);
-    if (foot)   foot.textContent   = String(count);
-  }
-
-  // Render cart modal list
-  function renderCart() {
-    const cart = readCart();
-    const listEl  = $('cartList');
-    const totalEl = $('cartTotal');
-    if (!listEl || !totalEl) return;
-
-    listEl.innerHTML = '';
-    if (!cart.items.length) {
-      listEl.innerHTML = '<div class="small muted">Your cart is empty.</div>';
-      totalEl.textContent = '0.00';
-      updateCount(cart);
-      return;
-    }
-
-    let total = 0;
-    cart.items.forEach(item => {
-      total += item.price * item.qty;
-      const row = document.createElement('div');
-      row.className = 'card';
-      row.dataset.id = item.id;
-      row.innerHTML = `
-        <div class="row" style="justify-content:space-between; align-items:flex-start">
-          <div class="row">
-            <img src="${item.img}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
-            <div style="margin-left:8px">
-              <strong>${item.title}</strong>
-              <div class="small muted">$${item.price.toFixed(2)}</div>
-            </div>
-          </div>
-          <div class="qty">
-            <button class="btn ghost" data-k="dec" type="button">−</button>
-            <div data-q>${item.qty}</div>
-            <button class="btn ghost" data-k="inc" type="button">＋</button>
-            <button class="btn ghost" data-k="rm"  type="button">✖</button>
-          </div>
-        </div>
-      `;
-      listEl.appendChild(row);
-    });
-
-    totalEl.textContent = total.toFixed(2);
-    updateCount(cart);
-  }
-
-  // Open cart modal (header and bottom buttons)
-  function openCartModal() {
-    try { renderCart(); } catch {}
-    const modal = $('cartModal');
-    if (modal) modal.classList.add('open');
-  }
-
-  // Wire buttons safely (header + bottom cart buttons)
-  function wireOpeners() {
-    const headerBtn = $('cartBtn');
-    const bottomBtn = $('openCartBtn');
-    if (headerBtn) {
-      headerBtn.setAttribute('type', 'button');
-      headerBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); try { showPage('marketplace'); } catch {}; openCartModal(); };
-    }
-    if (bottomBtn) {
-      bottomBtn.setAttribute('type', 'button');
-      bottomBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); openCartModal(); };
-    }
-    const closeCart = $('closeCart');
-    if (closeCart) closeCart.onclick = (e) => { e.preventDefault(); $('cartModal')?.classList.remove('open'); };
-  }
-
-  // Delegate edit actions (inc/dec/remove)
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('#cartList [data-k]');
-    if (!btn) return;
-
-    e.preventDefault();
-    const row = btn.closest('.card');
-    const id  = row?.dataset?.id;
-    if (!id) return;
-
-    const cart = readCart();
-    const idx  = cart.items.findIndex(i => i.id === id);
-    if (idx < 0) return;
-
-    const k = btn.getAttribute('data-k');
-    if (k === 'dec') cart.items[idx].qty = Math.max(1, cart.items[idx].qty - 1);
-    if (k === 'inc') cart.items[idx].qty = cart.items[idx].qty + 1;
-    if (k === 'rm')  cart.items.splice(idx, 1);
-
-    writeCart(cart);
-    renderCart();
-  });
-
-  // Checkout button in cart → open checkout modal
-  document.addEventListener('click', (e) => {
-    if (!e.target || e.target.id !== 'checkoutBtn') return;
-    e.preventDefault();
-    $('cartModal')?.classList.remove('open');
-    $('checkoutModal')?.classList.add('open');
-  });
-
-  // Init
-  window.addEventListener('DOMContentLoaded', () => {
-    // Ensure type=button to avoid form submits interfering
-    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id => { const b=$(id); if (b) b.setAttribute('type','button'); });
-    wireOpeners();
-    renderCart(); // sync totals/badge on load
-  });
-})();
-    <!-- Install banner -->
-<div id="installBanner" style="position:fixed; left:16px; right:16px; bottom:80px; background:#fff; border:1px solid #E5E7EB; border-radius:12px; box-shadow:0 8px 24px rgba(17,24,39,.08); padding:12px; z-index:1000; display:none">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-    <strong>Install ZippUp</strong>
-    <button id="installClose" class="btn ghost" type="button">✖</button>
-  </div>
-  <div class="small muted" style="margin:8px 0">Add ZippUp to your home screen for a faster, full‑screen experience.</div>
-  <button id="installBtn" class="btn primary" type="button">Install App</button>
-</div>
-
-<script>
-// Install prompt (Android/Chrome) + iOS fallback
-(function () {
-  let deferredPrompt = null;
-  const banner = document.getElementById('installBanner');
-  const btn    = document.getElementById('installBtn');
-  const close  = document.getElementById('installClose');
-
-  // Android/Chrome
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    if (banner) banner.style.display = 'block';
-  });
-
-  if (btn) {
-    btn.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      if (banner) banner.style.display = 'none';
-    });
-  }
-  if (close) {
-    close.addEventListener('click', () => { if (banner) banner.style.display = 'none'; });
-  }
-  window.addEventListener('appinstalled', () => {
-    deferredPrompt = null;
-    if (banner) banner.style.display = 'none';
-  });
-
-  // iOS Safari doesn't fire beforeinstallprompt -> show hint
-  const ua = navigator.userAgent.toLowerCase();
-  const isIOS = /iphone|ipad|ipod/.test(ua);
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  if (isIOS && isSafari && !isStandalone) {
-    if (banner) {
-      banner.style.display = 'block';
-      const txt = banner.querySelector('.small');
-      if (txt) txt.textContent = 'On iPhone/iPad: tap the Share icon, then “Add to Home Screen”.';
-      if (btn) btn.style.display = 'none';
-    }
-  }
-})();
-</script>
-</script>
-  <script>
-// Mobile cart and checkout hotfix (non-destructive)
-(function () {
-  const $ = (id) => document.getElementById(id);
-
-  function onTap(el, handler) {
-    if (!el) return;
-    const h = (e) => { e.preventDefault(); e.stopPropagation(); handler(e); };
-    el.addEventListener('click', h, { passive: false });
-    el.addEventListener('touchend', h, { passive: false });
-  }
-
-  function readCart() {
-    try { return JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); }
-    catch { return { items: [] }; }
-  }
-  function writeCart(cart) {
-    localStorage.setItem('mp_cart', JSON.stringify(cart));
-  }
-  function updateCount(cart) {
-    const count = cart.items.reduce((a,b)=>a+b.qty,0);
-    const hb = $('headerCartBadge'); const cc = $('cartCount');
-    if (hb) hb.textContent = String(count);
-    if (cc) cc.textContent = String(count);
-  }
-
-  function renderCartSafe() {
-    try { window.renderCart && window.renderCart(); } catch {}
-  }
-
-  function openCartModal() {
-    try { showPage('marketplace'); } catch {}
-    renderCartSafe();
-    const m = $('cartModal');
-    if (m) setTimeout(() => m.classList.add('open'), 0);
-  }
-
-  function openCheckoutModal() {
-    $('cartModal')?.classList.remove('open');
-    $('checkoutModal')?.classList.add('open');
-  }
-
-  // Wire header and bottom cart buttons
-  onTap($('cartBtn'), openCartModal);
-  onTap($('openCartBtn'), openCartModal);
-  onTap($('closeCart'), () => $('cartModal')?.classList.remove('open'));
-
-  // Wire checkout from cart
-  onTap($('checkoutBtn'), openCheckoutModal);
-
-  // Delegate + / − / remove inside cart for touch + click
-  function handleCartEdit(e) {
-    const btn = e.target.closest('#cartList [data-k]');
-    if (!btn) return;
-    e.preventDefault(); e.stopPropagation();
-
-    const row = btn.closest('.card');
-    const id  = row?.dataset?.id;
-    if (!id) return;
-
-    const cart = readCart();
-    const idx  = cart.items.findIndex(i => i.id === id);
-    if (idx < 0) return;
-
-    const k = btn.getAttribute('data-k');
-    if (k === 'dec') cart.items[idx].qty = Math.max(1, cart.items[idx].qty - 1);
-    if (k === 'inc') cart.items[idx].qty = cart.items[idx].qty + 1;
-    if (k === 'rm')  cart.items.splice(idx, 1);
-
-    writeCart(cart);
-    renderCartSafe();
-    updateCount(cart);
-  }
-  document.addEventListener('click', handleCartEdit, { passive: false });
-  document.addEventListener('touchend', handleCartEdit, { passive: false });
-
-  // Ensure buttons are type=button to avoid form submits swallowing taps
-  window.addEventListener('DOMContentLoaded', () => {
-    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id => {
-      const b = $(id); if (b) b.setAttribute('type','button');
-    });
-  });
-})();
-</script>
 </body>
 </html>
