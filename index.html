@@ -1578,5 +1578,223 @@
   });
 })();
 </script>
+  <script>
+// ZippUp targeted hotfix: cart edit + sticky checkout + fast Transport/Food + transport-only address suggestions (country-limited) + Google overlay fallback
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // 0) Sticky checkout row + scrollable cart items
+  (function makeCheckoutSticky() {
+    const body = document.querySelector('#cartModal .sheet .body');
+    if (!body) return;
+    body.style.maxHeight = '70vh';
+    body.style.overflow = 'auto';
+    const row = document.querySelector('#cartModal .sheet .body #checkoutBtn')?.closest('.row');
+    if (row) {
+      row.style.position = 'sticky';
+      row.style.bottom = '0';
+      row.style.background = '#fff';
+      row.style.paddingTop = '10px';
+      row.style.borderTop = '1px solid var(--border)';
+    }
+  })();
+
+  // 1) Cart editing (+ / − / ✖) with totals/badge updates (non-destructive)
+  function readCart() {
+    try { return (window.cart && Array.isArray(window.cart.items)) ? window.cart : JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); }
+    catch { return { items: [] }; }
+  }
+  function writeCart(c) {
+    if (window.cart) window.cart.items = c.items;
+    localStorage.setItem('mp_cart', JSON.stringify(c));
+  }
+  function updateCounts(c) {
+    const n = c.items.reduce((a,b)=>a+b.qty,0);
+    const hb = $('headerCartBadge'), cc = $('cartCount');
+    if (hb) hb.textContent = String(n);
+    if (cc) cc.textContent = String(n);
+  }
+  function rerenderCartUI() {
+    try { window.renderCart && window.renderCart(); } catch {}
+    updateCounts(readCart());
+  }
+  function editCartHandler(e) {
+    const btn = e.target.closest('#cartList [data-k]');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+
+    const row = btn.closest('.card');
+    let id  = row?.dataset?.id || '';
+    const c = readCart();
+
+    if (!id) {
+      // Fallback match by title text if dataset is missing
+      const title = (row.querySelector('strong')?.textContent || '').trim();
+      const found = c.items.find(i => i.title === title);
+      if (found) id = found.id;
+    }
+    if (!id) return;
+
+    const i = c.items.findIndex(x => x.id === id);
+    if (i < 0) return;
+
+    const k = btn.getAttribute('data-k');
+    if (k === 'dec') c.items[i].qty = Math.max(1, c.items[i].qty - 1);
+    if (k === 'inc') c.items[i].qty = c.items[i].qty + 1;
+    if (k === 'rm')  c.items.splice(i, 1);
+
+    writeCart(c);
+    rerenderCartUI();
+  }
+  document.addEventListener('click', editCartHandler, { passive:false });
+  document.addEventListener('touchend', editCartHandler, { passive:false });
+
+  // 2) Make BOTH cart buttons open modal; checkout opens reliably
+  function openCartModal() {
+    try { showPage('marketplace'); } catch {}
+    rerenderCartUI();
+    $('cartModal')?.classList.add('open');
+  }
+  function bindTap(el, fn){
+    if (!el) return;
+    const h=(e)=>{ e.preventDefault(); e.stopPropagation(); fn(e); };
+    el.addEventListener('click', h, { passive:false });
+    el.addEventListener('touchend', h, { passive:false });
+  }
+  bindTap($('cartBtn'), openCartModal);
+  bindTap($('openCartBtn'), openCartModal);
+  bindTap($('closeCart'), ()=> $('cartModal')?.classList.remove('open'));
+  bindTap($('checkoutBtn'), ()=> { $('cartModal')?.classList.remove('open'); $('checkoutModal')?.classList.add('open'); });
+
+  // 3) Fast-activate Transport/Food on one tap (does not change your handlers)
+  function openByLabel(text) {
+    const t = (text||'').toLowerCase();
+    if (t.includes('transport')) { try { openCategory('transport','Transport'); } catch {} return true; }
+    if (t.includes('food'))      { try { openCategory('food','Food'); }         catch {} return true; }
+    return false;
+  }
+  function svcTap(e){
+    const card = e.target.closest('.card.service'); if (!card) return;
+    const h4 = card.querySelector('h4'); if (!h4) return;
+    if (openByLabel(h4.textContent)) { e.preventDefault(); e.stopPropagation(); }
+  }
+  document.addEventListener('click', svcTap, { capture:true, passive:false });
+  document.addEventListener('touchend', svcTap, { capture:true, passive:false });
+
+  // 4) Transport-only fallback address suggestions (no Google overlay; country-limited)
+  // If Google key is blocked, this takes over. Only binds inside the transport modal (#tiModal).
+  window.gm_authFailure = function() { window.__zupGoogleBlocked = true; };
+  (function transportAddressFallback() {
+    const tiModal = document.getElementById('tiModal');
+    if (!tiModal) return;
+
+    // Country/area bias: prefer coords if available; otherwise try IP country
+    let countryCode = null;
+    let bounds = null; // { minLon, minLat, maxLon, maxLat } around current coords
+    function initGeoBias() {
+      try {
+        if (window.coords && typeof window.coords.lat === 'number' && typeof window.coords.lng === 'number') {
+          const lat = window.coords.lat, lng = window.coords.lng;
+          const d = 0.6; // ~60-70km bbox
+          bounds = { minLon: lng - d, minLat: lat - d, maxLon: lng + d, maxLat: lat + d };
+        } else {
+          // Light IP lookup to get country code (used by Nominatim)
+          fetch('https://ipapi.co/json/')
+            .then(r=>r.json()).then(d=>{ if (d && d.country_code) countryCode = String(d.country_code).toLowerCase(); })
+            .catch(()=>{});
+        }
+      } catch {}
+    }
+    initGeoBias();
+
+    const panel = document.createElement('div');
+    panel.id = 'addrSuggest';
+    panel.style.cssText = 'position:fixed;max-height:240px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);z-index:70;display:none';
+    document.body.appendChild(panel);
+
+    let activeInput = null, debounce = 0;
+    function positionPanel(input) {
+      const r = input.getBoundingClientRect();
+      panel.style.left   = Math.round(r.left) + 'px';
+      panel.style.top    = Math.round(r.bottom + 6) + 'px';
+      panel.style.width  = Math.round(r.width) + 'px';
+    }
+    function hidePanel(){ panel.style.display='none'; panel.innerHTML=''; activeInput=null; }
+
+    async function queryAddresses(q) {
+      // Nominatim with bias
+      const params = new URLSearchParams({ format:'json', limit:'5', addressdetails:'1', q });
+      if (bounds) {
+        params.set('viewbox', `${bounds.minLon},${bounds.maxLat},${bounds.maxLon},${bounds.minLat}`);
+        params.set('bounded', '1');
+      } else if (countryCode) {
+        params.set('countrycodes', countryCode);
+      }
+      const url = `https://nominatim.openstreetmap.org/search?${params.toString()}`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
+      return await res.json().catch(()=>[]);
+    }
+
+    function bindInput(input) {
+      if (!input || input.dataset.addrBound === '1') return;
+      input.dataset.addrBound = '1';
+      input.setAttribute('autocomplete','off');
+      input.addEventListener('input', () => {
+        clearTimeout(debounce);
+        const q = input.value.trim();
+        if (q.length < 3) { hidePanel(); return; }
+        debounce = setTimeout(async () => {
+          try {
+            const items = await queryAddresses(q);
+            if (!items || !items.length) { hidePanel(); return; }
+            activeInput = input;
+            panel.innerHTML=''; positionPanel(input);
+            items.forEach(it=>{
+              const line = it.display_name || [it.name, it.address && (it.address.city || it.address.town || it.address.village), it.address && it.address.country].filter(Boolean).join(', ');
+              const btn  = document.createElement('button');
+              btn.type='button';
+              btn.style.cssText='display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:#fff;border-bottom:1px solid var(--border);cursor:pointer';
+              btn.textContent = line;
+              btn.onclick = ()=>{ input.value = line; hidePanel(); };
+              panel.appendChild(btn);
+            });
+            panel.style.display='block';
+          } catch { hidePanel(); }
+        }, 220);
+      }, { passive:true });
+      input.addEventListener('focus', () => { if (input.value.trim().length >= 3) positionPanel(input); }, { passive:true });
+      input.addEventListener('blur', () => setTimeout(hidePanel, 150));
+    }
+
+    function bindTransportInputs() {
+      // Bind ONLY inside Transport modal
+      const pickup = document.getElementById('tiPickup');
+      const dest   = document.getElementById('tiDestination');
+      if (pickup) bindInput(pickup);
+      if (dest)   bindInput(dest);
+      document.querySelectorAll('#tiModal .tiStopInput').forEach(bindInput);
+    }
+
+    // Observe the transport modal only (stops remain transport-only)
+    const mo = new MutationObserver(() => bindTransportInputs());
+    mo.observe(tiModal, { childList:true, subtree:true });
+    bindTransportInputs();
+
+    // If Google key is blocked, prevent your attachAutocomplete from trying to use it
+    const origAttach = window.attachAutocomplete;
+    window.attachAutocomplete = function(inputEl){
+      if (window.__zupGoogleBlocked) return; // no-op; fallback takes over
+      try { if (typeof origAttach === 'function') origAttach(inputEl); } catch {}
+    };
+  })();
+
+  // 5) Safety: ensure key buttons are not treated as form submit on mobile
+  window.addEventListener('DOMContentLoaded', ()=>{
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id => { const b=$(id); if (b) b.setAttribute('type','button'); });
+    // Initial badge sync
+    updateCounts(readCart());
+  });
+})();
+</script>
 </body>
 </html>
