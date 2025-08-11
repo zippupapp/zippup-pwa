@@ -1726,6 +1726,63 @@
     renderCart(); // sync totals/badge on load
   });
 })();
+    <!-- Install banner -->
+<div id="installBanner" style="position:fixed; left:16px; right:16px; bottom:80px; background:#fff; border:1px solid #E5E7EB; border-radius:12px; box-shadow:0 8px 24px rgba(17,24,39,.08); padding:12px; z-index:1000; display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+    <strong>Install ZippUp</strong>
+    <button id="installClose" class="btn ghost" type="button">✖</button>
+  </div>
+  <div class="small muted" style="margin:8px 0">Add ZippUp to your home screen for a faster, full‑screen experience.</div>
+  <button id="installBtn" class="btn primary" type="button">Install App</button>
+</div>
+
+<script>
+// Install prompt (Android/Chrome) + iOS fallback
+(function () {
+  let deferredPrompt = null;
+  const banner = document.getElementById('installBanner');
+  const btn    = document.getElementById('installBtn');
+  const close  = document.getElementById('installClose');
+
+  // Android/Chrome
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (banner) banner.style.display = 'block';
+  });
+
+  if (btn) {
+    btn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if (banner) banner.style.display = 'none';
+    });
+  }
+  if (close) {
+    close.addEventListener('click', () => { if (banner) banner.style.display = 'none'; });
+  }
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    if (banner) banner.style.display = 'none';
+  });
+
+  // iOS Safari doesn't fire beforeinstallprompt -> show hint
+  const ua = navigator.userAgent.toLowerCase();
+  const isIOS = /iphone|ipad|ipod/.test(ua);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isIOS && isSafari && !isStandalone) {
+    if (banner) {
+      banner.style.display = 'block';
+      const txt = banner.querySelector('.small');
+      if (txt) txt.textContent = 'On iPhone/iPad: tap the Share icon, then “Add to Home Screen”.';
+      if (btn) btn.style.display = 'none';
+    }
+  }
+})();
+</script>
 </script>
 </body>
 </html>
