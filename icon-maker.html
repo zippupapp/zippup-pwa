@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ZippUp Icon Maker</title>
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; padding: 24px; background:#f7f7fb; color:#111; }
+  .wrap { max-width: 680px; margin: 0 auto; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px; }
+  h1 { margin: 0 0 12px; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; margin-top: 12px; }
+  button { padding:10px 14px; border-radius:10px; border:0; background:#2563EB; color:#fff; font-weight:700; cursor:pointer }
+  canvas { background:#f0f3ff; border:1px dashed #d0d6f0; border-radius:12px }
+  small { color:#555 }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ZippUp Icon Maker</h1>
+  <p>Click buttons to generate and download PNG icons for your PWA (maskable safe area).</p>
+
+  <div class="row">
+    <button id="dl192">Download icon-192.png</button>
+    <button id="dl512">Download icon-512.png</button>
+    <button id="dl180" style="background:#10B981">Download apple-touch-icon.png (180×180)</button>
+  </div>
+
+  <div class="row" style="align-items:flex-start; margin-top:16px">
+    <div>
+      <canvas id="preview" width="192" height="192"></canvas>
+      <div style="text-align:center"><small>Preview (192×192)</small></div>
+    </div>
+  </div>
+
+  <p style="margin-top:16px">
+    After downloading:
+    <br>- Upload to your repo under: icons/icon-192.png and icons/icon-512.png
+    <br>- Optional iOS icon: icons/apple-touch-icon.png
+  </p>
+</div>
+
+<script>
+function drawIcon(size, options = {}) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // Colors
+  const bg = options.bg || '#2563EB';
+  const fg = options.fg || '#FFFFFF';
+
+  // Rounded square (maskable safe area padding ~12%)
+  const pad = Math.round(size * 0.12);
+  const r = Math.round(size * 0.18);
+  const x = pad, y = pad, w = size - pad*2, h = size - pad*2;
+
+  ctx.fillStyle = bg;
+  roundRect(ctx, x, y, w, h, r);
+  ctx.fill();
+
+  // White "Z"
+  ctx.fillStyle = fg;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `700 ${Math.round(size * 0.55)}px Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
+  ctx.fillText('Z', size/2, size/2);
+
+  return canvas;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function downloadPng(canvas, filename) {
+  canvas.toBlob((blob) => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 0);
+  }, 'image/png');
+}
+
+// Wire buttons
+document.getElementById('dl192').onclick = () => {
+  const c = drawIcon(192);
+  downloadPng(c, 'icon-192.png');
+  updatePreview();
+};
+document.getElementById('dl512').onclick = () => {
+  const c = drawIcon(512);
+  downloadPng(c, 'icon-512.png');
+  updatePreview();
+};
+document.getElementById('dl180').onclick = () => {
+  const c = drawIcon(180);
+  downloadPng(c, 'apple-touch-icon.png');
+  updatePreview();
+};
+
+function updatePreview() {
+  const pv = document.getElementById('preview');
+  const c = drawIcon(192);
+  const ctx = pv.getContext('2d');
+  ctx.clearRect(0,0,pv.width,pv.height);
+  ctx.drawImage(c, 0, 0);
+}
+updatePreview();
+</script>
+</body>
+</html>
