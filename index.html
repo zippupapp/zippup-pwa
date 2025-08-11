@@ -2534,6 +2534,160 @@
   }
 })();
 </script>
+  <script>
+// Supabase auth harden: visible errors, proper redirects, working buttons
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const LIVE_REDIRECT = location.origin; // Supabase dashboard must also have this set
+
+  if (!window.SUPABASE_URL || !window.SUPABASE_ANON) {
+    console.error('Supabase URL/Anon not set. Set window.SUPABASE_URL and window.SUPABASE_ANON.');
+    return;
+  }
+  if (!window.supabase) {
+    console.error('supabase-js script missing. Add <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script> in <head>.');
+    return;
+  }
+
+  const supa = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON);
+
+  function setBusy(btn, busy, label) {
+    if (!btn) return;
+    btn.disabled = !!busy;
+    btn.classList.toggle('loading', !!busy);
+    if (busy) { btn.dataset._t = btn.textContent; btn.textContent = label || 'Please wait…'; }
+    else if (btn.dataset._t) { btn.textContent = btn.dataset._t; delete btn.dataset._t; }
+  }
+
+  function showErr(msg) {
+    let el = $('authError');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'authError';
+      el.style.cssText = 'color:#DC2626;font-size:13px;margin-top:8px;text-align:center';
+      const gate = $('authGate');
+      const card = gate && gate.querySelector('.list') || gate;
+      card && card.appendChild(el);
+    }
+    el.textContent = msg || '';
+  }
+
+  async function syncUser() {
+    const { data:{ session }, error } = await supa.auth.getSession();
+    if (error) { console.error(error); showErr(error.message); return null; }
+    const user = session?.user || null;
+    const name = user?.user_metadata?.full_name || user?.email || 'Guest';
+    const uEl = $('userName'), pEl = $('profName');
+    if (uEl) uEl.textContent = name;
+    if (pEl) pEl.textContent = name;
+    if (user) { const gate = $('authGate'); gate && gate.remove(); }
+    return user;
+  }
+
+  function ensureGate() {
+    if ($('authGate')) return;
+    const g = document.createElement('div');
+    g.id='authGate';
+    g.style.cssText='position:fixed;inset:0;background:#fff;z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+    g.innerHTML = `
+      <style>
+        #authGate .btn{min-width:120px;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+        #authGate .btn.primary{background:#2563EB;color:#fff}
+        #authGate .btn.primary:active{background:#1D4ED8}
+        #authGate .btn.ghost{background:#F3F4F6}
+        #authGate .btn.ghost:active{background:#E5E7EB}
+        #authGate .btn.loading{opacity:.75;pointer-events:none;position:relative}
+        #authGate .btn.loading:after{content:'';width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;position:absolute;right:10px;top:50%;transform:translateY(-50%);animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
+      </style>
+      <div style="width:100%;max-width:420px;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:16px;background:#fff">
+        <div class="list" style="display:flex;flex-direction:column;gap:10px">
+          <div id="authLogoWrap" style="text-align:center;margin-bottom:6px">
+            <img src="/icons/icon-192.png" onerror="this.onerror=null;this.src='/icons/favicon.svg'" alt="ZippUp" width="72" height="72" style="border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.12)"/>
+            <div style="font-weight:800;margin-top:6px;font-size:20px">ZippUp</div>
+            <div style="color:#475569;font-size:14px;margin-top:4px">Your one‑stop on‑demand services.</div>
+          </div>
+          <div class="field"><label class="small">Email</label><input id="lgEmail" type="email" /></div>
+          <div class="field"><label class="small">Password</label><input id="lgPassword" type="password" /></div>
+          <div id="authError"></div>
+          <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+            <button class="btn primary" id="lgSignIn" type="button">Sign in</button>
+            <button class="btn ghost" id="lgSignUp" type="button">Sign up</button>
+            <button class="btn ghost" id="lgGoogle" type="button">Google</button>
+          </div>
+          <div class="small" style="text-align:center;margin-top:8px">
+            Forgot password? <a href="#" id="lgReset">Reset</a>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(g);
+  }
+
+  async function gate() {
+    ensureGate();
+    const user = await syncUser();
+    if (user) return;
+
+    const signIn = $('lgSignIn'), signUp = $('lgSignUp'), google = $('lgGoogle'), reset = $('lgReset');
+
+    signIn.onclick = async () => {
+      showErr('');
+      const email = $('lgEmail').value.trim(), pw = $('lgPassword').value.trim();
+      if (!email || !pw) return showErr('Enter email and password');
+      setBusy(signIn, true, 'Signing in…');
+      const { error } = await supa.auth.signInWithPassword({ email, password: pw });
+      setBusy(signIn, false);
+      if (error) { console.error(error); return showErr(error.message); }
+      await syncUser(); try { showPage('home'); } catch {}
+    };
+
+    signUp.onclick = async () => {
+      showErr('');
+      const email = $('lgEmail').value.trim(), pw = $('lgPassword').value.trim();
+      if (!email || !pw) return showErr('Enter email and password');
+      setBusy(signUp, true, 'Creating…');
+      const { error } = await supa.auth.signUp({
+        email, password: pw,
+        options: { data: { full_name: email.split('@')[0] }, emailRedirectTo: LIVE_REDIRECT }
+      });
+      setBusy(signUp, false);
+      if (error) { console.error(error); return showErr(error.message); }
+      showErr('Check your email to confirm, then return to the app.');
+    };
+
+    google.onclick = async () => {
+      showErr(''); setBusy(google, true, 'Opening…');
+      const { error } = await supa.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: LIVE_REDIRECT } });
+      setBusy(google, false);
+      if (error) { console.error(error); return showErr(error.message); }
+    };
+
+    reset.onclick = async (e) => {
+      e.preventDefault(); showErr('');
+      const email = $('lgEmail').value.trim(); if (!email) return showErr('Enter your email');
+      setBusy(reset, true, 'Sending…');
+      const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: LIVE_REDIRECT });
+      setBusy(reset, false);
+      if (error) { console.error(error); return showErr(error.message); }
+      showErr('Password reset email sent');
+    };
+
+    // Auto-handle redirects (email confirm / OAuth)
+    supa.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_IN') { await syncUser(); try { showPage('home'); } catch {} }
+    });
+  }
+
+  // Force gate at startup and on logout
+  window.addEventListener('DOMContentLoaded', gate);
+  const logout = $('menuLogout'); if (logout) logout.onclick = async () => {
+    setBusy(logout, true, 'Signing out…'); showErr('');
+    const { error } = await supa.auth.signOut(); setBusy(logout, false);
+    if (error) { console.error(error); return alert(error.message); }
+    gate();
+  };
+})();
+</script>
 </body>
   <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
   <svg width="160" height="160" viewBox="0 0 256 256" aria-hidden="true">
