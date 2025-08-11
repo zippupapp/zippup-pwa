@@ -1559,5 +1559,108 @@
   });
 })();
 </script>
+  <script>
+// Fast-activate Transport/Food + restore cart edit (inc/dec/remove), non-destructive
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // =============== Transport / Food fast open ===============
+  function openServiceByLabel(labelText) {
+    const t = (labelText || '').toLowerCase();
+    if (t.includes('transport')) { try { openCategory('transport','Transport'); } catch {} return true; }
+    if (t.includes('food'))      { try { openCategory('food','Food'); }         catch {} return true; }
+    return false;
+  }
+
+  // Capture-phase handler so it fires even if other handlers fail
+  function serviceClickCapture(e) {
+    const card = e.target.closest('.card.service');
+    if (!card) return;
+    const h4 = card.querySelector('h4');
+    if (!h4) return;
+    if (openServiceByLabel(h4.textContent)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+  // Bind once in capture phase
+  document.addEventListener('click', serviceClickCapture, true);
+  document.addEventListener('touchend', serviceClickCapture, { passive:false, capture:true });
+
+  // Also re-bind if services grids re-render
+  const sg = document.getElementById('servicesGrid');
+  const sag = document.getElementById('servicesAllGrid');
+  [sg, sag].forEach(root => {
+    if (!root) return;
+    new MutationObserver(() => {
+      // No-op: capture handler already in place; this keeps it alive on DOM changes
+    }).observe(root, { childList: true, subtree: true });
+  });
+
+  // =============== Cart edit (+ / − / remove) ===============
+  function readCart() {
+    if (window.cart && Array.isArray(window.cart.items)) return window.cart;
+    try { return JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); }
+    catch { return { items: [] }; }
+  }
+  function writeCart(cart) {
+    if (window.cart) window.cart.items = cart.items;
+    localStorage.setItem('mp_cart', JSON.stringify(cart));
+  }
+  function updateCount(cart) {
+    const count = cart.items.reduce((a,b)=>a+b.qty,0);
+    const hb = $('headerCartBadge'); const cc = $('cartCount');
+    if (hb) hb.textContent = String(count);
+    if (cc) cc.textContent = String(count);
+  }
+  function rerenderCart() {
+    try { window.renderCart && window.renderCart(); } catch {}
+    const cart = readCart(); updateCount(cart);
+  }
+
+  function cartEditHandler(e) {
+    const btn = e.target.closest('#cartList [data-k]');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+
+    const row = btn.closest('.card');
+    const id  = row?.dataset?.id;
+    if (!id) return;
+
+    const cart = readCart();
+    const idx  = cart.items.findIndex(i => i.id === id);
+    if (idx < 0) return;
+
+    const k = btn.getAttribute('data-k');
+    if (k === 'dec') cart.items[idx].qty = Math.max(1, cart.items[idx].qty - 1);
+    if (k === 'inc') cart.items[idx].qty = cart.items[idx].qty + 1;
+    if (k === 'rm')  cart.items.splice(idx, 1);
+
+    writeCart(cart);
+    rerenderCart();
+  }
+  document.addEventListener('click', cartEditHandler, { passive:false });
+  document.addEventListener('touchend', cartEditHandler, { passive:false });
+
+  // Ensure cart buttons open the same modal (header + bottom)
+  function openCartModal() {
+    try { showPage('marketplace'); } catch {}
+    rerenderCart();
+    const m = $('cartModal');
+    if (m) setTimeout(() => m.classList.add('open'), 0);
+  }
+  const headerCart = $('cartBtn');
+  const bottomCart = $('openCartBtn');
+  if (headerCart) headerCart.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); openCartModal(); }, { passive:false });
+  if (bottomCart) bottomCart.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); openCartModal(); }, { passive:false });
+
+  // Safety: make these real buttons on all browsers
+  window.addEventListener('DOMContentLoaded', () => {
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id => {
+      const b = $(id); if (b) b.setAttribute('type','button');
+    });
+  });
+})();
+</script>
 </body>
 </html>
