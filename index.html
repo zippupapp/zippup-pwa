@@ -2435,6 +2435,105 @@
   }
 })();
 </script>
+  <script>
+// Auth UI polish: logo tagline + button pressed/loading feedback
+(function () {
+  // 1) Inject styles for pressed/loading states
+  (function addStyles(){
+    if (document.getElementById('authBtnFX')) return;
+    const s=document.createElement('style'); s.id='authBtnFX';
+    s.textContent = `
+      #authGate .btn { transition: transform .08s ease, filter .12s ease; position: relative; }
+      #authGate .btn:active, #authGate .btn.pressed { transform: scale(.98); }
+      #authGate .btn.loading { opacity:.75; pointer-events:none; }
+      #authGate .btn.loading::after {
+        content:''; width:14px; height:14px; border:2px solid currentColor;
+        border-top-color: transparent; border-radius:50%;
+        position:absolute; right:10px; top:50%; transform: translateY(-50%);
+        animation: zspin .8s linear infinite;
+      }
+      @keyframes zspin { to { transform: translateY(-50%) rotate(360deg); } }
+
+      /* Tagline style */
+      #authLogoWrap .tagline { color:#475569; font-size:14px; margin-top:6px }
+    `;
+    document.head.appendChild(s);
+  })();
+
+  // 2) Add pressed feedback to auth buttons
+  function wirePressedFX(scope) {
+    (scope || document).querySelectorAll('#authGate .btn').forEach(btn=>{
+      if (btn.dataset.fxBound === '1') return;
+      btn.dataset.fxBound = '1';
+      btn.addEventListener('pointerdown', ()=> btn.classList.add('pressed'), { passive:true });
+      btn.addEventListener('pointerup',   ()=> btn.classList.remove('pressed'), { passive:true });
+      btn.addEventListener('pointerleave',()=> btn.classList.remove('pressed'), { passive:true });
+    });
+  }
+
+  // 3) Add loading feedback on click (fallback, in case your auth code doesn’t set it)
+  function wireLoadingFallback(scope) {
+    const pairs = [
+      ['lgSignIn',  'Signing in…'],
+      ['lgSignUp',  'Creating…'],
+      ['lgGoogle',  'Opening…']
+    ];
+    pairs.forEach(([id,label])=>{
+      const btn = (scope||document).getElementById(id);
+      if (!btn || btn.dataset.loadBound === '1') return;
+      btn.dataset.loadBound = '1';
+      btn.addEventListener('click', ()=>{
+        if (btn.classList.contains('loading')) return;
+        btn.classList.add('loading');
+        const old = btn.textContent;
+        btn.textContent = label;
+        // Auto-revert after 3s if your auth handler didn’t close the gate yet
+        setTimeout(()=>{
+          if (btn.isConnected) {
+            btn.classList.remove('loading');
+            btn.textContent = old;
+          }
+        }, 3000);
+      }, { passive:true });
+    });
+  }
+
+  // 4) Replace duplicate “ZippUp” title with a tagline below the logo
+  function injectTagline() {
+    const gate = document.getElementById('authGate');
+    if (!gate) return false;
+
+    // If logo block exists, add/replace tagline there
+    const wrap = gate.querySelector('#authLogoWrap');
+    if (wrap && !wrap.querySelector('.tagline')) {
+      const t = document.createElement('div');
+      t.className = 'tagline';
+      t.textContent = 'Your one‑stop on‑demand services.';
+      wrap.appendChild(t);
+    }
+
+    // If there’s an old big “ZippUp” heading inside the card, replace it with tagline
+    const big = Array.from(gate.querySelectorAll('div, h1, h2'))
+      .find(el => el.textContent.trim() === 'ZippUp' && el.style && (el.style.fontWeight === '800' || el.style.fontSize));
+    if (big) big.textContent = 'Your one‑stop on‑demand services.';
+
+    return true;
+  }
+
+  // 5) Run now or when the auth gate appears
+  function apply() {
+    injectTagline();
+    wirePressedFX();
+    wireLoadingFallback();
+  }
+  if (!apply()) {
+    const mo = new MutationObserver(()=>{
+      if (document.getElementById('authGate')) { apply(); mo.disconnect(); }
+    });
+    mo.observe(document.body, { childList:true, subtree:true });
+  }
+})();
+</script>
 </body>
   <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
   <svg width="160" height="160" viewBox="0 0 256 256" aria-hidden="true">
