@@ -1089,5 +1089,366 @@
       new MutationObserver(() => bindTransportInputs()).observe(tiModal, { childList:true, subtree:true });
     })();
   </script>
+  <script>
+// ZippUp hotfix: cart edit + checkout + transport submit + per-service active tracking + transport-only address suggestions
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // ============ CART EDIT + CHECKOUT ============
+  function readCart() {
+    try { return (window.cart && Array.isArray(window.cart.items)) ? window.cart : JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); }
+    catch { return { items: [] }; }
+  }
+  function writeCart(c) {
+    if (window.cart) window.cart.items = c.items;
+    localStorage.setItem('mp_cart', JSON.stringify(c));
+  }
+  function updateBadges(c) {
+    const n = c.items.reduce((a,b)=>a+b.qty,0);
+    const hb = $('headerCartBadge'), cc = $('cartCount');
+    if (hb) hb.textContent = String(n);
+    if (cc) cc.textContent = String(n);
+  }
+  function renderCartSafe() {
+    if (typeof window.renderCart === 'function') { try { window.renderCart(); } catch {} }
+    updateBadges(readCart());
+  }
+  // Sticky checkout row and scrollable body
+  (function stickyCheckout() {
+    const body = document.querySelector('#cartModal .sheet .body');
+    if (!body) return;
+    body.style.maxHeight = '70vh';
+    body.style.overflow = 'auto';
+    const row = document.querySelector('#cartModal .sheet .body #checkoutBtn')?.closest('.row');
+    if (row) {
+      row.style.position = 'sticky';
+      row.style.bottom = '0';
+      row.style.background = '#fff';
+      row.style.paddingTop = '10px';
+      row.style.borderTop = '1px solid var(--border)';
+    }
+  })();
+  // Edit cart (+ / − / remove) via delegation
+  function onCartEdit(e) {
+    const btn = e.target.closest('#cartList [data-k]');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+
+    const row = btn.closest('.card');
+    let id  = row?.dataset?.id || '';
+    const c = readCart();
+
+    if (!id) {
+      const title = (row.querySelector('strong')?.textContent || '').trim();
+      const found = c.items.find(i => i.title === title);
+      if (found) id = found.id;
+    }
+    if (!id) return;
+
+    const i = c.items.findIndex(x => x.id === id);
+    if (i < 0) return;
+
+    const k = btn.getAttribute('data-k');
+    if (k === 'dec') c.items[i].qty = Math.max(1, c.items[i].qty - 1);
+    if (k === 'inc') c.items[i].qty = c.items[i].qty + 1;
+    if (k === 'rm')  c.items.splice(i, 1);
+
+    writeCart(c);
+    renderCartSafe();
+  }
+  document.addEventListener('click', onCartEdit, { passive:false });
+  document.addEventListener('touchend', onCartEdit, { passive:false });
+
+  // Ensure both cart buttons open modal and checkout opens
+  function openCartModal() {
+    try { showPage('marketplace'); } catch {}
+    renderCartSafe();
+    $('cartModal')?.classList.add('open');
+  }
+  ['cartBtn','openCartBtn'].forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.setAttribute('type','button');
+      el.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); openCartModal(); }, { passive:false });
+      el.addEventListener('touchend', (e)=>{ e.preventDefault(); e.stopPropagation(); openCartModal(); }, { passive:false });
+    }
+  });
+  const closeCart = $('closeCart');
+  if (closeCart) closeCart.onclick = ()=> $('cartModal')?.classList.remove('open');
+  const checkoutBtn = $('checkoutBtn');
+  if (checkoutBtn) {
+    checkoutBtn.setAttribute('type','button');
+    checkoutBtn.addEventListener('click', (e)=>{ e.preventDefault(); $('cartModal')?.classList.remove('open'); $('checkoutModal')?.classList.add('open'); }, { passive:false });
+  }
+
+  // Checkout submit (card/cash)
+  async function placeOrderHotfix() {
+    const cart = readCart();
+    const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+    const name=$('chkName')?.value?.trim(), phone=$('chkPhone')?.value?.trim();
+    const address=$('chkAddress')?.value?.trim(), unit=($('chkUnit')?.value||'').trim();
+    const notes=($('chkNotes')?.value||'').trim();
+    if (!$('chkTerms')?.checked) return alert('Please accept the Terms');
+    if (!address) return alert('Enter delivery address');
+    if (!name || !phone) return alert('Enter name and phone');
+    if (!cart.items.length) return alert('Cart is empty');
+    const payload = { items: cart.items.map(i=>({id:i.id,title:i.title,qty:i.qty,price:i.price})), name, phone, address, unit, notes };
+
+    if (method === 'card') {
+      try {
+        const r = await fetch(`${(window.BASE_API||'')}/api/payments/checkout-session`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ ...payload, successUrl: location.origin+'/?checkout=success', cancelUrl: location.origin+'/?checkout=cancel' })
+        });
+        const d = await r.json().catch(()=>({}));
+        if (d?.url) {
+          cart.items = []; writeCart(cart); renderCartSafe();
+          location.href = d.url; return;
+        }
+        if ((d?.id || d?.sessionId) && window.Stripe && typeof window.STRIPE_PK === 'string') {
+          const stripe = window.Stripe(window.STRIPE_PK);
+          cart.items = []; writeCart(cart); renderCartSafe();
+          await stripe.redirectToCheckout({ sessionId: d.id || d.sessionId }); return;
+        }
+        alert('Payment session error. Try Cash.');
+      } catch {
+        alert('Payment session error. Try Cash.');
+      }
+    } else {
+      // Cash
+      let orderId='demo-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
+      try {
+        const r2 = await fetch(`${(window.BASE_API||'')}/api/marketplace/orders`, {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ...payload, paymentMethod:'cash' })
+        });
+        const d2 = await r2.json().catch(()=>({}));
+        orderId = d2.orderId || orderId; code = d2.deliveryCode || code;
+      } catch {}
+      $('checkoutModal')?.classList.remove('open');
+      if (typeof window.showOrderStatus === 'function') window.showOrderStatus(orderId, code, 'cash');
+      cart.items = []; writeCart(cart); renderCartSafe();
+    }
+  }
+  const placeOrderBtn = $('placeOrderBtn');
+  if (placeOrderBtn) {
+    placeOrderBtn.setAttribute('type','button');
+    placeOrderBtn.addEventListener('click', (e)=>{ e.preventDefault(); placeOrderHotfix(); }, { passive:false });
+  }
+
+  // ============ TRANSPORT SUBMIT + PER-SERVICE ACTIVE ============
+  const ActiveKey = 'zup_active_map';
+  function loadActiveMap(){ try{return JSON.parse(localStorage.getItem(ActiveKey)||'{}')}catch{return{}} }
+  function saveActiveMap(m){ localStorage.setItem(ActiveKey, JSON.stringify(m||{})) }
+  function setActive(category, obj){ const m=loadActiveMap(); if(obj) m[category]=obj; else delete m[category]; saveActiveMap(m) }
+  function getActive(category){ return loadActiveMap()[category] }
+
+  // Intercept Transport Start button so submit works even if original binding failed
+  function bindTransportSubmit() {
+    const btn = $('tiStart'); if (!btn) return;
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const pickup = $('tiPickup')?.value?.trim();
+      const dest   = $('tiDestination')?.value?.trim();
+      if (!pickup || !dest) return alert('Pickup and Destination are required');
+      // Record active immediately
+      setActive('transport', { id: (window.requestId || ('demo-'+Date.now())), status:'pending' });
+      // Trigger existing handler if present
+      if (typeof window.startInstantTransport === 'function') {
+        try { window.startInstantTransport(window.selectedProvider || null); } catch {}
+      }
+    }, { passive:false });
+  }
+  // Show active info when opening same service again
+  function injectActiveHeader(category) {
+    const active = getActive(category);
+    if (!active) return;
+    const pmBody = document.querySelector('#providersModal .body');
+    if (!pmBody) return;
+    let bar = document.getElementById('activeHeaderBar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'activeHeaderBar';
+      bar.style.cssText = 'margin-bottom:10px;border:1px solid var(--border);border-radius:10px;padding:10px;background:#fff;';
+      pmBody.prepend(bar);
+    }
+    bar.innerHTML = `
+      <div class="row" style="justify-content:space-between;">
+        <div class="small">Active ${category} request • status: <strong>${active.status||'pending'}</strong></div>
+        <div class="row" style="gap:6px">
+          <button class="btn ghost" id="activeCancelBtn" type="button">Cancel</button>
+          <button class="btn primary" id="activeResumeBtn" type="button">Resume tracking</button>
+        </div>
+      </div>
+    `;
+    $('activeResumeBtn').onclick = () => { try { typeof openTracking === 'function' && openTracking(); } catch {} };
+    $('activeCancelBtn').onclick = () => openCancelReasons(category);
+  }
+  // Cancelling with reasons
+  function openCancelReasons(category) {
+    let modal = document.getElementById('cancelReasonsModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'cancelReasonsModal';
+      modal.className = 'modal open';
+      modal.innerHTML = `
+        <div class="sheet">
+          <div class="head"><strong>Cancel request</strong><button class="btn ghost" id="crClose" type="button">✖</button></div>
+          <div class="body">
+            <div id="crList" class="list"></div>
+            <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px">
+              <button class="btn ghost" id="crBack" type="button">Back</button>
+              <button class="btn primary" id="crConfirm" type="button">Confirm cancel</button>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+    } else {
+      modal.classList.add('open');
+    }
+    const crList = document.getElementById('crList');
+    crList.innerHTML = '';
+    ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{
+      const row = document.createElement('label');
+      row.className = 'row';
+      row.innerHTML = `<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`;
+      crList.appendChild(row);
+    });
+    const other = document.createElement('input');
+    other.id = 'crOther';
+    other.placeholder = 'If Other, describe…';
+    other.style.cssText = 'width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px';
+    crList.appendChild(other);
+
+    document.getElementById('crClose').onclick = ()=> modal.classList.remove('open');
+    document.getElementById('crBack').onclick  = ()=> modal.classList.remove('open');
+    document.getElementById('crConfirm').onclick = async ()=> {
+      const picked = document.querySelector('input[name="cr"]:checked')?.value || 'Other';
+      const reason = picked === 'Other' ? (other.value.trim()||'Other') : picked;
+      try {
+        if (window.requestId) {
+          await fetch(`${(window.BASE_API||'')}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason)}`, { method:'DELETE' });
+        }
+      } catch {}
+      setActive(category, null);
+      modal.classList.remove('open');
+      alert('Request cancelled');
+    };
+  }
+
+  // Wrap openCategory to inject active header for that service type
+  const _openCategory = window.openCategory;
+  if (typeof _openCategory === 'function') {
+    window.openCategory = function wrapped(catId, label) {
+      const ret = _openCategory.apply(this, arguments);
+      setTimeout(()=>injectActiveHeader(catId), 50);
+      return ret;
+    };
+  }
+  // Bind transport submit after DOM is ready or when modal shows
+  const tiModal = document.getElementById('tiModal');
+  if (tiModal) new MutationObserver(bindTransportSubmit).observe(tiModal, { childList:true, subtree:true });
+  bindTransportSubmit();
+
+  // ============ FAST OPEN: TRANSPORT / FOOD ============
+  function openByLabel(text) {
+    const t = (text||'').toLowerCase();
+    if (t.includes('transport')) { try { _openCategory ? _openCategory('transport','Transport') : openCategory('transport','Transport'); } catch {} return true; }
+    if (t.includes('food'))      { try { _openCategory ? _openCategory('food','Food') : openCategory('food','Food'); } catch {} return true; }
+    return false;
+  }
+  function svcTap(e){
+    const card = e.target.closest('.card.service'); if (!card) return;
+    const h4 = card.querySelector('h4'); if (!h4) return;
+    if (openByLabel(h4.textContent)) { e.preventDefault(); e.stopPropagation(); }
+  }
+  document.addEventListener('click', svcTap, { capture:true, passive:false });
+  document.addEventListener('touchend', svcTap, { capture:true, passive:false });
+
+  // ============ TRANSPORT-ONLY ADDRESS SUGGESTIONS (country-limited, Google-free) ============
+  (function transportAddressFallback() {
+    const panel = document.createElement('div');
+    panel.id = 'addrSuggest';
+    panel.style.cssText = 'position:fixed;max-height:240px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);z-index:70;display:none';
+    document.body.appendChild(panel);
+
+    let countryCode=null, bounds=null, activeInput=null, debounce=0;
+    function initBias() {
+      try {
+        if (window.coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
+          const d = 0.6; bounds = { minLon: coords.lng - d, minLat: coords.lat - d, maxLon: coords.lng + d, maxLat: coords.lat + d };
+        } else {
+          fetch('https://ipapi.co/json/').then(r=>r.json()).then(d=>{ if (d?.country_code) countryCode = String(d.country_code).toLowerCase(); }).catch(()=>{});
+        }
+      } catch {}
+    }
+    function positionPanel(input) {
+      const r = input.getBoundingClientRect();
+      panel.style.left   = Math.round(r.left) + 'px';
+      panel.style.top    = Math.round(r.bottom + 6) + 'px';
+      panel.style.width  = Math.round(r.width) + 'px';
+    }
+    function hidePanel(){ panel.style.display='none'; panel.innerHTML=''; activeInput=null; }
+    async function queryAddresses(q) {
+      const p = new URLSearchParams({ format:'json', limit:'5', addressdetails:'1', q });
+      if (bounds) { p.set('viewbox', `${bounds.minLon},${bounds.maxLat},${bounds.maxLon},${bounds.minLat}`); p.set('bounded','1'); }
+      else if (countryCode) { p.set('countrycodes', countryCode); }
+      const url = `https://nominatim.openstreetmap.org/search?${p.toString()}`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
+      return await res.json().catch(()=>[]);
+    }
+    function bindAddrInput(input) {
+      if (!input || input.dataset.addrBound === '1') return;
+      input.dataset.addrBound = '1';
+      // Only bind within Transport modal elements
+      const inTransport = !!input.closest('#tiModal');
+      if (!inTransport) return;
+
+      input.setAttribute('autocomplete','off');
+      input.addEventListener('input', () => {
+        clearTimeout(debounce);
+        const q = input.value.trim();
+        if (q.length < 3) { hidePanel(); return; }
+        debounce = setTimeout(async () => {
+          try {
+            const items = await queryAddresses(q);
+            if (!items?.length) { hidePanel(); return; }
+            activeInput = input; panel.innerHTML=''; positionPanel(input);
+            items.forEach(it => {
+              const line = it.display_name || [it.name, it.address && (it.address.city||it.address.town||it.address.village), it.address && it.address.country].filter(Boolean).join(', ');
+              const btn = document.createElement('button');
+              btn.type='button'; btn.style.cssText='display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:#fff;border-bottom:1px solid var(--border);cursor:pointer';
+              btn.textContent = line;
+              btn.onclick = () => { input.value = line; hidePanel(); };
+              panel.appendChild(btn);
+            });
+            panel.style.display='block';
+          } catch { hidePanel(); }
+        }, 220);
+      }, { passive:true });
+      input.addEventListener('focus', () => { if (input.value.trim().length >= 3) positionPanel(input); }, { passive:true });
+      input.addEventListener('blur',  () => setTimeout(hidePanel, 150));
+    }
+    function bindAllTransportInputs() {
+      bindAddrInput($('tiPickup')); bindAddrInput($('tiDestination'));
+      document.querySelectorAll('#tiModal .tiStopInput').forEach(bindAddrInput);
+    }
+    // Initial bias and bindings
+    initBias(); bindAllTransportInputs();
+    // Rebind when transport modal changes
+    const tiModal = $('tiModal');
+    if (tiModal) new MutationObserver(bindAllTransportInputs).observe(tiModal, { childList:true, subtree:true });
+    // Close suggestions when clicking elsewhere
+    document.addEventListener('click', (e)=>{ if (!panel.contains(e.target) && e.target !== activeInput) hidePanel(); }, { passive:true });
+  })();
+
+  // Ensure buttons are type=button
+  window.addEventListener('DOMContentLoaded', () => {
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn','tiStart'].forEach(id => { const b=$(id); if (b) b.setAttribute('type','button'); });
+    renderCartSafe();
+  });
+})();
+</script>
 </body>
 </html>
