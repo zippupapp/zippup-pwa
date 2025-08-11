@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <meta charset="utf-8"/>
@@ -1980,6 +1980,232 @@
   window.addEventListener('DOMContentLoaded', ()=>{
     ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn','tiStart','authSignIn','authSignUp','authGoogle'].forEach(id=>{ const b=$(id); if (b) b.setAttribute('type','button'); });
     window.renderCart(); window.updateCartCount();
+  });
+})();
+</script>
+  <script>
+// ZippUp: effective cancel + auth gate + cart/checkout reliable
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // ========= CART + CHECKOUT (reliable) =========
+  if (!window.cart) { try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); } catch { window.cart = { items: [] }; } }
+  const saveCart = () => localStorage.setItem('mp_cart', JSON.stringify(window.cart));
+  const updateCartCount = () => {
+    const n = window.cart.items.reduce((a,b)=>a+b.qty,0);
+    const hb = $('headerCartBadge'), cc = $('cartCount'); if (hb) hb.textContent = String(n); if (cc) cc.textContent = String(n);
+  };
+  const renderCart = () => {
+    const list=$('cartList'), totalEl=$('cartTotal'); if (!list||!totalEl) return;
+    list.innerHTML=''; if (!window.cart.items.length){ list.innerHTML='<div class="small muted">Your cart is empty.</div>'; totalEl.textContent='0.00'; updateCartCount(); return; }
+    let total=0;
+    window.cart.items.forEach(item=>{
+      total+=Number(item.price)*item.qty;
+      const row=document.createElement('div'); row.className='card'; row.dataset.id=item.id;
+      row.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="row"><img src="${item.img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
+        <div style="margin-left:8px"><strong>${item.title}</strong><div class="small muted">$${Number(item.price).toFixed(2)}</div></div></div>
+        <div class="qty"><button class="btn ghost" data-k="dec" type="button">−</button><div>${item.qty}</div><button class="btn ghost" data-k="inc" type="button">＋</button><button class="btn ghost" data-k="rm" type="button">✖</button></div></div>`;
+      list.appendChild(row);
+    });
+    totalEl.textContent=total.toFixed(2); updateCartCount();
+  };
+  // Sticky checkout row
+  (function stickyCheckout(){
+    const body = document.querySelector('#cartModal .sheet .body'); if (!body) return;
+    body.style.maxHeight='70vh'; body.style.overflow='auto';
+    const row = document.querySelector('#cartModal .sheet .body #checkoutBtn')?.closest('.row');
+    if (row) { row.style.position='sticky'; row.style.bottom='0'; row.style.background='#fff'; row.style.paddingTop='10px'; row.style.borderTop='1px solid var(--border)'; }
+  })();
+  // Edit (+/−/remove)
+  function onCartEdit(e){
+    const btn=e.target.closest('#cartList [data-k]'); if(!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    const id=btn.closest('.card')?.dataset?.id; if(!id) return;
+    const i=window.cart.items.findIndex(x=>x.id===id); if(i<0) return;
+    const k=btn.getAttribute('data-k');
+    if(k==='dec') window.cart.items[i].qty=Math.max(1,window.cart.items[i].qty-1);
+    if(k==='inc') window.cart.items[i].qty=window.cart.items[i].qty+1;
+    if(k==='rm')  window.cart.items.splice(i,1);
+    saveCart(); renderCart(); updateCartCount();
+  }
+  document.addEventListener('click', onCartEdit, { passive:false });
+  // Checkout submit
+  async function placeOrder() {
+    const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+    const name=$('chkName')?.value?.trim(), phone=$('chkPhone')?.value?.trim(), address=$('chkAddress')?.value?.trim();
+    const unit=($('chkUnit')?.value||'').trim(), notes=($('chkNotes')?.value||'').trim();
+    if (!$('chkTerms')?.checked) return alert('Please accept the Terms');
+    if (!address) return alert('Enter delivery address');
+    if (!name||!phone) return alert('Enter name and phone');
+    if (!window.cart.items.length) return alert('Cart is empty');
+    const payload = { items: window.cart.items.map(i=>({id:i.id,title:i.title,qty:i.qty,price:i.price})), name, phone, address, unit, notes };
+    try {
+      if (method==='card') {
+        const r=await fetch(`${(window.BASE_API||'')}/api/payments/checkout-session`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({...payload,successUrl:location.origin+'/?checkout=success',cancelUrl:location.origin+'/?checkout=cancel'})});
+        const d=await r.json().catch(()=>({}));
+        if (d?.url) { window.cart.items=[]; saveCart(); updateCartCount(); location.href=d.url; return; }
+        if ((d?.id||d?.sessionId) && window.Stripe && window.STRIPE_PK) {
+          const stripe=window.Stripe(window.STRIPE_PK); window.cart.items=[]; saveCart(); updateCartCount();
+          await stripe.redirectToCheckout({sessionId:d.id||d.sessionId}); return;
+        }
+        alert('Payment session error. Try Cash.');
+      } else {
+        let orderId='demo-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
+        try{
+          const r2=await fetch(`${(window.BASE_API||'')}/api/marketplace/orders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,paymentMethod:'cash'})});
+          const d2=await r2.json().catch(()=>({})); orderId=d2.orderId||orderId; code=d2.deliveryCode||code;
+        }catch{}
+        $('checkoutModal')?.classList.remove('open');
+        if (typeof window.showOrderStatus==='function') window.showOrderStatus(orderId, code, 'cash');
+        window.cart.items=[]; saveCart(); updateCartCount();
+      }
+    } catch { alert('Checkout error. Try again.'); }
+  }
+  $('placeOrderBtn') && ($('placeOrderBtn').onclick = (e)=>{ e.preventDefault(); placeOrder(); });
+
+  // ========= CANCEL: actually close, clear, and navigate =========
+  const ACTIVE_KEY='zup_active_by_service';
+  const getActiveMap=()=>{ try{return JSON.parse(localStorage.getItem(ACTIVE_KEY)||'{}')}catch{return{}} };
+  const setActive=(cat,obj)=>{ const m=getActiveMap(); if(obj) m[cat]=obj; else delete m[cat]; localStorage.setItem(ACTIVE_KEY,JSON.stringify(m)); };
+  function closeCancelDialogs() {
+    $('cancelReasonsModal')?.classList.remove('open');
+    $('instantModal')?.classList.remove('open');
+    $('trackModal')?.classList.remove('open');
+  }
+  async function doCancel(category, reason) {
+    try { if (window.requestId) await fetch(`${(window.BASE_API||'')}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`, { method:'DELETE' }); } catch {}
+    setActive(category, null);
+    closeCancelDialogs();
+    // Return to Home or same service listings
+    try {
+      if (category && typeof openCategory==='function') {
+        showPage('home'); setTimeout(()=>{ openCategory(category[0]?category:category,''); }, 50);
+      } else { showPage('home'); }
+    } catch { showPage('home'); }
+  }
+  // Wire Cancel dialog buttons (auto-close)
+  (function wireCancelModal(){
+    const modal=$('cancelReasonsModal'); if (!modal) return;
+    $('crClose') && ($('crClose').onclick=()=> closeCancelDialogs());
+    $('crBack')  && ($('crBack').onclick =()=> closeCancelDialogs());
+    $('crConfirm') && ($('crConfirm').onclick=async ()=>{
+      const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other';
+      const other=document.getElementById('crOther')?.value?.trim();
+      const reason=picked==='Other' ? (other||'Other') : picked;
+      await doCancel((window.lastCategory||'general'), reason);
+    });
+  })();
+
+  // ========= Re-click same service with pending -> open tracking now =========
+  const _openCategory=window.openCategory;
+  if (typeof _openCategory==='function') {
+    window.openCategory=function wrapped(catId,label){
+      const act=getActiveMap()[catId];
+      if (act?.id) {
+        $('instantModal')?.classList.remove('open');
+        $('trackModal')?.classList.add('open');
+        const tHead=document.querySelector('#trackModal .head');
+        if (tHead && !document.getElementById('trackCancelBtn')) {
+          const btn=document.createElement('button'); btn.id='trackCancelBtn'; btn.className='btn ghost'; btn.type='button'; btn.textContent='Cancel';
+          btn.onclick=()=>{ $('cancelReasonsModal')?.classList.add('open'); };
+          tHead.appendChild(btn);
+        }
+        return;
+      }
+      return _openCategory.apply(this,arguments);
+    };
+  }
+
+  // ========= AUTH GATE (Supabase email/pw + Google) =========
+  const SUPABASE_URL  = 'https://xxrtlkyqjqdhkenpkwll.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4cnRsa3lxanFkaGtlbnBrd2xsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1OTkyMTEsImV4cCI6MjA3MDE3NTIxMX0.LKBzuOIjjmgoYAjMPHtJ3KkYaNC3A42nh4CHy8aKUp4';
+  let supa=null, currentUser=null;
+
+  function ensureAuthUI(){
+    if (document.getElementById('authGate')) return;
+    const g=document.createElement('div');
+    g.id='authGate';
+    g.style.cssText='position:fixed;inset:0;background:#fff;z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+    g.innerHTML=`
+      <div style="width:100%;max-width:420px;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:16px;background:#fff">
+        <div class="list">
+          <div style="text-align:center;font-weight:800;font-size:20px">ZippUp</div>
+          <div class="field"><label class="small">Email</label><input id="lgEmail" type="email" /></div>
+          <div class="field"><label class="small">Password</label><input id="lgPassword" type="password" /></div>
+          <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:center">
+            <button class="btn primary" id="lgSignIn" type="button">Sign in</button>
+            <button class="btn ghost" id="lgSignUp" type="button">Sign up</button>
+            <button class="btn ghost" id="lgGoogle" type="button">Google</button>
+          </div>
+          <div class="small" style="text-align:center;margin-top:8px">
+            Forgot password? <a href="#" id="lgReset">Reset</a>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(g);
+  }
+  function supaInit(){
+    if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON) return false;
+    supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    return true;
+  }
+  async function syncUser(){
+    if (!supa) return;
+    const { data:{ session } } = await supa.auth.getSession();
+    currentUser = session?.user || null;
+    const name = currentUser?.user_metadata?.full_name || currentUser?.email || (window.user?.name||'Guest');
+    if (window.user) window.user.name = name;
+    $('userName') && ( $('userName').textContent=name );
+    $('profName') && ( $('profName').textContent=name );
+    if (currentUser) document.getElementById('authGate')?.remove();
+  }
+  async function requireAuthOnLoad(){
+    ensureAuthUI();
+    if (!supaInit()) return; // if not configured, skip gate
+    await syncUser();
+    if (!currentUser) document.getElementById('authGate').style.display='flex';
+    $('lgSignIn')  && ($('lgSignIn').onclick  = async ()=>{
+      const email=$('lgEmail').value.trim(), pw=$('lgPassword').value.trim();
+      if(!email||!pw) return alert('Enter email / password');
+      const { error } = await supa.auth.signInWithPassword({ email, password:pw });
+      if (error) return alert(error.message);
+      await syncUser(); showPage('home');
+    });
+    $('lgSignUp')  && ($('lgSignUp').onclick  = async ()=>{
+      const email=$('lgEmail').value.trim(), pw=$('lgPassword').value.trim();
+      if(!email||!pw) return alert('Enter email / password');
+      const { error } = await supa.auth.signUp({ email, password:pw, options:{ data:{ full_name: email.split('@')[0] } } });
+      if (error) return alert(error.message);
+      alert('Check your email to confirm.'); await syncUser(); showPage('home');
+    });
+    $('lgGoogle')  && ($('lgGoogle').onclick  = async ()=>{
+      const { error } = await supa.auth.signInWithOAuth({ provider:'google' });
+      if (error) alert(error.message);
+    });
+    $('lgReset')   && ($('lgReset').onclick   = async (e)=>{
+      e.preventDefault();
+      const email=$('lgEmail').value.trim(); if(!email) return alert('Enter your email');
+      const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/' });
+      if (error) return alert(error.message);
+      alert('Password reset email sent');
+    });
+    // force gate if nav clicked while logged out
+    document.querySelectorAll('.nav button,[id^="menu"]').forEach(b=>{
+      b.addEventListener('click',(e)=>{ if (!currentUser){ e.preventDefault(); ensureAuthUI(); document.getElementById('authGate').style.display='flex'; }},{capture:true});
+    });
+    // logout
+    $('menuLogout') && ($('menuLogout').onclick= async ()=>{ await supa.auth.signOut(); currentUser=null; ensureAuthUI(); document.getElementById('authGate').style.display='flex'; });
+  }
+
+  // Run
+  window.addEventListener('DOMContentLoaded', ()=>{
+    renderCart(); updateCartCount();
+    requireAuthOnLoad();
+    // Close booking modal [X]
+    $('closeBooking') && ($('closeBooking').onclick=()=> $('bookingModal')?.classList.remove('open'));
   });
 })();
 </script>
