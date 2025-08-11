@@ -1802,5 +1802,82 @@
   });
 })();
 </script>
+  <script>
+// Fast Transport/Food + Cart edit/checkout (mobile-safe)
+(function(){
+  const $ = (id)=>document.getElementById(id);
+
+  // Fast activate Transport/Food (capture so it wins on mobile)
+  function openByLabel(label){
+    const t=(label||'').toLowerCase();
+    if (t.includes('transport')) { try{openCategory('transport','Transport')}catch{}; return true; }
+    if (t.includes('food'))      { try{openCategory('food','Food')}catch{};      return true; }
+    return false;
+  }
+  function svcTap(e){
+    const card=e.target.closest('.card.service'); if(!card) return;
+    const title=card.querySelector('h4')?.textContent||'';
+    if (openByLabel(title)) { e.preventDefault(); e.stopPropagation(); }
+  }
+  ['pointerup','click','touchend'].forEach(ev=>{
+    document.addEventListener(ev, svcTap, {capture:true, passive:false});
+  });
+
+  // Cart open (header + bottom) -> same modal
+  function openCart(){
+    try{showPage('marketplace')}catch{}
+    try{window.renderCart&&window.renderCart()}catch{}
+    $('cartModal')?.classList.add('open');
+  }
+  function bindTap(el, fn){
+    if(!el) return;
+    const h=(e)=>{ e.preventDefault(); e.stopPropagation(); fn(e); };
+    el.addEventListener('pointerup',h,{passive:false}); el.addEventListener('click',h,{passive:false}); el.addEventListener('touchend',h,{passive:false});
+  }
+  bindTap($('cartBtn'),openCart);
+  bindTap($('openCartBtn'),openCart);
+  bindTap($('closeCart'),()=>$('cartModal')?.classList.remove('open'));
+
+  // Checkout from cart
+  bindTap($('checkoutBtn'),()=>{ $('cartModal')?.classList.remove('open'); $('checkoutModal')?.classList.add('open'); });
+
+  // Cart edit (+ / − / remove) delegated
+  function readCart(){ try{return window.cart&&Array.isArray(window.cart.items)?window.cart:JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}')}catch{return{items:[]}} }
+  function writeCart(c){ if(window.cart) window.cart.items=c.items; localStorage.setItem('mp_cart',JSON.stringify(c)); }
+  function updateBadges(c){ const n=c.items.reduce((a,b)=>a+b.qty,0); const hb=$('headerCartBadge'); const cc=$('cartCount'); if(hb) hb.textContent=String(n); if(cc) cc.textContent=String(n); }
+  function rerenderCart(c){
+    const list=$('cartList'), tot=$('cartTotal'); if(!list||!tot) return;
+    list.innerHTML=''; if(!c.items.length){ list.innerHTML='<div class="small muted">Your cart is empty.</div>'; tot.textContent='0.00'; updateBadges(c); return; }
+    let sum=0;
+    c.items.forEach(it=>{
+      sum+=it.price*it.qty;
+      const row=document.createElement('div'); row.className='card'; row.dataset.id=it.id;
+      row.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="row"><img src="${it.img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/><div style="margin-left:8px"><strong>${it.title}</strong><div class="small muted">$${it.price.toFixed(2)}</div></div></div>
+        <div class="qty"><button class="btn ghost" data-k="dec" type="button">−</button><div data-q>${it.qty}</div><button class="btn ghost" data-k="inc" type="button">＋</button><button class="btn ghost" data-k="rm" type="button">✖</button></div>
+      </div>`;
+      list.appendChild(row);
+    });
+    tot.textContent=sum.toFixed(2); updateBadges(c);
+  }
+  function editCart(e){
+    const btn=e.target.closest('#cartList [data-k]'); if(!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    const row=btn.closest('.card'); const id=row?.dataset?.id; if(!id) return;
+    const c=readCart(); const i=c.items.findIndex(x=>x.id===id); if(i<0) return;
+    const k=btn.getAttribute('data-k');
+    if(k==='dec') c.items[i].qty=Math.max(1,c.items[i].qty-1);
+    if(k==='inc') c.items[i].qty=c.items[i].qty+1;
+    if(k==='rm')  c.items.splice(i,1);
+    writeCart(c); rerenderCart(c);
+  }
+  document.addEventListener('pointerup',editCart,{passive:false});
+  document.addEventListener('click',editCart,{passive:false});
+  document.addEventListener('touchend',editCart,{passive:false});
+
+  // Make key buttons not submit forms (mobile quirk)
+  window.addEventListener('DOMContentLoaded',()=>['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id=>{const b=$(id); if(b) b.setAttribute('type','button');}));
+})();
+</script>
 </body>
 </html>
