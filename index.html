@@ -2515,7 +2515,7 @@
     // If there’s an old big “ZippUp” heading inside the card, replace it with tagline
     const big = Array.from(gate.querySelectorAll('div, h1, h2'))
       .find(el => el.textContent.trim() === 'ZippUp' && el.style && (el.style.fontWeight === '800' || el.style.fontSize));
-    if (big) big.textContent = 'ZippUp Your Game my Friend!';
+    if (big) big.textContent = 'ZippUp Your Game!.';
 
     return true;
   }
