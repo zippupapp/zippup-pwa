@@ -2688,6 +2688,176 @@
   };
 })();
 </script>
+      <script>
+// Reliable Supabase auth gate with working buttons and visible errors
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // Helpers
+  function setBusy(btn, on, label) {
+    if (!btn) return;
+    btn.disabled = !!on;
+    btn.classList.toggle('loading', !!on);
+    if (on) {
+      btn.dataset._t = btn.textContent;
+      btn.textContent = label || 'Please wait…';
+    } else if (btn.dataset._t) {
+      btn.textContent = btn.dataset._t;
+      delete btn.dataset._t;
+    }
+  }
+  function showErr(msg) {
+    let el = $('authError');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'authError';
+      el.style.cssText = 'color:#DC2626;font-size:13px;margin-top:8px;text-align:center';
+      const card = $('authGate')?.querySelector('.list') || $('authGate');
+      card && card.appendChild(el);
+    }
+    el.textContent = msg || '';
+  }
+  function addCSSOnce() {
+    if ($('authBtnCSS')) return;
+    const s = document.createElement('style');
+    s.id = 'authBtnCSS';
+    s.textContent = `
+      #authGate .btn{min-width:120px;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;transition:transform .08s ease,filter .12s ease}
+      #authGate .btn.primary{background:#2563EB;color:#fff}
+      #authGate .btn.primary:active{background:#1D4ED8}
+      #authGate .btn.ghost{background:#F3F4F6}
+      #authGate .btn.ghost:active{background:#E5E7EB}
+      #authGate .btn:active{transform:scale(.98)}
+      #authGate .btn.loading{opacity:.75;pointer-events:none;position:relative}
+      #authGate .btn.loading:after{content:'';width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;position:absolute;right:10px;top:50%;transform:translateY(-50%);animation:spin .8s linear infinite}
+      @keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
+    `;
+    document.head.appendChild(s);
+  }
+
+  // Build gate UI if missing
+  function ensureGate() {
+    if ($('authGate')) return $('authGate');
+    const g = document.createElement('div');
+    g.id = 'authGate';
+    g.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+    g.innerHTML = `
+      <div style="width:100%;max-width:420px;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:16px;background:#fff">
+        <div class="list" style="display:flex;flex-direction:column;gap:10px">
+          <div id="authLogoWrap" style="text-align:center;margin-bottom:6px">
+            <img src="/icons/icon-192.png" onerror="this.onerror=null;this.src='/icons/favicon.svg'" alt="ZippUp" width="72" height="72" style="border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.12)"/>
+            <div style="color:#475569;font-size:14px;margin-top:6px">Your one‑stop on‑demand services.</div>
+          </div>
+          <div class="field"><label class="small">Email</label><input id="lgEmail" type="email"/></div>
+          <div class="field"><label class="small">Password</label><input id="lgPassword" type="password"/></div>
+          <div id="authError"></div>
+          <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+            <button class="btn primary" id="lgSignIn" type="button">Sign in</button>
+            <button class="btn ghost" id="lgSignUp" type="button">Sign up</button>
+            <button class="btn ghost" id="lgGoogle" type="button">Google</button>
+          </div>
+          <div class="small" style="text-align:center;margin-top:8px">
+            Forgot password? <a href="#" id="lgReset">Reset</a>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(g);
+    return g;
+  }
+
+  async function runAuth() {
+    addCSSOnce();
+    const gate = ensureGate();
+
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON) {
+      showErr('Supabase keys not set. Set window.SUPABASE_URL and window.SUPABASE_ANON in <head>.');
+      return;
+    }
+    if (!window.supabase) {
+      showErr('Supabase SDK missing. Add <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script> in <head>.');
+      return;
+    }
+
+    const supa = window.supabase.createClient(window.https://xxrtlkyqjqdhkenpkwll.supabase.co, window.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4cnRsa3lxanFkaGtlbnBrd2xsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1OTkyMTEsImV4cCI6MjA3MDE3NTIxMX0.LKBzuOIjjmgoYAjMPHtJ3KkYaNC3A42nh4CHy8aKUp4);
+    const LIVE_REDIRECT = location.origin;
+
+    async function syncUser() {
+      const { data:{ session }, error } = await supa.auth.getSession();
+      if (error) { showErr(error.message); return null; }
+      const user = session?.user || null;
+      const name = user?.user_metadata?.full_name || user?.email || 'Guest';
+      const u=$('userName'), p=$('profName'); if (u) u.textContent=name; if (p) p.textContent=name;
+      if (user) gate.remove();
+      return user;
+    }
+
+    // Wire buttons once
+    const signIn=$('lgSignIn'), signUp=$('lgSignUp'), google=$('lgGoogle'), reset=$('lgReset');
+    if (signIn && !signIn.dataset.bound) {
+      signIn.dataset.bound='1';
+      signIn.onclick = async ()=>{
+        showErr('');
+        const email=$('lgEmail').value.trim(), pw=$('lgPassword').value.trim();
+        if (!email||!pw) return showErr('Enter email and password');
+        setBusy(signIn,true,'Signing in…');
+        const { error } = await supa.auth.signInWithPassword({ email, password:pw });
+        setBusy(signIn,false);
+        if (error) return showErr(error.message);
+        await syncUser(); try { showPage('home'); } catch {}
+      };
+    }
+    if (signUp && !signUp.dataset.bound) {
+      signUp.dataset.bound='1';
+      signUp.onclick = async ()=>{
+        showErr('');
+        const email=$('lgEmail').value.trim(), pw=$('lgPassword').value.trim();
+        if (!email||!pw) return showErr('Enter email and password');
+        setBusy(signUp,true,'Creating…');
+        const { error } = await supa.auth.signUp({
+          email, password:pw,
+          options:{ data:{ full_name: email.split('@')[0] }, emailRedirectTo: LIVE_REDIRECT }
+        });
+        setBusy(signUp,false);
+        if (error) return showErr(error.message);
+        showErr('Check your email to confirm, then return to the app.');
+      };
+    }
+    if (google && !google.dataset.bound) {
+      google.dataset.bound='1';
+      google.onclick = async ()=>{
+        showErr(''); setBusy(google,true,'Opening…');
+        const { error } = await supa.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: LIVE_REDIRECT } });
+        setBusy(google,false);
+        if (error) return showErr(error.message);
+      };
+    }
+    if (reset && !reset.dataset.bound) {
+      reset.dataset.bound='1';
+      reset.onclick = async (e)=>{
+        e.preventDefault(); showErr('');
+        const email=$('lgEmail').value.trim(); if (!email) return showErr('Enter your email');
+        setBusy(reset,true,'Sending…');
+        const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: LIVE_REDIRECT });
+        setBusy(reset,false);
+        if (error) return showErr(error.message);
+        showErr('Password reset email sent');
+      };
+    }
+
+    // Auto update on sign-in via email link / OAuth
+    supa.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_IN') { await syncUser(); try { showPage('home'); } catch {} }
+    });
+
+    // Force auth if not logged in
+    const user = await syncUser();
+    if (!user) gate.style.display='flex';
+  }
+
+  // Start
+  window.addEventListener('DOMContentLoaded', runAuth);
+})();
+</script>
 </body>
   <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
   <svg width="160" height="160" viewBox="0 0 256 256" aria-hidden="true">
