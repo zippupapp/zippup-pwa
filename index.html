@@ -1315,5 +1315,268 @@
   // Enable billing + Maps JavaScript API + Places API; add your site domain as an allowed referrer on the key.
 })();
 </script>
+  <script>
+// ZippUp combined hotfix: checkout sticky + cart edit + fast Transport/Food + search suggestions + fallback address suggestions
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // 0) Sticky checkout row (cart modal) + scroll body
+  (function makeCheckoutSticky() {
+    const body = document.querySelector('#cartModal .sheet .body');
+    if (!body) return;
+    body.style.maxHeight = '70vh';
+    body.style.overflow = 'auto';
+    const row = document.querySelector('#cartModal .sheet .body #checkoutBtn')?.closest('.row');
+    if (row) {
+      row.style.position = 'sticky';
+      row.style.bottom = '0';
+      row.style.background = '#fff';
+      row.style.paddingTop = '10px';
+      row.style.borderTop = '1px solid var(--border)';
+    }
+  })();
+
+  // 1) Cart edit (+/−/✖) via delegation, non-destructive
+  function readCart() {
+    try { return (window.cart && Array.isArray(window.cart.items)) ? window.cart : JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); }
+    catch { return { items: [] }; }
+  }
+  function writeCart(c) {
+    if (window.cart) window.cart.items = c.items;
+    localStorage.setItem('mp_cart', JSON.stringify(c));
+  }
+  function updateCounts(c) {
+    const n = c.items.reduce((a,b)=>a+b.qty,0);
+    const hb = $('headerCartBadge'), cc = $('cartCount');
+    if (hb) hb.textContent = String(n);
+    if (cc) cc.textContent = String(n);
+  }
+  function renderCartSafe() {
+    try { window.renderCart && window.renderCart(); } catch {}
+    updateCounts(readCart());
+  }
+  function editCartHandler(e) {
+    const btn = e.target.closest('#cartList [data-k]');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+
+    const row = btn.closest('.card');
+    const id  = row?.dataset?.id;
+    if (!id) return;
+
+    const c = readCart();
+    const i = c.items.findIndex(x => x.id === id);
+    if (i < 0) return;
+
+    const k = btn.getAttribute('data-k');
+    if (k === 'dec') c.items[i].qty = Math.max(1, c.items[i].qty - 1);
+    if (k === 'inc') c.items[i].qty = c.items[i].qty + 1;
+    if (k === 'rm')  c.items.splice(i, 1);
+
+    writeCart(c);
+    renderCartSafe();
+  }
+  document.addEventListener('click', editCartHandler, { passive:false });
+  document.addEventListener('touchend', editCartHandler, { passive:false });
+
+  // 2) Ensure both cart buttons open the same modal, checkout opens reliably
+  function openCartModal() {
+    try { showPage('marketplace'); } catch {}
+    renderCartSafe();
+    const m = $('cartModal'); if (m) m.classList.add('open');
+  }
+  function bindTap(el, fn){
+    if (!el) return;
+    const h=(e)=>{ e.preventDefault(); e.stopPropagation(); fn(e); };
+    el.addEventListener('click', h, { passive:false });
+    el.addEventListener('touchend', h, { passive:false });
+  }
+  bindTap($('cartBtn'), openCartModal);
+  bindTap($('openCartBtn'), openCartModal);
+  bindTap($('closeCart'), ()=> $('cartModal')?.classList.remove('open'));
+  bindTap($('checkoutBtn'), ()=> { $('cartModal')?.classList.remove('open'); $('checkoutModal')?.classList.add('open'); });
+
+  // 3) Fast-activate Transport/Food on first tap (does not change your handlers)
+  function openByLabel(text) {
+    const t = (text||'').toLowerCase();
+    if (t.includes('transport')) { try { openCategory('transport','Transport'); } catch {} return true; }
+    if (t.includes('food'))      { try { openCategory('food','Food'); }         catch {} return true; }
+    return false;
+  }
+  function svcTap(e){
+    const card = e.target.closest('.card.service'); if (!card) return;
+    const h4 = card.querySelector('h4'); if (!h4) return;
+    if (openByLabel(h4.textContent)) { e.preventDefault(); e.stopPropagation(); }
+  }
+  document.addEventListener('click', svcTap, { capture:true, passive:false });
+  document.addEventListener('touchend', svcTap, { capture:true, passive:false });
+
+  // 4) Search suggestions + redirect (AI-like)
+  (function wireSearch() {
+    const input = $('search');
+    const btn   = $('searchBtn');
+    if (!input || !btn) return;
+
+    let panel = document.getElementById('zupSuggest');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = 'zupSuggest';
+      panel.style.cssText = 'position:fixed;left:16px;right:16px;top:86px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);z-index:60;display:none;max-height:260px;overflow:auto';
+      document.body.appendChild(panel);
+    }
+    const MAP = {
+      transport: /(transport|ride|taxi|cab|uber|bolt|truck|backie|moving|load)/i,
+      fastfood:  /(food|pizza|burger|fries|chicken|kfc|shawarma|drinks|meal)/i,
+      grocery:   /(grocery|market|milk|bread|eggs|rice|fruit|vegetable|veggies|water)/i,
+      emergency: /(ambulance|medical|fire|towing|tow|security|police|roadside|flat|jumpstart|fuel|lockout)/i,
+      home:      /(clean|garden|painting|plumber|electrician|home service)/i,
+      tech:      /(phone|computer|laptop|tv|repair|software|tech)/i,
+      auto:      /(mechanic|tire|tyre|battery|car wash|auto)/i,
+      construct: /(builder|carpenter|construction)/i,
+      others:    /(event|tutor|legal|photo|photography|other)/i
+    };
+    function hide(){ panel.style.display='none'; panel.innerHTML=''; }
+    function navigate(term) {
+      const q = (term || input.value || '').trim().toLowerCase();
+      if (!q) return;
+      if (MAP.transport.test(q)) { try { openCategory('transport','Transport'); } catch {} return hide(); }
+      if (MAP.fastfood.test(q))  { try { openItemsModal('fastfood'); }           catch {} return hide(); }
+      if (MAP.grocery.test(q))   { try { openItemsModal('grocery'); }            catch {} return hide(); }
+      if (MAP.emergency.test(q)) {
+        if (/ambulance|medical/.test(q)) { try { openEmergency('ambulance','Ambulance'); } catch {} }
+        else if (/fire/.test(q))         { try { openEmergency('fire','Fire Service'); }   catch {} }
+        else if (/towing|tow/.test(q))   { try { openEmergency('towing','Towing'); }       catch {} }
+        else                             { try { openEmergency('security','Security'); }   catch {} }
+        return hide();
+      }
+      if (MAP.home.test(q))      { try { openItemsModal('home'); }        catch {} return hide(); }
+      if (MAP.tech.test(q))      { try { openItemsModal('tech'); }        catch {} return hide(); }
+      if (MAP.auto.test(q))      { try { openItemsModal('auto'); }        catch {} return hide(); }
+      if (MAP.construct.test(q)) { try { openItemsModal('construction'); }catch {} return hide(); }
+      if (MAP.others.test(q))    { try { openItemsModal('others'); }      catch {} return hide(); }
+      try {
+        document.getElementById('providersTitle').textContent = q + ' — Providers';
+        fetchProviders('search', q).then(renderProviders);
+        document.getElementById('providersModal').classList.add('open');
+      } catch {}
+      hide();
+    }
+    let t = 0;
+    function suggest() {
+      clearTimeout(t);
+      const q = input.value.trim();
+      if (!q) return hide();
+      t = setTimeout(async () => {
+        panel.innerHTML=''; panel.style.display='block';
+        let items = [];
+        try {
+          const r = await fetch(`${(window.BASE_API||'')}/api/search/suggestions?q=${encodeURIComponent(q)}`);
+          const d = await r.json().catch(()=>({}));
+          items = Array.isArray(d?.suggestions) ? d.suggestions.slice(0,8) : [];
+        } catch {}
+        if (!items.length) {
+          const seed = ['Transport','Ride','Truck / Backie','Fast Food','Groceries','Plumber','Electrician','Mechanic','Security','Towing'];
+          items = seed.filter(s=>s.toLowerCase().includes(q.toLowerCase())).slice(0,8);
+          if (!items.length) items = seed.slice(0,6);
+        }
+        items.forEach(text=>{
+          const row=document.createElement('button');
+          row.type='button';
+          row.style.cssText='display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:#fff;border-bottom:1px solid var(--border);cursor:pointer';
+          row.textContent=text;
+          row.onclick=()=>{ input.value=text; navigate(text); };
+          panel.appendChild(row);
+        });
+        const more=document.createElement('button');
+        more.type='button';
+        more.style.cssText='display:block;width:100%;text-align:center;padding:10px 12px;border:0;background:#F3F4F6;cursor:pointer;font-weight:600';
+        more.textContent='Search';
+        more.onclick=()=>navigate(q);
+        panel.appendChild(more);
+      }, 180);
+    }
+    input.addEventListener('input', suggest, { passive:true });
+    input.addEventListener('focus', suggest, { passive:true });
+    input.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); navigate(); }});
+    document.addEventListener('click',(e)=>{ if(!panel.contains(e.target) && e.target!==input) hide(); },{passive:true});
+    btn.onclick = ()=>navigate();
+  })();
+
+  // 5) Fallback address suggestions (Pickup/Destination/Stops) without Google Maps
+  (function wireAddressFallback() {
+    // Create one floating suggestion panel
+    const panel = document.createElement('div');
+    panel.id = 'addrSuggest';
+    panel.style.cssText = 'position:fixed;max-height:240px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);z-index:70;display:none';
+    document.body.appendChild(panel);
+
+    let activeInput = null, debounce = 0;
+
+    function positionPanel(input) {
+      const r = input.getBoundingClientRect();
+      panel.style.left   = Math.round(r.left) + 'px';
+      panel.style.top    = Math.round(r.bottom + 6) + 'px';
+      panel.style.width  = Math.round(r.width) + 'px';
+    }
+    function hidePanel(){ panel.style.display='none'; panel.innerHTML=''; activeInput=null; }
+
+    async function queryAddresses(q) {
+      // Nominatim fallback (no key). Respect rate-limits, keep it short.
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=' + encodeURIComponent(q);
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
+      return await res.json().catch(()=>[]);
+    }
+    function bindInput(input) {
+      if (!input || input.dataset.addrBound === '1') return;
+      input.dataset.addrBound = '1';
+      input.setAttribute('autocomplete','off');
+      input.addEventListener('input', () => {
+        clearTimeout(debounce);
+        const q = input.value.trim();
+        if (q.length < 3) { hidePanel(); return; }
+        debounce = setTimeout(async () => {
+          try {
+            const items = await queryAddresses(q);
+            if (!items || !items.length) { hidePanel(); return; }
+            activeInput = input;
+            panel.innerHTML=''; positionPanel(input);
+            items.forEach(it=>{
+              const line = it.display_name || [it.name, it.address && (it.address.city || it.address.town || it.address.village), it.address && it.address.country].filter(Boolean).join(', ');
+              const btn  = document.createElement('button');
+              btn.type='button';
+              btn.style.cssText='display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:#fff;border-bottom:1px solid var(--border);cursor:pointer';
+              btn.textContent = line;
+              btn.onclick = ()=>{ input.value = line; hidePanel(); };
+              panel.appendChild(btn);
+            });
+            panel.style.display='block';
+          } catch { hidePanel(); }
+        }, 220);
+      }, { passive:true });
+      input.addEventListener('focus', () => { if (input.value.trim().length >= 3) positionPanel(input); }, { passive:true });
+      input.addEventListener('blur', () => setTimeout(hidePanel, 150));
+    }
+
+    function bindAll() {
+      const pickup = document.getElementById('tiPickup');
+      const dest   = document.getElementById('tiDestination');
+      bindInput(pickup); bindInput(dest);
+      document.querySelectorAll('.tiStopInput').forEach(bindInput);
+    }
+    // Initial bind, plus observe dynamically added stop fields
+    bindAll();
+    const observer = new MutationObserver(() => bindAll());
+    observer.observe(document.body, { childList:true, subtree:true });
+    // Close on outside click
+    document.addEventListener('click', (e)=>{ if (!panel.contains(e.target) && e.target !== activeInput) hidePanel(); }, { passive:true });
+  })();
+
+  // 6) Final safety: make critical buttons type=button
+  window.addEventListener('DOMContentLoaded', ()=>{
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id => { const b=$(id); if (b) b.setAttribute('type','button'); });
+    renderCartSafe();
+  });
+})();
+</script>
 </body>
 </html>
