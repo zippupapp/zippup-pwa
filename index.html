@@ -1503,5 +1503,61 @@
       }, 3000);
     }
   </script>
+  <script>
+// Fast-activate Transport/Food and restore Checkout reliably (non-destructive)
+(function () {
+  // 1) Fast tap helpers
+  function onTap(el, handler) {
+    if (!el) return;
+    const h = (e) => { e.preventDefault(); e.stopPropagation(); handler(e); };
+    el.addEventListener('click', h, { passive: false });
+    el.addEventListener('touchend', h, { passive: false });
+  }
+
+  // 2) Make Transport/Food cards open on first tap, even if other handlers failed
+  document.addEventListener('click', (e) => {
+    const card = e.target.closest('.card.service');
+    if (!card) return;
+
+    // Read the visible label on the card
+    const label = (card.querySelector('h4')?.textContent || '').toLowerCase();
+
+    if (label.includes('transport')) {
+      e.preventDefault(); e.stopPropagation();
+      try { openCategory('transport', 'Transport'); } catch {}
+      return;
+    }
+    if (label.includes('food')) {
+      e.preventDefault(); e.stopPropagation();
+      try { openCategory('food', 'Food'); } catch {}
+      return;
+    }
+  }, { passive: false });
+
+  // 3) Header and bottom cart both open Cart modal
+  function $(id){ return document.getElementById(id); }
+  function openCartModal() {
+    try { showPage('marketplace'); } catch {}
+    try { window.renderCart && window.renderCart(); } catch {}
+    $('cartModal')?.classList.add('open');
+  }
+  onTap($('cartBtn'), openCartModal);
+  onTap($('openCartBtn'), openCartModal);
+  onTap($('closeCart'), () => $('cartModal')?.classList.remove('open'));
+
+  // 4) Checkout button in Cart -> open Checkout modal reliably
+  onTap($('checkoutBtn'), () => {
+    $('cartModal')?.classList.remove('open');
+    $('checkoutModal')?.classList.add('open');
+  });
+
+  // 5) Ensure these buttons never act like form submits
+  window.addEventListener('DOMContentLoaded', () => {
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id => {
+      const b = $(id); if (b) b.setAttribute('type','button');
+    });
+  });
+})();
+</script>
 </body>
 </html>
