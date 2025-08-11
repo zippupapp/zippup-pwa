@@ -2209,6 +2209,232 @@
   });
 })();
 </script>
+  <script>
+// Auth + UX + cancel close hotfix
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- UI helpers ----------
+  function setLoading(btn, on, label) {
+    if (!btn) return;
+    btn.disabled = !!on;
+    btn.classList.toggle('loading', !!on);
+    if (on) {
+      btn.dataset._t = btn.textContent;
+      btn.textContent = (label || 'Please wait…');
+    } else if (btn.dataset._t) {
+      btn.textContent = btn.dataset._t;
+      delete btn.dataset._t;
+    }
+  }
+  // Add minimal styles once
+  (function addStyles(){
+    if (document.getElementById('authHotfixCSS')) return;
+    const s=document.createElement('style'); s.id='authHotfixCSS';
+    s.textContent = `
+      .btn.loading { opacity:.6; pointer-events:none; }
+      #authGate .btn { min-width: 110px; }
+      #authGate .btn.primary { background:#2563EB; color:#fff }
+      #authGate .btn.ghost { background:#F3F4F6 }
+      #authGate .btn.primary:active { background:#1D4ED8 }
+      #authGate .btn.ghost:active { background:#E5E7EB }
+    `;
+    document.head.appendChild(s);
+  })();
+
+  // ---------- Cancel modal: actually close and route ----------
+  function closeCancelUI() {
+    document.getElementById('cancelReasonsModal')?.classList.remove('open');
+    document.getElementById('instantModal')?.classList.remove('open');
+    document.getElementById('trackModal')?.classList.remove('open');
+  }
+  async function doCancelAndReturn(reason) {
+    try {
+      if (window.requestId) {
+        await fetch(`${(window.BASE_API||'')}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`, { method:'DELETE' });
+      }
+    } catch {}
+    // Clear active and go Home
+    try {
+      const k='zup_active_by_service'; const m=JSON.parse(localStorage.getItem(k)||'{}');
+      if (window.lastCategory && m[window.lastCategory]) { delete m[window.lastCategory]; localStorage.setItem(k, JSON.stringify(m)); }
+    } catch {}
+    closeCancelUI();
+    try { showPage('home'); } catch {}
+  }
+  (function wireCancelModal(){
+    const modal=$('cancelReasonsModal'); if (!modal) return;
+    const crClose=$('crClose'), crBack=$('crBack'), crConfirm=$('crConfirm');
+    crClose && (crClose.onclick=()=> closeCancelUI());
+    crBack  && (crBack.onclick =()=> closeCancelUI());
+    crConfirm && (crConfirm.onclick = async ()=>{
+      const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other';
+      const other=document.getElementById('crOther')?.value?.trim();
+      const reason=picked==='Other' ? (other||'Other') : picked;
+      await doCancelAndReturn(reason);
+    });
+  })();
+
+  // Booking close button
+  const closeBooking = $('closeBooking');
+  if (closeBooking) closeBooking.onclick = () => $('bookingModal')?.classList.remove('open');
+
+  // ---------- Supabase auth gate ----------
+  const SUPABASE_URL  = 'https://xxrtlkyqjqdhkenpkwll.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4cnRsa3lxanFkaGtlbnBrd2xsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1OTkyMTEsImV4cCI6MjA3MDE3NTIxMX0.LKBzuOIjjmgoYAjMPHtJ3KkYaNC3A42nh4CHy8aKUp4';
+  let supa=null, currentUser=null;
+
+  function ensureAuthUI(){
+    if (document.getElementById('authGate')) return;
+    const g=document.createElement('div');
+    g.id='authGate';
+    g.style.cssText='position:fixed;inset:0;background:#fff;z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+    g.innerHTML=`
+      <div style="width:100%;max-width:420px;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:16px;background:#fff">
+        <div class="list">
+          <div style="text-align:center;font-weight:800;font-size:22px;margin-bottom:8px">ZippUp</div>
+          <div class="field"><label class="small">Email</label><input id="lgEmail" type="email" /></div>
+          <div class="field"><label class="small">Password</label><input id="lgPassword" type="password" /></div>
+          <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px">
+            <button class="btn primary" id="lgSignIn" type="button">Sign in</button>
+            <button class="btn ghost" id="lgSignUp" type="button">Sign up</button>
+            <button class="btn ghost" id="lgGoogle" type="button">Google</button>
+          </div>
+          <div class="small" style="text-align:center;margin-top:10px">
+            Forgot password? <a href="#" id="lgReset">Reset</a>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(g);
+  }
+  function supaInit(){
+    if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON) return false;
+    supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    return true;
+  }
+  async function syncUser(){
+    if (!supa) return;
+    const { data:{ session } } = await supa.auth.getSession();
+    currentUser = session?.user || null;
+    const name = currentUser?.user_metadata?.full_name || currentUser?.email || (window.user?.name||'Guest');
+    if (window.user) window.user.name = name;
+    document.getElementById('userName') && (document.getElementById('userName').textContent=name);
+    document.getElementById('profName') && (document.getElementById('profName').textContent=name);
+    if (currentUser) document.getElementById('authGate')?.remove();
+  }
+  async function requireAuthOnLoad(){
+    ensureAuthUI();
+    if (!supaInit()) return; // If not configured, skip gate
+    // Handle email confirmation redirects (avoid localhost)
+    // Supabase should redirect back to your live domain (set in dashboard). On arrival:
+    supa.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_IN') { await syncUser(); try { showPage('home'); } catch {} }
+    });
+    // For OAuth code in URL (Google), try exchange automatically
+    try {
+      const hashOrSearch = location.hash || location.search;
+      if (hashOrSearch.includes('access_token') || hashOrSearch.includes('code')) {
+        // Supabase v2 auto-handles onAuthStateChange; nothing else needed here
+      }
+    } catch {}
+    await syncUser();
+    if (!currentUser) document.getElementById('authGate').style.display='flex';
+
+    const signInBtn = $('lgSignIn'), signUpBtn=$('lgSignUp'), googleBtn=$('lgGoogle'), resetBtn=$('lgReset');
+    signInBtn && (signInBtn.onclick = async ()=>{
+      const email=$('lgEmail').value.trim(), pw=$('lgPassword').value.trim();
+      if(!email||!pw) return alert('Enter email / password');
+      setLoading(signInBtn,true,'Signing in…');
+      const { error } = await supa.auth.signInWithPassword({ email, password:pw });
+      setLoading(signInBtn,false);
+      if (error) return alert(error.message);
+      await syncUser(); try { showPage('home'); } catch {}
+    });
+    signUpBtn && (signUpBtn.onclick = async ()=>{
+      const email=$('lgEmail').value.trim(), pw=$('lgPassword').value.trim();
+      if(!email||!pw) return alert('Enter email / password');
+      setLoading(signUpBtn,true,'Creating…');
+      const { error } = await supa.auth.signUp({
+        email, password:pw,
+        options:{ data:{ full_name: email.split('@')[0] }, emailRedirectTo: location.origin }
+      });
+      setLoading(signUpBtn,false);
+      if (error) return alert(error.message);
+      alert('Check your email to confirm, then return to the app.');
+    });
+    googleBtn && (googleBtn.onclick = async ()=>{
+      setLoading(googleBtn,true,'Opening…');
+      const { error } = await supa.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.origin } });
+      setLoading(googleBtn,false);
+      if (error) alert(error.message);
+    });
+    resetBtn && (resetBtn.onclick = async (e)=>{
+      e.preventDefault();
+      const email=$('lgEmail').value.trim(); if (!email) return alert('Enter your email');
+      setLoading(resetBtn,true,'Sending…');
+      const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: location.origin });
+      setLoading(resetBtn,false);
+      if (error) return alert(error.message);
+      alert('Password reset email sent');
+    });
+
+    // If user clicks nav while logged out, show gate
+    document.querySelectorAll('.nav button,[id^="menu"]').forEach(b=>{
+      b.addEventListener('click',(e)=>{ if (!currentUser){ e.preventDefault(); ensureAuthUI(); document.getElementById('authGate').style.display='flex'; }},{capture:true});
+    });
+    // Logout opens gate
+    document.getElementById('menuLogout') && (document.getElementById('menuLogout').onclick = async ()=>{
+      setLoading(document.getElementById('menuLogout'), true, 'Signing out…');
+      await supa.auth.signOut(); currentUser=null;
+      setLoading(document.getElementById('menuLogout'), false);
+      ensureAuthUI(); document.getElementById('authGate').style.display='flex';
+    });
+  }
+
+  // Run after DOM ready
+  window.addEventListener('DOMContentLoaded', ()=>{
+    // bind buttons as explicit buttons
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn'].forEach(id=>{ const b=$(id); if (b) b.setAttribute('type','button'); });
+    try { window.renderCart && window.renderCart(); window.updateCartCount && window.updateCartCount(); } catch {}
+    requireAuthOnLoad();
+  });
+})();
+</script>
+  <script>
+// Add ZippUp logo to the auth form (authGate)
+(function addAuthLogo() {
+  function inject() {
+    const gate = document.getElementById('authGate');
+    if (!gate) return false;
+
+    // Avoid duplicates
+    if (gate.querySelector('#authLogoWrap')) return true;
+
+    // Find the inner card/list to prepend the logo into
+    const card = gate.querySelector('[style*="max-width"]') || gate.firstElementChild || gate;
+    const target = card.querySelector('.list') || card;
+
+    const wrap = document.createElement('div');
+    wrap.id = 'authLogoWrap';
+    wrap.style.cssText = 'text-align:center;margin-bottom:12px';
+    wrap.innerHTML = `
+      <img src="/icons/icon-192.png"
+           onerror="this.onerror=null;this.src='/icons/favicon.svg'"
+           alt="ZippUp" width="72" height="72"
+           style="border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.12)"/>
+      <div style="font-weight:800;margin-top:8px;font-size:20px">ZippUp</div>
+    `;
+    target.insertAdjacentElement('afterbegin', wrap);
+    return true;
+  }
+
+  // Try now, or wait until the auth gate is created
+  if (!inject()) {
+    const mo = new MutationObserver(() => { if (inject()) mo.disconnect(); });
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+})();
+</script>
 </body>
   <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
   <svg width="160" height="160" viewBox="0 0 256 256" aria-hidden="true">
