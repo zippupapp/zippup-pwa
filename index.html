@@ -2508,13 +2508,14 @@
     if (wrap && !wrap.querySelector('.tagline')) {
       const t = document.createElement('div');
       t.className = 'tagline';
+      t.textContent = 'Your one‑stop on‑demand services.';
       wrap.appendChild(t);
     }
 
     // If there’s an old big “ZippUp” heading inside the card, replace it with tagline
     const big = Array.from(gate.querySelectorAll('div, h1, h2'))
-      .find(el => el.textContent.trim() === 'ZippUp Your Game my Friend!' && el.style && (el.style.fontWeight === '800' || el.style.fontSize));
-    if (big) big.textContent = 'Your one‑stop on‑demand services';
+      .find(el => el.textContent.trim() === 'ZippUp' && el.style && (el.style.fontWeight === '800' || el.style.fontSize));
+    if (big) big.textContent = 'ZippUp Your Game my Friend!';
 
     return true;
   }
