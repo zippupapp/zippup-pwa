@@ -1932,5 +1932,41 @@
   setTimeout(hide, 1500);
 })();
 </script>
+  <script>
+(function recoverHome(){
+  // 1) Hide/remove splash no matter what
+  try {
+    const s = document.getElementById('splash');
+    if (s) { s.style.opacity = '0'; setTimeout(()=> s && s.remove(), 150); }
+  } catch {}
+
+  // 2) Close anything that could be covering the app
+  try {
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
+    const auth = document.getElementById('authGate'); if (auth) auth.remove();
+  } catch {}
+
+  // 3) Ensure header/nav visible
+  try {
+    const header = document.querySelector('header'); if (header) header.style.display = '';
+    const nav = document.querySelector('.nav'); if (nav) nav.style.display = '';
+  } catch {}
+
+  // 4) Activate Home page explicitly
+  try {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const home = document.getElementById('page-home');
+    if (home) home.classList.add('active');
+  } catch {}
+
+  // 5) Re-run the Home initializers if they exist (safe calls)
+  try { if (typeof initLocation === 'function') initLocation(); } catch {}
+  try { if (typeof renderServices === 'function') renderServices(); } catch {}
+  try { if (typeof renderEmergency === 'function') renderEmergency(); } catch {}
+  try { if (typeof renderRecent === 'function') renderRecent(); } catch {}
+  try { if (typeof renderServicesAll === 'function') renderServicesAll(); } catch {}
+  try { if (typeof renderBookings === 'function') renderBookings(); } catch {}
+})();
+</script>
 </body>
 </html>
