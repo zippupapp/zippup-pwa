@@ -17,10 +17,10 @@ if (!localStorage.getItem('zupHardResetDone')) {
 }
 </script>
 <head>
+<script src="https://js.stripe.com/v3"></script>
 <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://js.stripe.com/v3"></script>
 
   <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -376,6 +376,18 @@ Add this script block once, after your existing scripts (before </body>)
   // Initial sync
   syncBadge();
 })();
+/* Terms modal readability and topmost z-index */
+#termsModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10000; align-items:center; justify-content:center; }
+#termsModal .modal-content { width:100%; max-width:720px; background:#fff; border-radius:16px; overflow:hidden; border:1px solid var(--border); }
+#termsModal .modal-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--border); background:#fff; }
+#termsModal .modal-body { padding:16px; }
+
+/* Ensure buttons aren’t overlapped in checkout; force scroll inside body */
+#checkoutModal .sheet { height:100vh; display:flex; flex-direction:column; }
+#checkoutModal .sheet .body { flex:1; overflow:auto; }
+
+/* Slightly larger Account button */
+#profileBtn { padding:8px 12px; font-size:15px; max-width:170px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 </script>
 }
   </style>
@@ -3720,6 +3732,140 @@ Add this script block once, after your existing scripts (before </body>)
   (function codePrivacyMessage(){
     const q=new URLSearchParams(location.search);
     if (q.get('checkout')==='success') alert("Don't share your delivery code with the seller until your goods are delivered and confirmed.");
+  })();
+})();
+</script>
+  <script>
+(function zupFixes(){
+  const $ = (id)=>document.getElementById(id);
+  const API = (window.BASE_API || 'https://zippup-backend-v3.onrender.com');
+  const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+
+  // Snapshot cart directly from storage to avoid stale window state
+  function getCart(){ try{ return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{return {items:[]}} }
+  function setCart(c){ try{ localStorage.setItem('mp_cart', JSON.stringify(c||{items:[]})); }catch{} }
+  function updateBadges(){
+    try{ const n=getCart().items.reduce((a,b)=>a+(+b.qty||0),0);
+      const h=$('headerCartBadge'); if(h) h.textContent=String(n);
+      const cc=$('cartCount'); if(cc) cc.textContent=String(n);
+      if (typeof window.updateCartCount==='function') window.updateCartCount();
+    }catch{}
+  }
+
+  // Ensure only ONE listener is bound for these actions
+  function bindOnce(el, evt, fn){ if (!el || el.dataset?.bound===evt) return; el.addEventListener(evt, fn); el.dataset.bound = evt; }
+
+  // Terms link next to checkbox + modal wiring (clear/visible)
+  (function wireTerms(){
+    const chk=$('chkTerms'); if (!chk) return;
+    if (!document.getElementById('termsLink')) {
+      const a=document.createElement('a'); a.id='termsLink'; a.href='#'; a.textContent='Read Terms'; a.style.marginLeft='8px';
+      chk.parentElement?.appendChild(a);
+      a.onclick=(e)=>{ e.preventDefault(); const m=$('termsModal'); if(m) m.style.display='flex'; };
+    }
+    $('termsClose')?.addEventListener('click', ()=> $('termsModal').style.display='none');
+    $('termsModal')?.addEventListener('click', (e)=>{ if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
+  })();
+
+  // Replace dropdown "Contact Support" with "Confirm Delivery"
+  (function replaceSupportWithConfirm(){
+    const menu=document.getElementById('dropdown-menu'); if (!menu) return;
+    Array.from(menu.querySelectorAll('.dropdown-item')).forEach(it=>{
+      const txt=(it.textContent||'').trim().toLowerCase();
+      if (txt.includes('contact support')) it.remove();
+    });
+    if (!document.getElementById('confirmDeliveryNav')) {
+      const cd=document.createElement('div'); cd.id='confirmDeliveryNav'; cd.className='dropdown-item';
+      cd.innerHTML='<span>✅</span><span>Confirm Delivery</span>'; menu.appendChild(cd);
+      cd.onclick=()=> { const m=document.getElementById('confirmDeliveryModal'); if (m) m.style.display='flex'; };
+    }
+  })();
+
+  // Profile avatar: show saved photo in header + profile card
+  (function showProfileAvatar(){
+    const img=localStorage.getItem('zup_profile_photo');
+    if (img) {
+      const headAv = document.getElementById('user-avatar');
+      if (headAv) { headAv.style.backgroundImage=`url("${img}")`; headAv.style.backgroundSize='cover'; headAv.style.backgroundPosition='center'; headAv.textContent=''; }
+      // Try to find a profile avatar container (first emoji circle in Profile card)
+      const profCard = document.querySelector('#page-profile .card .row > div[style*="width:48px"]');
+      if (profCard) { profCard.style.background=`url("${img}") center/cover`; profCard.textContent=''; }
+    }
+  })();
+
+  // Cancel request: really cancel and exit tracking/providers, navigate back home
+  async function doCancel(category, reason){
+    try{ if (window.requestId) await fetch(`${API}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`,{method:'DELETE'}); }catch{}
+    try{ if (window.stopInstant) window.stopInstant(); }catch{}
+    try{ if (window.trackPoll) { clearInterval(window.trackPoll); window.trackPoll=null; } }catch{}
+    window.requestId=null;
+    ['cancelReasonsModal','instantModal','trackModal','providersModal'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+    try { typeof window.showPage==='function' ? showPage('home') : (document.querySelector('[data-page="home"]')?.click()); } catch {}
+    alert('Request cancelled');
+  }
+  (function wireCancelButtons(){
+    const crConfirm=$('crConfirm');
+    bindOnce(crConfirm,'click', ()=>{
+      const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other';
+      const other=document.getElementById('crOther')?.value?.trim();
+      const reason=picked==='Other'?(other||'Other'):picked;
+      const cat=(window.lastCategory||'general'); doCancel(cat, reason);
+    });
+    const tcb=$('trackCancelBtn');
+    if (tcb) tcb.onclick=()=> $('cancelReasonsModal')?.classList.add('open');
+  })();
+
+  // Stripe card checkout: wait for stripe lib, single-submit guard, don’t clear cart before redirect
+  (function wirePlaceOrderCard(){
+    const btn=$('placeOrderBtn'); if (!btn) return;
+    let submitting=false;
+    bindOnce(btn, 'click', async (e)=>{
+      const method=[...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+      if (method!=='card') return; // let existing cash flow run
+      e.preventDefault();
+      if (submitting) return;
+      submitting=true; btn.classList.add('loading'); btn.disabled=true;
+
+      const cart=getCart(); if (!cart.items.length){ alert('Your cart is empty.'); submitting=false; btn.classList.remove('loading'); btn.disabled=false; return; }
+      const name=($('#chkName')?.value||'').trim(), phone=($('#chkPhone')?.value||'').trim(), address=($('#chkAddress')?.value||'').trim();
+      const unit=($('#chkUnit')?.value||'').trim(), notes=($('#chkNotes')?.value||'').trim(), terms=$('#chkTerms')?.checked;
+      if (!terms){ alert('Please read and accept the Terms.'); submitting=false; btn.classList.remove('loading'); btn.disabled=false; return; }
+      if (!name||!phone||!address){ alert('Enter name, phone, and address.'); submitting=false; btn.classList.remove('loading'); btn.disabled=false; return; }
+
+      // wait for Stripe
+      const stripe = await (new Promise(res=>{ (function tick(){ if (window.Stripe) return res(window.Stripe(STRIPE_PK)); setTimeout(tick,80); })(); }));
+      if (!stripe){ alert('Payment library not loaded. Try again.'); submitting=false; btn.classList.remove('loading'); btn.disabled=false; return; }
+
+      try{
+        const r=await fetch(`${API}/api/payments/checkout-session`,{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ items:cart.items.map(i=>({id:i.id,title:i.title,qty:i.qty,price:i.price })), customer:{name,phone}, address:{address,unit,notes},
+            successUrl:location.origin+'/?checkout=success', cancelUrl:location.origin+'/?checkout=cancel' })
+        });
+        const d=await r.json().catch(()=>({}));
+        if (d?.url){ localStorage.setItem('zup_last_order', JSON.stringify({ sessionId:d.id||d.sessionId||null, status:'pending'})); location.href=d.url; return; }
+        if (d?.id || d?.sessionId){ localStorage.setItem('zup_last_order', JSON.stringify({ sessionId:d.id||d.sessionId, status:'pending'})); const { error }=await stripe.redirectToCheckout({ sessionId:d.id||d.sessionId }); if (error) alert(error.message); return; }
+        alert('Unable to start card checkout. Try Cash.');
+      }catch{ alert('Network error. Try again or use Cash.'); }
+      finally { submitting=false; btn.classList.remove('loading'); btn.disabled=false; }
+    });
+  })();
+
+  // Only show buyer code privacy message on explicit success; do not auto-navigate
+  (function stripeReturnMessages(){
+    const q=new URLSearchParams(location.search);
+    const c=q.get('checkout');
+    if (c==='success') alert("Don't share your delivery code with the seller until your goods are delivered and confirmed.");
+    if (c==='cancel') alert('Card payment cancelled. You can try again or choose Cash.');
+  })();
+
+  // Cart live-refresh without spamming (throttled)
+  (function cartLive(){
+    let last=''; let t=0;
+    setInterval(()=>{ if (++t%2) return; const now=localStorage.getItem('mp_cart')||''; if (now!==last){ last=now; try{ window.renderCart && window.renderCart(); }catch{} updateBadges(); } }, 600);
+    // Ensure marketplace buttons open checkout correctly
+    const openCartBtn=$('openCartBtn'); if (openCartBtn && !openCartBtn.dataset.bound){ openCartBtn.dataset.bound='1'; openCartBtn.onclick=()=>{ const m=$('checkoutModal'); if(m){ m.classList.add('open'); } }; }
+    const checkoutBtn=$('checkoutBtn'); if (checkoutBtn && !checkoutBtn.dataset.bound){ checkoutBtn.dataset.bound='1'; checkoutBtn.onclick=()=>{ $('cartModal')?.classList.remove('open'); $('checkoutModal')?.classList.add('open'); }; }
   })();
 })();
 </script>
