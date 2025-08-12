@@ -20,6 +20,7 @@ if (!localStorage.getItem('zupHardResetDone')) {
 <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://js.stripe.com/v3"></script>
 
   <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -3600,6 +3601,126 @@ Add this script block once, after your existing scripts (before </body>)
   }
   document.getElementById('confirmDeliveryNav')?.addEventListener('click',()=> document.getElementById('confirmDeliveryModal').style.display='flex');
   document.getElementById('lastOrderNav')?.addEventListener('click',()=> document.getElementById('lastOrderModal').style.display='flex');
+})();
+</script>
+  <script>
+(function fixes(){
+  const $ = (id)=>document.getElementById(id);
+
+  // A) Stripe: wait until the library is ready, then run checkout
+  const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+  const API = (window.BASE_API || 'https://zippup-backend-v3.onrender.com');
+  function getCart(){ try{ return window.cart || JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{return {items:[]}} }
+  function setCart(c){ try{ localStorage.setItem('mp_cart', JSON.stringify(c)); }catch{} }
+  function waitStripe(){ return new Promise(res=>{ (function tick(){ if (window.Stripe) return res(window.Stripe(STRIPE_PK)); setTimeout(tick,80); })(); }); }
+  async function startStripeCheckout(){
+    const stripe = await waitStripe().catch(()=>null);
+    if (!stripe) return alert('Payment library not loaded. Try again in a moment.');
+    const cart = getCart(); if (!cart.items.length) return alert('Your cart is empty.');
+    const name=($('#chkName')?.value||'').trim(), phone=($('#chkPhone')?.value||'').trim(), address=($('#chkAddress')?.value||'').trim();
+    const unit=($('#chkUnit')?.value||'').trim(), notes=($('#chkNotes')?.value||'').trim(), terms=$('#chkTerms')?.checked;
+    if (!terms) return alert('Please read and accept the Terms.');
+    if (!name || !phone || !address) return alert('Enter name, phone, and address.');
+
+    try{
+      const r=await fetch(`${API}/api/payments/checkout-session`,{ method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ items:cart.items.map(i=>({id:i.id,title:i.title,qty:i.qty,price:i.price})), customer:{name,phone}, address:{address,unit,notes},
+          successUrl:location.origin+'/?checkout=success', cancelUrl:location.origin+'/?checkout=cancel' })});
+      const d=await r.json().catch(()=>({}));
+      if (d?.url){ setCart({items:[]}); localStorage.setItem('zup_last_order', JSON.stringify({ sessionId:d.id||d.sessionId||null, status:'pending'})); return location.href=d.url; }
+      if (d?.id || d?.sessionId){ setCart({items:[]}); localStorage.setItem('zup_last_order', JSON.stringify({ sessionId:d.id||d.sessionId, status:'pending'})); const { error }=await stripe.redirectToCheckout({ sessionId:d.id||d.sessionId }); if (error) alert(error.message); return; }
+      alert('Unable to start card checkout. Try Cash.');
+    }catch{ alert('Network error. Try again or use Cash.'); }
+  }
+  // Wire “Place Order” to Stripe when Card is selected
+  (function wirePlaceOrder(){
+    const btn=$('placeOrderBtn'); if(!btn) return;
+    btn.addEventListener('click', (e)=>{
+      const method=[...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value||'card';
+      if (method==='card'){ e.preventDefault(); startStripeCheckout(); }
+    });
+  })();
+
+  // B) Replace dropdown “Contact Support” with “Confirm Delivery”
+  (function adjustDropdown(){
+    const menu = document.getElementById('dropdown-menu'); if (!menu) return;
+    // Remove any Support item in dropdown
+    Array.from(menu.querySelectorAll('.dropdown-item')).forEach(it=>{
+      if ((it.textContent||'').toLowerCase().includes('support')) it.remove();
+    });
+    // Add Confirm Delivery if not present
+    if (!document.getElementById('confirmDeliveryNav')) {
+      const cd=document.createElement('div'); cd.id='confirmDeliveryNav'; cd.className='dropdown-item'; cd.innerHTML='<span>✅</span><span>Confirm Delivery</span>';
+      menu.appendChild(cd);
+      cd.onclick=()=> document.getElementById('confirmDeliveryModal')?.style && (document.getElementById('confirmDeliveryModal').style.display='flex');
+    }
+  })();
+
+  // C) Cancel request: actually clear state, close modals, and navigate back
+  function getActiveMap(){ try{ return JSON.parse(localStorage.getItem('zup_active_by_service')||'{}'); }catch{return{}} }
+  function setActiveMap(m){ localStorage.setItem('zup_active_by_service', JSON.stringify(m||{})); }
+  async function doCancel(category, reason){
+    try { if (window.requestId) await fetch(`${(window.BASE_API||'')}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`,{method:'DELETE'}); }catch{}
+    // clear local flags
+    try{ if (window.stopInstant) window.stopInstant(); }catch{}
+    try{ if (window.trackPoll) { clearInterval(window.trackPoll); window.trackPoll=null; } }catch{}
+    const m=getActiveMap(); if (category && m[category]) delete m[category]; setActiveMap(m);
+    window.requestId=null;
+    // close any modals
+    ;['cancelReasonsModal','instantModal','trackModal','providersModal'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+    // navigate back to the originating page or home
+    try { typeof showPage==='function' ? showPage('home') : (document.querySelector('[data-page="home"]')?.click()); } catch {}
+    alert('Request cancelled');
+  }
+  // Rebind cancel buttons if present
+  (function wireCancel(){
+    const crConfirm=document.getElementById('crConfirm');
+    if (crConfirm) crConfirm.onclick=()=> {
+      const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other';
+      const other=document.getElementById('crOther')?.value?.trim();
+      const reason=picked==='Other'?(other||'Other'):picked;
+      const cat=(window.lastCategory||'general'); doCancel(cat, reason);
+    };
+    const tcb=document.getElementById('trackCancelBtn');
+    if (tcb) tcb.onclick=()=> document.getElementById('cancelReasonsModal')?.classList.add('open');
+  })();
+
+  // D) Profile avatar: persist and display (uses localStorage key 'zup_profile_photo')
+  (function avatarPersist(){
+    const av=$('user-avatar');
+    const img=localStorage.getItem('zup_profile_photo');
+    if (av && img){ av.style.backgroundImage=`url("${img}")`; av.style.backgroundSize='cover'; av.textContent=''; }
+    // If your photo input exists, save on change
+    const photoInput=document.getElementById('pePhoto');
+    if (photoInput && !photoInput.dataset.bound){
+      photoInput.dataset.bound='1';
+      photoInput.addEventListener('change', ()=>{
+        const f=photoInput.files?.[0]; if(!f) return;
+        const fr=new FileReader(); fr.onload=()=>{ localStorage.setItem('zup_profile_photo', fr.result); const av=$('user-avatar'); if(av){ av.style.backgroundImage=`url("${fr.result}")`; av.style.backgroundSize='cover'; av.textContent=''; } };
+        fr.readAsDataURL(f);
+      });
+    }
+  })();
+
+  // E) Small cart auto-refresh (keeps badges and UI current without manual reloads)
+  (function cartAutoRefresh(){
+    function renderCartSafe(){ try{ window.renderCart && window.renderCart(); }catch{} }
+    function updateBadges(){
+      try{
+        const c=getCart(); const n=c.items.reduce((a,b)=>a+(+b.qty||0),0);
+        const h=document.getElementById('headerCartBadge'); if(h) h.textContent=String(n);
+        const cc=document.getElementById('cartCount'); if(cc) cc.textContent=String(n);
+        if (typeof window.updateCartCount==='function') window.updateCartCount();
+      }catch{}
+    }
+    let last=''; setInterval(()=>{ const now=localStorage.getItem('mp_cart')||''; if(now!==last){ last=now; renderCartSafe(); updateBadges(); } }, 700);
+  })();
+
+  // F) On return from Stripe redirect, remind buyer about code privacy
+  (function codePrivacyMessage(){
+    const q=new URLSearchParams(location.search);
+    if (q.get('checkout')==='success') alert("Don't share your delivery code with the seller until your goods are delivered and confirmed.");
+  })();
 })();
 </script>
 </body>
