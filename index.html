@@ -20,7 +20,7 @@
   <style>
     :root { --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF; --text:#111827; --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB; --radius:14px; --shadow:0 8px 24px rgba(17,24,39,.08) }
     * { box-sizing:border-box; margin:0; padding:0 }
-    body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif; background:var(--bg); color:var(--text) }
+    body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden }
     header { position:sticky; top:0; z-index:20; background:var(--card); border-bottom:1px solid var(--border) }
     header .row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px }
     .greet { display:flex; flex-direction:column }
@@ -78,75 +78,2281 @@
     .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px }
     .hint { font-size:12px; color:#6b7280 }
     .sticky { position:sticky; bottom:0; background:#fff; padding-top:10px; border-top:1px solid var(--border) }
-
-    /* Layout fixes: keep header/footer fixed, prevent horizontal overflow, ensure page fits */
-    html, body { height:100%; width:100%; max-width:100%; overflow-x:hidden; }
-    header { position:fixed; top:0; left:0; right:0; z-index:20; }
-    .nav { position:fixed; left:0; right:0; bottom:0; z-index:15; }
-    .page { padding-top:64px; padding-bottom:100px; }
-    img, video, canvas { max-width:100%; height:auto }
-    .sheet, .card { max-width:100% }
   </style>
 </head>
 <body>
-  <!-- [UNCHANGED BODY CONTENT FROM YOUR WORKING FILE CONTINUES BELOW] -->
-  <!-- The entire body content is exactly as you provided; only CSS at top and a small fixes script (later) are added. -->
-  <!-- ... [omitted for brevity: all the same content you pasted, unchanged] ... -->
+  <header>
+    <div class="row">
+      <div class="greet">
+        <strong>Hello, <span id="userName">Guest</span></strong>
+        <span class="small">📍 <span id="userLoc">Detecting location…</span></span>
+      </div>
+      <div class="row">
+        <button class="btn ghost" id="notifBtn" type="button">🔔</button>
+        <div style="position:relative">
+          <button class="btn ghost" id="cartBtn" type="button">🛒</button>
+          <span id="headerCartBadge" style="position:absolute; top:-6px; right:-6px; background:#DC2626; color:#fff; border-radius:999px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">0</span>
+        </div>
+        <div style="position:relative">
+          <button class="btn ghost" id="profileBtn" type="button">👤 Account</button>
+          <div id="profileMenu">
+            <button class="btn ghost" id="menuProfile" type="button">👤 Profile</button>
+            <button class="btn ghost" id="menuWallet" type="button">💰 Wallet</button>
+            <button class="btn ghost" id="menuTopup" type="button">⚡ Top‑up</button>
+            <button class="btn ghost" id="menuSupport" type="button">🆘 Contact Support</button>
+            <button class="btn ghost" id="menuLogout" type="button">🚪 Logout</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
 
-  <!-- KEEP all your existing <script> blocks exactly as in your working file -->
-  <!-- We only disable Supabase-auth parts and add a small cart/cancel/layout patch, plus Firebase at the very end -->
+  <!-- Home -->
+  <main id="page-home" class="page active">
+    <section class="search">
+      <div class="box">
+        <input id="search" placeholder="Search transport, food, services, emergency…"/>
+        <button class="btn ghost" id="voiceBtn" type="button">🎤</button>
+        <button class="btn primary" id="searchBtn" type="button">Search</button>
+      </div>
+    </section>
 
-  <!-- [All your existing <script> blocks here, unchanged text, except Supabase-auth blocks wrapped in if(false) — already done in my previous version] -->
+    <section class="section">
+      <div class="title">Emergency</div>
+      <div class="grid" id="emergencyGrid"></div>
+    </section>
 
-  <!-- Small reliability fixes: cart edit + instant cancel (non-destructive) -->
+    <section class="section">
+      <div class="title">All Services</div>
+      <div class="grid" id="servicesGrid"></div>
+    </section>
+
+    <section class="section">
+      <div class="title">Recent</div>
+      <div id="recentList"></div>
+    </section>
+  </main>
+
+  <!-- Services landing -->
+  <main id="page-services" class="page">
+    <section class="section">
+      <div class="title">Services</div>
+      <div class="grid" id="servicesAllGrid"></div>
+    </section>
+  </main>
+
+  <!-- Bookings landing -->
+  <main id="page-bookings" class="page">
+    <section class="section">
+      <div class="title">My Bookings</div>
+      <div id="bookingsList"></div>
+    </section>
+  </main>
+
+  <!-- Marketplace landing -->
+  <main id="page-marketplace" class="page">
+    <section class="search">
+      <div class="box">
+        <input id="mpSearch" placeholder="Search products…"/>
+        <button class="btn ghost" id="mpVoice" type="button">🎤</button>
+        <button class="btn primary" id="mpSearchBtn" type="button">Search</button>
+      </div>
+    </section>
+    <section class="section">
+      <div class="controls" id="mpChips"></div>
+    </section>
+    <section class="section">
+      <div class="title">Products</div>
+      <div class="grid" id="mpGrid"></div>
+    </section>
+    <div class="cart-fab">
+      <button class="btn primary" id="openCartBtn" type="button">🛒 Cart (<span id="cartCount">0</span>)</button>
+    </div>
+  </main>
+
+  <!-- Profile -->
+  <main id="page-profile" class="page">
+    <section class="section">
+      <div class="title">Profile</div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center">
+          <div class="row">
+            <div style="width:48px;height:48px;border-radius:50%;background:#E5EDFF;display:flex;align-items:center;justify-content:center">👤</div>
+            <div style="margin-left:8px">
+              <div><strong id="profName">Demo User</strong> <span class="small muted">(Public name)</span></div>
+              <div class="small" id="profEmail">demo@zippup.com</div>
+            </div>
+          </div>
+          <button class="btn primary" id="editProfileBtn" type="button">Edit</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="row" style="justify-content:space-between; align-items:center">
+          <div><strong>Availability</strong><div class="small muted">Go Offline / Available</div></div>
+          <label style="position:relative;display:inline-block;width:48px;height:28px">
+            <input id="availToggle" type="checkbox" style="display:none"/>
+            <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#d1d5db;border-radius:999px"></span>
+            <span style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:#fff;border-radius:999px;transition:.2s" id="availKnob"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="list" style="margin-top:12px">
+        <button class="btn ghost" id="manageServicesBtn" type="button">Manage Services</button>
+        <button class="btn ghost" id="manageProductsBtn" type="button">Manage Products</button>
+        <button class="btn ghost" id="emergencyContactsBtn" type="button">Emergency Contacts</button>
+        <button class="btn ghost" id="providerVerifyBtn" type="button">Become Verified Provider</button>
+        <button class="btn ghost" id="supportBtn" type="button">Contact Support</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Wallet -->
+  <main id="page-wallet" class="page">
+    <section class="section">
+      <div class="title">Wallet</div>
+      <div class="card">Balance: <strong>$245.80</strong></div>
+    </section>
+  </main>
+
+  <!-- Top-up -->
+  <main id="page-topup" class="page">
+    <section class="section">
+      <div class="title">Top‑up (Digital)</div>
+      <div class="grid">
+        <div class="card service" data-topup="airtime"><div class="row"><div style="font-size:24px">📞</div><h4>Buy Airtime</h4></div></div>
+        <div class="card service" data-topup="data"><div class="row"><div style="font-size:24px">📶</div><h4>Data Bundles</h4></div></div>
+        <div class="card service" data-topup="bills"><div class="row"><div style="font-size:24px">💡</div><h4>Pay Bills</h4></div></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Manage Services -->
+  <main id="page-manage-services" class="page">
+    <section class="section">
+      <div class="title">Manage Services</div>
+      <div class="card">
+        <div class="list">
+          <div class="grid-2">
+            <div class="field">
+              <label class="small">Category</label>
+              <select id="msCategory">
+                <option value="transport">Transport</option>
+                <option value="food">Food</option>
+                <option value="tech">Tech Services</option>
+                <option value="home">Home Services</option>
+                <option value="construction">Construction</option>
+                <option value="auto">Automobile Repair</option>
+                <option value="others">Others</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="small">Service type</label>
+              <input id="msType" placeholder="e.g., Driver, Plumber"/>
+            </div>
+          </div>
+          <div class="field">
+            <label class="small">Details</label>
+            <textarea id="msDetails" rows="3" placeholder="Describe your service…"></textarea>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label class="small">Price (per 1–2hr)</label>
+              <input id="msPrice" type="number" min="0" step="0.01" placeholder="e.g., 50"/>
+            </div>
+            <div class="field">
+              <label class="small">Catalog images (up to 4)</label>
+              <input id="msImages" type="file" accept="image/*" multiple/>
+              <div class="hint">Optional</div>
+            </div>
+          </div>
+          <button class="btn primary" id="msAdd" type="button">+ Add Service</button>
+        </div>
+      </div>
+      <div class="list" style="margin-top:12px" id="msList"></div>
+    </section>
+  </main>
+
+  <!-- Manage Products -->
+  <main id="page-manage-products" class="page">
+    <section class="section">
+      <div class="title">Manage Products</div>
+      <div class="card">
+        <div class="list">
+          <div class="grid-2">
+            <div class="field">
+              <label class="small">Category</label>
+              <select id="mpCatSelect">
+                <option value="electronics">Electronics</option>
+                <option value="fashion">Fashion</option>
+                <option value="home">Home & Garden</option>
+                <option value="sports">Sports</option>
+                <option value="automobile">Automobile</option>
+                <option value="spares">Spare Parts</option>
+                <option value="others">Others</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="small">Product name</label>
+              <input id="mpName" placeholder="e.g., iPhone 13"/>
+            </div>
+          </div>
+          <div class="field">
+            <label class="small">Description</label>
+            <textarea id="mpDesc" rows="3" placeholder="Describe the product…"></textarea>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label class="small">Price</label>
+              <input id="mpPrice" type="number" min="0" step="0.01"/>
+            </div>
+            <div class="field">
+              <label class="small">Stock</label>
+              <input id="mpStock" type="number" min="0" step="1"/>
+            </div>
+          </div>
+          <div class="field">
+            <label class="small">Images (up to 10)</label>
+            <input id="mpImages" type="file" accept="image/*" multiple/>
+            <div class="hint">Optional</div>
+          </div>
+          <button class="btn primary" id="mpAdd" type="button">+ Add Product</button>
+        </div>
+      </div>
+      <div class="list" style="margin-top:12px" id="mpManageList"></div>
+    </section>
+  </main>
+
+  <!-- Emergency Contacts -->
+  <main id="page-emergency-contacts" class="page">
+    <section class="section">
+      <div class="title">Emergency Contacts</div>
+      <div class="card">
+        <div class="small muted">Add up to 5 contacts (name and phone).</div>
+        <div id="ecForm" class="list" style="margin-top:10px"></div>
+        <button class="btn primary" id="ecSave" type="button">Save Contacts</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Verify Provider -->
+  <main id="page-verify-provider" class="page">
+    <section class="section">
+      <div class="title">Become Verified Provider</div>
+      <div class="card">
+        <div class="list">
+          <div class="field"><label class="small">Full name</label><input id="vpName" placeholder="Your name"/></div>
+          <div class="field"><label class="small">Service category</label><input id="vpCategory" placeholder="e.g., Driver, Plumber"/></div>
+          <div class="field"><label class="small">ID number</label><input id="vpId" placeholder="Your ID"/></div>
+          <button class="btn primary" id="vpSubmit" type="button">Submit for Verification</button>
+          <div id="vpStatus" class="small" style="color:#2563EB"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Contact Support -->
+  <main id="page-support" class="page">
+    <section class="section">
+      <div class="title">Contact Support</div>
+      <div class="card">
+        <div class="list">
+          <div class="small muted">AI Help — common questions</div>
+          <div id="aiFaq" class="list"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="list">
+          <div class="small"><strong>Not satisfied? Contact support</strong></div>
+          <div class="grid-2">
+            <div class="field"><label class="small">Name</label><input id="supName"/></div>
+            <div class="field"><label class="small">Phone</label><input id="supPhone"/></div>
+          </div>
+          <div class="field"><label class="small">Email</label><input id="supEmail"/></div>
+          <div class="field"><label class="small">Reason</label><textarea id="supReason" rows="3" placeholder="Describe your issue…"></textarea></div>
+          <button class="btn primary" id="supSend" type="button">Send Message</button>
+          <div class="small">Emergency? <a href="tel:0784079686">Call 0784079686</a></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <button class="floating-panic" id="panicBtn" type="button">🚨</button>
+
+  <nav class="nav">
+    <button data-page="home" class="active" type="button">🏠 Home</button>
+    <button data-page="services" type="button">🔧 Services</button>
+    <button data-page="bookings" type="button">📋 Bookings</button>
+    <button data-page="marketplace" type="button">🛍️ Marketplace</button>
+  </nav>
+
+  <!-- Providers Modal -->
+  <div class="modal" id="providersModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="providersTitle">Providers</strong>
+        <button class="btn ghost" id="closeProviders" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="list" id="providersList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Booking Form Modal -->
+  <div class="modal" id="bookingModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Book Service</strong>
+        <button class="btn ghost" id="closeBooking" type="button">✖</button>
+      </div>
+      <div class="body">
+        <form id="bookingForm" class="list">
+          <div class="grid-2">
+            <div class="field"><label class="small">Date</label><input id="bkDate" type="date" required/></div>
+            <div class="field"><label class="small">Time</label><input id="bkTime" type="time" required/></div>
+          </div>
+          <div class="field"><label class="small">Address</label><input id="bkAddress" required placeholder="Enter address"/></div>
+          <div class="field"><label class="small">Details</label><textarea id="bkDesc" rows="3" placeholder="Describe the job…"></textarea></div>
+          <button class="btn primary block" type="submit">Send Booking Request</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transport Instant Booking Modal -->
+  <div class="modal" id="tiModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Ride Details</strong>
+        <button class="btn ghost" id="tiClose" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="list">
+          <div class="field">
+            <label class="small">Pickup address</label>
+            <div class="row" style="gap:8px; width:100%">
+              <input id="tiPickup" placeholder="Your current or preferred pickup…" style="flex:1"/>
+              <button class="btn ghost" id="tiUseCurrent" type="button">📍 Use current</button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="small">Destination address</label>
+            <input id="tiDestination" placeholder="Where are you going?"/>
+          </div>
+          <div class="field">
+            <label class="small">Stops (optional, max 5)</label>
+            <div id="tiStops" class="list"></div>
+            <div class="row" style="gap:8px;margin-top:6px">
+              <button class="btn ghost" id="tiAddStop" type="button">＋ Add stop</button>
+              <button class="btn ghost" id="tiRemoveStop" type="button">− Remove stop</button>
+            </div>
+          </div>
+          <button class="btn primary" id="tiStart" type="button">Start Instant Request</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instant Request Modal -->
+  <div class="modal" id="instantModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="instantTitle">Contacting provider…</strong>
+        <button class="btn ghost" id="cancelInstant" type="button">Cancel</button>
+      </div>
+      <div class="body">
+        <div class="card">
+          <div>Time left: <strong id="countdown">90</strong>s</div>
+          <div class="small muted" id="instantHint">Waiting for provider to accept…</div>
+        </div>
+        <div class="controls" style="margin-top:10px">
+          <button class="btn ghost" id="findOthers" type="button">Find other providers</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel Reasons Modal (shared) -->
+  <div class="modal" id="cancelReasonsModal">
+    <div class="sheet">
+      <div class="head"><strong>Cancel request</strong><button class="btn ghost" id="crClose" type="button">✖</button></div>
+      <div class="body">
+        <div id="crList" class="list"></div>
+        <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px">
+          <button class="btn ghost" id="crBack" type="button">Back</button>
+          <button class="btn primary" id="crConfirm" type="button">Confirm cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tracking Modal -->
+  <div class="modal" id="trackModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Live Tracking</strong>
+        <div class="row" style="gap:6px">
+          <button class="btn ghost" id="trackCancelBtn" type="button">Cancel</button>
+          <button class="btn ghost" id="closeTrack" type="button">✖</button>
+        </div>
+      </div>
+      <div class="body">
+        <div id="trackStatus" class="small muted">Provider accepted. En route…</div>
+        <div id="trackMapWrap" style="margin-top:10px"><div id="track-map"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Providers Options Modal -->
+  <div class="modal" id="categoryOptionsModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="categoryOptionsTitle">Options</strong>
+        <button class="btn ghost" id="closeCategoryOptions" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div id="categoryOptionsList" class="list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items/Search Modal -->
+  <div class="modal" id="itemsModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="itemsTitle">Find Items</strong>
+        <button class="btn ghost" id="closeItems" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="row" style="gap:8px;margin-bottom:10px">
+          <input id="itemSearch" placeholder="Say or type what you need…" style="flex:1"/>
+          <button class="btn ghost" id="itemVoice" type="button">🎤</button>
+          <button class="btn primary" id="itemGo" type="button">Search</button>
+        </div>
+        <div id="itemChips" class="controls"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Modal -->
+  <div class="modal" id="cartModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>My Cart</strong>
+        <button class="btn ghost" id="closeCart" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div id="cartList" class="list"></div>
+        <div class="row sticky" style="justify-content:space-between;margin-top:10px">
+          <div class="price">Total: $<span id="cartTotal">0.00</span></div>
+          <button class="btn primary" id="checkoutBtn" type="button">Checkout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div class="modal" id="checkoutModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Checkout</strong>
+        <button class="btn ghost" id="closeCheckout" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="list">
+          <div class="grid-2">
+            <div class="field"><label class="small">Full Name</label><input id="chkName"/></div>
+            <div class="field"><label class="small">Phone</label><input id="chkPhone"/></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label class="small">Street / Address</label><input id="chkAddress"/></div>
+            <div class="field"><label class="small">Flat / House No.</label><input id="chkUnit"/></div>
+          </div>
+          <div class="field"><label class="small">Delivery Notes</label><textarea id="chkNotes" rows="3"></textarea></div>
+          <div class="field">
+            <label class="small">Payment Method</label>
+            <div class="controls">
+              <label><input type="radio" name="payMethod" value="card" checked/> Card</label>
+              <label><input type="radio" name="payMethod" value="cash"/> Cash</label>
+            </div>
+          </div>
+          <label class="terms"><input type="checkbox" id="chkTerms"/> <span>I accept the Terms.</span></label>
+          <button class="btn primary" id="placeOrderBtn" type="button">Place Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Status Modal -->
+  <div class="modal" id="orderModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Order Status</strong>
+        <button class="btn ghost" id="closeOrder" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div id="orderInfo" class="list"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
-  (function(){
-    // Cart: bind only once on the cart list, avoid duplicate global handlers
-    const list = document.getElementById('cartList');
-    if (list && !list.dataset.cartFixBound) {
-      list.dataset.cartFixBound = '1';
-      list.addEventListener('click', function(e){
-        const btn = e.target.closest('[data-k]'); if (!btn) return;
-        const row = btn.closest('.card'); if (!row) return;
-        const id = row.dataset.id;
-        if (!window.cart) return;
-        const i = window.cart.items.findIndex(x => x.id === id);
-        if (i < 0) return;
-        const k = btn.getAttribute('data-k');
-        if (k === 'dec') window.cart.items[i].qty = Math.max(1, window.cart.items[i].qty - 1);
-        if (k === 'inc') window.cart.items[i].qty = window.cart.items[i].qty + 1;
-        if (k === 'rm')  window.cart.items.splice(i, 1);
-        try { window.saveCart && window.saveCart(); } catch {}
-        try { window.renderCart && window.renderCart(); } catch {}
-        try { window.updateCartCount && window.updateCartCount(); } catch {}
+    const BASE_API = 'https://zippup-backend-v3.onrender.com';
+    const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+    let user = { name:'Guest', email:'demo@zippup.com' };
+    let coords = null, selectedProvider = null, requestId = null, instantTimer = null, instantLeft = 90;
+    let map, userMarker, providerMarker, trackPoll = null, lastCategory = null;
+    const activeRequests = {};
+
+    const $ = (id)=>document.getElementById(id);
+    function showPage(page){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); (document.getElementById('page-'+page) || document.getElementById('page-home')).classList.add('active'); }
+
+    $('notifBtn').onclick = ()=>alert('Notifications (coming soon)');
+    $('profileBtn').onclick = (e)=>{ e.stopPropagation(); const m=$('profileMenu'); m.style.display = (m.style.display==='block'?'none':'block'); };
+    document.addEventListener('click', ()=>{ const m=$('profileMenu'); if (m) m.style.display='none'; });
+    $('menuProfile').onclick = ()=>{ $('profileMenu').style.display='none'; showPage('profile'); };
+    $('menuWallet').onclick  = ()=>{ $('profileMenu').style.display='none'; showPage('wallet'); };
+    $('menuTopup').onclick   = ()=>{ $('profileMenu').style.display='none'; showPage('topup'); };
+    $('menuSupport').onclick = ()=>{ $('profileMenu').style.display='none'; showPage('support'); };
+    $('menuLogout').onclick  = ()=>{ $('profileMenu').style.display='none'; alert('Logged out'); };
+
+    document.querySelectorAll('.nav button').forEach(b=>{
+      b.onclick = ()=>{ document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); showPage(b.dataset.page); };
+    });
+
+    const availKey='zippup_availability'; const knob=document.getElementById('availKnob'); const toggle=document.getElementById('availToggle');
+    toggle.checked = localStorage.getItem(availKey) === 'on'; knob.style.transform = toggle.checked ? 'translateX(20px)' : 'translateX(0)';
+    toggle.onchange = (e)=>{ localStorage.setItem(availKey, e.target.checked?'on':'off'); knob.style.transform = e.target.checked?'translateX(20px)':'translateX(0)'; };
+
+    $('panicBtn').onclick = async () => {
+      if (!confirm('Confirm PANIC alert?')) return;
+      try{
+        const body = { type:'panic', userPublicName: user.name, location: coords ? { latitude:coords.lat, longitude:coords.lng } : null };
+        const r = await fetch(`${BASE_API}/api/emergency/alert`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const d = await r.json().catch(()=>({}));
+        if (r.ok){ alert('Panic alert sent'); if (d.trackingUrl) location.href=d.trackingUrl; }
+        else alert('Alert sent (fallback).');
+      }catch{ alert('Alert sent (no GPS).'); }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      $('userName').textContent = user.name;
+      initLocation();
+      renderServices(); renderEmergency(); renderRecent(); renderServicesAll(); renderBookings();
+      initMarketplace();
+      $('cartBtn').onclick = (e)=>{ e.preventDefault(); showPage('marketplace'); renderCart(); $('cartModal').classList.add('open'); };
+      $('openCartBtn').onclick = ()=>{ renderCart(); $('cartModal').classList.add('open'); };
+      $('closeCart').onclick = ()=> $('cartModal').classList.remove('open');
+      $('checkoutBtn').onclick = ()=>{ $('cartModal').classList.remove('open'); $('checkoutModal').classList.add('open'); };
+      $('closeCheckout').onclick = ()=> $('checkoutModal').classList.remove('open');
+      $('closeOrder').onclick = ()=> $('orderModal').classList.remove('open');
+      wireProfilePages();
+      wireSupport();
+    });
+
+    async function initLocation() {
+      try {
+        const pos = await new Promise((res, rej)=>navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy:true, timeout:10000 }));
+        coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        const name = await reverseGeocode(coords.lat, coords.lng);
+        $('userLoc').textContent = name || 'Unknown';
+      } catch { $('userLoc').textContent = 'Location unavailable'; }
+    }
+    async function reverseGeocode(lat,lng){
+      try {
+        const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+        const d = await r.json(); return (d.locality || d.city || 'Unknown') + ', ' + (d.countryName || '');
+      } catch { return null; }
+    }
+
+    const SERVICES = [
+      { id:'transport', name:'Transport', icon:'🚗', desc:'Ride & moving', instant:true,  scheduled:true },
+      { id:'food',      name:'Food',      icon:'🍔', desc:'Restaurant & grocery', instant:true,  scheduled:true },
+      { id:'tech',      name:'Tech',      icon:'🔧', desc:'Phone/computer repair', instant:true,  scheduled:true },
+      { id:'home',      name:'Home',      icon:'🏠', desc:'Cleaning & maintenance', instant:true,  scheduled:true },
+      { id:'construction', name:'Construction', icon:'🏗️', desc:'Builders & electricians', instant:false, scheduled:true },
+      { id:'auto',      name:'Automobile', icon:'🛠️', desc:'Mechanics, tires, roadside', instant:true,  scheduled:true },
+      { id:'others',    name:'Others',    icon:'🎯', desc:'Events, tutors, more', instant:false, scheduled:true },
+    ];
+    const EMERGENCY = [
+      { id:'ambulance', name:'Ambulance', icon:'🚑' },
+      { id:'fire',      name:'Fire Service', icon:'🚒' },
+      { id:'towing',    name:'Towing', icon:'🚛' },
+      { id:'security',  name:'Security', icon:'🛡️' },
+      { id:'roadside',  name:'Roadside', icon:'🔧' },
+    ];
+
+    function renderServices(){
+      const grid = $('servicesGrid'); grid.innerHTML='';
+      SERVICES.forEach(s=>{
+        const el=document.createElement('div'); el.className='card service';
+        el.innerHTML = `<div class="row"><div style="font-size:28px">${s.icon}</div><h4>${s.name}</h4></div><div class="small muted" style="margin-top:6px">${s.desc}</div><div class="row" style="margin-top:8px">${s.instant?'<span class="pill">Instant</span>':''}${s.scheduled?'<span class="pill">Scheduled</span>':''}</div>`;
+        el.onclick = ()=> openCategory(s.id, s.name);
+        grid.appendChild(el);
+      });
+    }
+    function renderServicesAll(){
+      const grid = $('servicesAllGrid'); grid.innerHTML='';
+      SERVICES.forEach(s=>{
+        const el=document.createElement('div'); el.className='card service';
+        el.innerHTML = `<div class="row"><div style="font-size:28px">${s.icon}</div><h4>${s.name}</h4></div><div class="small muted" style="margin-top:6px">${s.desc}</div>`;
+        el.onclick = ()=> openCategory(s.id, s.name);
+        grid.appendChild(el);
+      });
+    }
+    function renderEmergency(){
+      const grid = $('emergencyGrid'); grid.innerHTML='';
+      EMERGENCY.forEach(e=>{
+        const el=document.createElement('div'); el.className='card service';
+        el.innerHTML = `<div class="row"><div style="font-size:28px">${e.icon}</div><h4>${e.name}</h4></div><div class="small muted" style="margin-top:6px">${e.id==='roadside'?'Describe the issue':'Find nearest/available'}</div><div class="row" style="margin-top:8px"><span class="pill">Instant</span></div>`;
+        el.onclick = ()=>{ if (e.id==='roadside') openItemsModal('roadside'); else openEmergency(e.id, e.name); };
+        grid.appendChild(el);
+      });
+    }
+    function renderRecent(){
+      $('recentList').innerHTML = `
+        <div class="card"><div class="row" style="justify-content:space-between"><div>🚗 Ride to Airport</div><span class="badge success">completed</span></div><div class="small muted" style="margin-top:6px">2h ago</div></div>
+        <div class="card" style="margin-top:8px"><div class="row" style="justify-content:space-between"><div>🔧 Phone Repair</div><span class="badge" style="background:#FFF7ED;color:#9A3412">scheduled</span></div><div class="small muted" style="margin-top:6px">Tomorrow 11:00</div></div>`;
+    }
+    function renderBookings(){
+      $('bookingsList').innerHTML = `
+        <div class="card"><div class="row" style="justify-content:space-between"><div>🔧 Phone Repair</div><span class="badge" style="background:#FFF7ED;color:#9A3412">scheduled</span></div><div class="small muted" style="margin-top:6px">Tomorrow 11:00</div></div>
+        <div class="card" style="margin-top:8px"><div class="row" style="justify-content:space-between"><div>🚗 Ride to Airport</div><span class="badge success">completed</span></div><div class="small muted" style="margin-top:6px">2h ago</div></div>`;
+    }
+
+    function openCategory(catId, label){
+      lastCategory = catId;
+      const act = getActive(catId);
+      if (act && act.id) { openTrackingPending(); return; }
+      if (catId==='transport') {
+        openCategoryOptions('Transport Options', [
+          { id:'ride',   name:'Ride / Taxi', icon:'🚗' },
+          { id:'moving', name:'Truck / Backie', icon:'🚚' },
+        ], opt=>{
+          $('categoryOptionsModal').classList.remove('open');
+          $('providersTitle').textContent = opt.name + ' — Providers';
+          fetchProviders('transport', opt.id).then(renderProviders);
+          $('providersModal').classList.add('open');
+        });
+        return;
+      }
+      if (catId==='food') {
+        openCategoryOptions('Food Options', [
+          { id:'fastfood', name:'Fast Food', icon:'🍔' },
+          { id:'grocery',  name:'Groceries', icon:'🛒' },
+        ], opt=>{
+          $('categoryOptionsModal').classList.remove('open');
+          openItemsModal(opt.id);
+        });
+        return;
+      }
+      $('providersTitle').textContent = label + ' — Providers';
+      fetchProviders(catId).then(renderProviders);
+      $('providersModal').classList.add('open');
+    }
+    function openCategoryOptions(title, options, onPick){
+      $('categoryOptionsTitle').textContent = title;
+      $('categoryOptionsList').innerHTML='';
+      options.forEach(o=>{
+        const el=document.createElement('div'); el.className='provider';
+        el.innerHTML = `<div class="row" style="justify-content:space-between"><div class="row"><div style="font-size:24px">${o.icon||'•'}</div><div><strong>${o.name}</strong></div></div><button class="btn primary" type="button">Choose</button></div>`;
+        el.querySelector('button').onclick=()=>onPick(o);
+        $('categoryOptionsList').appendChild(el);
+      });
+      $('categoryOptionsModal').classList.add('open');
+      $('closeCategoryOptions').onclick=()=>$('categoryOptionsModal').classList.remove('open');
+    }
+    $('closeProviders').onclick = ()=>$('providersModal').classList.remove('open');
+
+    async function fetchProviders(category, sub=null){
+      try{
+        const q = new URLSearchParams({ category, sub: sub||'', lat: coords?.lat||'', lng: coords?.lng||'' });
+        const r = await fetch(`${BASE_API}/api/providers/nearby?${q.toString()}`);
+        if (!r.ok) throw 0; const d = await r.json(); return d.providers||[];
+      }catch{
+        return [
+          { id:'p1', publicName:'Alex M.', jobTitle:'Driver', verified:true, rating:4.8, phone:'+123456789', icon:'👤', distance:'0.8km', eta:'6-9m', fareMin:120, fareMax:130, currency:'$', available:true },
+          { id:'p2', publicName:'Quick Help', jobTitle:'Mechanic', verified:false, rating:4.5, phone:null, icon:'⚡', distance:'1.2km', eta:'8-12m', fareMin:10, fareMax:15, currency:'$', available:true },
+          { id:'p3', publicName:'Nearby Tech', jobTitle:'Plumber', verified:true, rating:4.2, phone:null, icon:'🔧', distance:'2.1km', eta:'12-18m', fareMin:12, fareMax:18, currency:'$', available:true },
+        ];
+      }
+    }
+    function renderProviders(list){
+      const box=$('providersList'); box.innerHTML='';
+      if (!list?.length){ box.innerHTML='<div class="small muted">No providers found nearby.</div>'; return; }
+      list.forEach(p=>{
+        const name = p.publicName || p.name || 'Provider';
+        const title= p.jobTitle ? ` • ${p.jobTitle}` : '';
+        const verified = p.verified ? `<span class="verify">✔️</span>` : `<span class="small muted">unverified</span>`;
+        const rating = p.rating ? ` <span class="rating">★ ${(+p.rating).toFixed ? (+p.rating).toFixed(1) : p.rating}</span>` : '';
+        const avatar = `<div class="avatar">${(p.icon||'👤')}</div>`;
+        const fare = (p.fareMin && p.fareMax) ? `${p.currency||'$'}${p.fareMin}‑${p.fareMax}` : (p.fee||'—');
+
+        const el=document.createElement('div'); el.className='provider';
+        el.innerHTML = `
+          <div class="row" style="justify-content:space-between; align-items:flex-start">
+            <div class="row" style="align-items:center">
+              ${avatar}
+              <div>
+                <div><strong>${name}</strong> ${verified} ${rating}</div>
+                <div class="small muted">${p.distance || '—'} • ETA ${p.eta || '—'}${title}</div>
+                <div class="small"><strong>Est. fare:</strong> ${fare}</div>
+              </div>
+            </div>
+            <span class="badge ${p.available ? 'success':''}">${p.available ? 'available':'unavailable'}</span>
+          </div>
+          <div class="controls">
+            <button class="btn primary" data-k="instant" type="button">Instant Request</button>
+            <button class="btn ghost" data-k="schedule" type="button">Schedule</button>
+          </div>`;
+        el.querySelectorAll('button[data-k]').forEach(b=>{
+          b.onclick = ()=> (b.dataset.k==='instant' ? startInstantEntry(p) : openBooking(p));
+        });
+        box.appendChild(el);
       });
     }
 
-    // Instant booking: ensure cancel really clears timers, active state, and modals
-    function hardCancel(category){
-      try { if (window.instantTimer) { clearInterval(window.instantTimer); window.instantTimer = null; } } catch {}
-      try { if (window.trackPoll)   { clearInterval(window.trackPoll);   window.trackPoll   = null; } } catch {}
-      try { if (window.activeRequests && category) window.activeRequests[category] = false; } catch {}
-      try { if (window.setActive) window.setActive(category || 'general', null); } catch {}
-      window.requestId = null;
-      document.getElementById('cancelReasonsModal')?.classList.remove('open');
-      document.getElementById('trackModal')?.classList.remove('open');
-      document.getElementById('instantModal')?.classList.remove('open');
+    $('voiceBtn').onclick = ()=> voiceToInput($('search'), ()=>runHomeSearch());
+    function voiceToInput(inputEl, onResult){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert('Voice not supported'); return; }
+      const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult = (e)=>{ const text=e.results[0][0].transcript||''; inputEl.value=text; onResult&&onResult(text); };
+      rec.start();
     }
-    const crConfirm = document.getElementById('crConfirm');
-    if (crConfirm && !crConfirm.dataset.cancelFixBound) {
-      crConfirm.dataset.cancelFixBound='1';
-      const orig = crConfirm.onclick;
-      crConfirm.onclick = async function(e){
-        if (orig) try { await orig.call(this, e); } catch {}
-        hardCancel(window.lastCategory || 'general');
+    $('searchBtn').onclick = runHomeSearch;
+    function runHomeSearch(){
+      const q = ($('search').value||'').trim().toLowerCase(); if (!q) return;
+      if (/(ride|taxi|cab|uber|bolt)/.test(q)) return openCategory('transport','Transport');
+      if (/(truck|backie|moving|load)/.test(q)) {
+        openCategoryOptions('Transport Options',[{id:'moving',name:'Truck / Backie',icon:'🚚'}],o=>{
+          $('categoryOptionsModal').classList.remove('open');
+          $('providersTitle').textContent = o.name + ' — Providers';
+          fetchProviders('transport','moving').then(renderProviders);
+          $('providersModal').classList.add('open');
+        });
+        return;
+      }
+      if (/(food|pizza|burger|fries|chicken|drinks)/.test(q)) return openItemsModal('fastfood');
+      if (/(grocery|milk|bread|eggs|rice|fruit|vegetable|vegetables)/.test(q)) return openItemsModal('grocery');
+      if (/(ambulance|medical)/.test(q)) return openEmergency('ambulance','Ambulance');
+      if (/(fire)/.test(q)) return openEmergency('fire','Fire Service');
+      if (/(towing|tow)/.test(q)) return openEmergency('towing','Towing');
+      if (/(security|police)/.test(q)) return openEmergency('security','Security');
+      if (/(plumber|electrician|clean|garden|paint)/.test(q)) return openItemsModal('home');
+      if (/(mechanic|tire|battery|car wash)/.test(q)) return openItemsModal('auto');
+      if (/(phone|computer|laptop|tv|repair|software)/.test(q)) return openItemsModal('tech');
+      if (/(builder|carpenter|construction)/.test(q)) return openItemsModal('construction');
+      if (/(event|tutor|legal|photo|photography)/.test(q)) return openItemsModal('others');
+      $('providersTitle').textContent = q + ' — Providers';
+      fetchProviders('search', q).then(renderProviders);
+      $('providersModal').classList.add('open');
+    }
+
+    async function openEmergency(emId, label){
+      $('providersTitle').textContent = label + ' — Nearest';
+      const list = await fetchProviders('emergency', emId);
+      renderProviders(list);
+      $('providersModal').classList.add('open');
+    }
+
+    const tiModal = $('tiModal'), tiPickup=$('tiPickup'), tiDestination=$('tiDestination'), tiStops=$('tiStops');
+    let tiStopCount=0;
+    $('tiClose').onclick = ()=> tiModal.classList.remove('open');
+    $('tiUseCurrent').onclick = async ()=>{
+      if (coords) { tiPickup.value = await reverseGeocode(coords.lat, coords.lng) || ''; }
+      else { await initLocation(); if (coords) tiPickup.value = await reverseGeocode(coords.lat, coords.lng) || ''; }
+    };
+    $('tiAddStop').onclick = ()=>{
+      if (tiStopCount>=5) return alert('Maximum of 5 stops');
+      tiStopCount++;
+      const wrap=document.createElement('div'); wrap.className='stop-row';
+      wrap.innerHTML=`<label class="small" style="min-width:56px">Stop ${tiStopCount}</label><input class="tiStopInput" placeholder="Enter stop ${tiStopCount} address" style="flex:1"/>`;
+      tiStops.appendChild(wrap);
+      bindAddrInput(wrap.querySelector('.tiStopInput'));
+    };
+    $('tiRemoveStop').onclick = ()=>{ if (tiStopCount<=0) return; tiStops.removeChild(tiStops.lastElementChild); tiStopCount--; };
+
+    function startInstantEntry(provider){
+      selectedProvider = provider;
+      if (lastCategory==='transport'){
+        tiModal.classList.add('open');
+        bindAddrInput(tiPickup);
+        bindAddrInput(tiDestination);
+        $('tiStart').onclick = ()=> startInstantTransport(provider);
+      } else startInstant(provider);
+    }
+
+    async function startInstantTransport(provider){
+      const pickup=(tiPickup.value||'').trim(), destination=(tiDestination.value||'').trim();
+      if (!pickup||!destination){ alert('Pickup and Destination are required'); return; }
+      const stops = Array.from(document.querySelectorAll('.tiStopInput')).map(i=>i.value.trim()).filter(Boolean).slice(0,5);
+      activeRequests['transport']=true; tiModal.classList.remove('open');
+      startInstantCountdownInit();
+      try{
+        const r = await fetch(`${BASE_API}/api/requests`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({type:'instant',category:'transport',providerId:provider.id,userPublicName:user.name,pickup,destination,stops,location:coords?{latitude:coords.lat,longitude:coords.lng}:null})
+        });
+        const d=await r.json().catch(()=>({})); requestId=d.requestId||('demo-'+Date.now());
+      }catch{ requestId='demo-'+Date.now(); }
+      setActive('transport', { id: requestId, status:'pending' });
+      openTrackingPending();
+      startInstantCountdown('transport');
+    }
+
+    async function startInstant(provider){
+      activeRequests[lastCategory||'general']=true;
+      startInstantCountdownInit();
+      try{
+        const r=await fetch(`${BASE_API}/api/requests`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({type:'instant',category:lastCategory||'general',providerId:provider.id,userPublicName:user.name,location:coords?{latitude:coords.lat,longitude:coords.lng}:null})
+        });
+        const d=await r.json().catch(()=>({})); requestId=d.requestId||('demo-'+Date.now());
+      }catch{ requestId='demo-'+Date.now(); }
+      setActive(lastCategory||'general', { id: requestId, status:'pending' });
+      openTrackingPending();
+      startInstantCountdown(lastCategory||'general');
+    }
+
+    function startInstantCountdownInit(){
+      $('providersModal').classList.remove('open');
+      instantLeft=90; $('countdown').textContent=String(instantLeft); $('instantHint').textContent='Waiting for provider to accept…'; $('instantModal').classList.add('open');
+    }
+    function startInstantCountdown(key){
+      $('cancelInstant').onclick = ()=>{ $('instantModal').classList.remove('open'); activeRequests[key]=false; };
+      instantTimer=setInterval(async ()=>{
+        instantLeft-=1; $('countdown').textContent=String(instantLeft);
+        if (instantLeft%3===0){
+          const status=await getRequestStatus(requestId);
+          if (status==='accepted'){ stopInstant(); openTracking(); return; }
+          if (status==='rejected'){ stopInstant(); alert('Provider rejected.'); $('instantModal').classList.remove('open'); activeRequests[key]=false; setActive(key,null); return; }
+        }
+        if (instantLeft<=0){ stopInstant(); alert('No response. Try others.'); $('instantModal').classList.remove('open'); activeRequests[key]=false; setActive(key,null); }
+      },1000);
+      $('findOthers').onclick = ()=>{ $('instantModal').classList.remove('open'); $('providersModal').classList.add('open'); };
+    }
+    function stopInstant(){ if (instantTimer) clearInterval(instantTimer); instantTimer=null; }
+    async function getRequestStatus(id){
+      try{ const r=await fetch(`${BASE_API}/api/requests/${encodeURIComponent(id)}`); if(!r.ok) throw 0; const d=await r.json(); return d.status||'pending'; }
+      catch{ return (instantLeft<78)?'accepted':'pending'; }
+    }
+
+    function openTrackingPending(){
+      $('instantModal').classList.remove('open');
+      $('trackModal').classList.add('open');
+      setTimeout(initMap, 50);
+      $('trackStatus').textContent = 'Waiting for provider to accept…';
+    }
+
+    function openTracking(){
+      $('instantModal').classList.remove('open'); $('trackModal').classList.add('open'); setTimeout(initMap,50); startTracking();
+    }
+    function initMap(){
+      if (!map){ map=L.map('track-map',{zoomControl:true}); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OSM' }).addTo(map); }
+      const userLatLng = coords ? [coords.lat, coords.lng] : [0,0];
+      map.setView(userLatLng, 14); if (userMarker) userMarker.remove(); userMarker=L.marker(userLatLng,{title:'You'}).addTo(map); if (providerMarker) providerMarker.remove();
+    }
+    function startTracking(){
+      if (trackPoll) clearInterval(trackPoll);
+      trackPoll=setInterval(async ()=>{
+        const pos=await getProviderPosition(requestId); if (!pos) return;
+        const latlng=[pos.lat,pos.lng]; if (!providerMarker) providerMarker=L.marker(latlng,{title:'Provider',icon: L.icon({iconUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',iconRetinaUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41]})}).addTo(map);
+        else providerMarker.setLatLng(latlng);
+        $('trackStatus').textContent = `Provider en route • ${pos.eta || 'ETA —'}`;
+      },3000);
+    }
+    async function getProviderPosition(id){
+      try{ const r=await fetch(`${BASE_API}/api/requests/${encodeURIComponent(id)}/position`); if(!r.ok) throw 0; const d=await r.json(); return {lat:d.provider?.lat,lng:d.provider?.lng,eta:d.eta}; }
+      catch{ const base=coords?{lat:coords.lat+(Math.random()-0.5)/100,lng:coords.lng+(Math.random()-0.5)/100}:{lat:0,lng:0}; return {lat:base.lat,lng:base.lng,eta:'8 min'}; }
+    }
+    $('closeTrack').onclick = ()=>{ if (trackPoll) clearInterval(trackPoll); $('trackModal').classList.remove('open'); };
+
+    $('trackCancelBtn').onclick = ()=> openCancelReasons(lastCategory||'general');
+    function openCancelReasons(category) {
+      const modal = $('cancelReasonsModal');
+      const crList = $('crList');
+      modal.classList.add('open'); crList.innerHTML='';
+      ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{
+        const row = document.createElement('label'); row.className = 'row';
+        row.innerHTML = `<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`;
+        crList.appendChild(row);
+      });
+      const other = document.createElement('input');
+      other.id = 'crOther'; other.placeholder = 'If Other, describe…'; other.style.cssText='width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px';
+      crList.appendChild(other);
+      $('crClose').onclick = ()=> modal.classList.remove('open');
+      $('crBack').onclick  = ()=> modal.classList.remove('open');
+      $('crConfirm').onclick = async ()=> {
+        const picked = document.querySelector('input[name="cr"]:checked')?.value || 'Other';
+        const reason = picked === 'Other' ? (other.value.trim()||'Other') : picked;
+        try { if (window.requestId) await fetch(`${BASE_API}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason)}`, { method:'DELETE' }); } catch {}
+        setActive(category, null);
+        if (trackPoll) clearInterval(trackPoll);
+        $('trackModal').classList.remove('open');
+        alert('Request cancelled');
+      };
+    }
+
+    // Active map per service
+    const ACTIVE_KEY = 'zup_active_by_service';
+    function getActiveMap(){ try { return JSON.parse(localStorage.getItem(ACTIVE_KEY)||'{}'); } catch { return {}; } }
+    function setActive(cat, obj){ const m=getActiveMap(); if (obj) m[cat]=obj; else delete m[cat]; localStorage.setItem(ACTIVE_KEY, JSON.stringify(m)); }
+    function getActive(cat){ return getActiveMap()[cat]; }
+
+    // Items modal
+    function openItemsModal(kind){
+      $('itemsTitle').textContent = (kind==='fastfood'?'Fast Food':kind==='grocery'?'Groceries':'Find Service');
+      const chipsMap = {
+        fastfood:['pizza','burger','fries','chicken','drinks','meat'],
+        grocery: ['milk','bread','eggs','rice','fruits','vegetables','water'],
+        home:    ['cleaning','gardening','painting','plumber','electrician'],
+        tech:    ['phone repair','computer','tv repair','software'],
+        auto:    ['mechanic','tires','battery','car wash'],
+        construction:['builder','carpenter','electrician','plumber'],
+        others:  ['events','tutor','legal','photography'],
+        roadside:['flat tire','jumpstart','fuel','lockout'],
+      };
+      $('itemChips').innerHTML='';
+      (chipsMap[kind]||[]).forEach(text=>{
+        const b=document.createElement('button'); b.className='btn ghost'; b.type='button'; b.textContent=text;
+        b.onclick=()=>{ $('itemSearch').value=text; $('itemGo').click(); };
+        $('itemChips').appendChild(b);
+      });
+      $('itemsModal').classList.add('open');
+      $('closeItems').onclick=()=>$('itemsModal').classList.remove('open');
+      $('itemVoice').onclick = ()=> voiceToInput($('itemSearch'), ()=>$('itemGo').click());
+      $('itemGo').onclick = async ()=>{
+        const q = ($('itemSearch').value||'').trim().toLowerCase();
+        $('itemsModal').classList.remove('open');
+        $('providersTitle').textContent = (q||'Results') + ' — Providers';
+        const list = await fetchProviders(kind, q||kind);
+        renderProviders(list);
+        $('providersModal').classList.add('open');
+      };
+    }
+
+    // Marketplace — demo + user products
+    const MP_CATEGORIES = [
+      { id:'electronics', name:'Electronics' },
+      { id:'fashion',     name:'Fashion' },
+      { id:'home',        name:'Home & Garden' },
+      { id:'sports',      name:'Sports' },
+      { id:'automobile',  name:'Automobile' },
+      { id:'spares',      name:'Spare Parts' },
+      { id:'others',      name:'Others' },
+    ];
+    let MP_PRODUCTS = [
+      { id:'p100', title:'Smartphone X',     cat:'electronics', price:499, stock:12, img:'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop' },
+      { id:'p101', title:'Wireless Earbuds', cat:'electronics', price:59,  stock:34, img:'https://images.unsplash.com/photo-1585386959984-a41552231658?q=80&w=800&auto=format&fit=crop' },
+      { id:'p200', title:'Running Shoes',    cat:'fashion',     price:79,  stock:18, img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop' },
+      { id:'p201', title:'Denim Jacket',     cat:'fashion',     price:69,  stock:9,  img:'https://images.unsplash.com/photo-1542060748-10c28b62716b?q=80&w=800&auto=format&fit=crop' },
+      { id:'p300', title:'Blender Pro',      cat:'home',        price:49,  stock:22, img:'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800&auto=format&fit=crop' },
+      { id:'p301', title:'Desk Lamp',        cat:'home',        price:25,  stock:41, img:'https://images.unsplash.com/photo-1505685296765-3a2736de412f?q=80&w=800&auto=format&fit=crop' }
+    ];
+
+    function getUserProducts(){ try { return JSON.parse(localStorage.getItem('zup_user_products')||'[]'); } catch { return []; } }
+    function setUserProducts(arr){ localStorage.setItem('zup_user_products', JSON.stringify(arr||[])); }
+    function mergeProducts(){ const ups=getUserProducts(); MP_PRODUCTS = MP_PRODUCTS.filter(p=>!p.user).concat(ups); }
+
+    $('mpVoice').onclick = ()=> voiceToInput($('mpSearch'), ()=> runMarketplaceSearch());
+    $('mpSearchBtn').onclick = runMarketplaceSearch;
+    function initMarketplace(){
+      mergeProducts();
+      $('mpChips').innerHTML='';
+      MP_CATEGORIES.forEach(c=>{
+        const b=document.createElement('button'); b.className='btn ghost'; b.type='button'; b.textContent=c.name;
+        b.onclick=()=> renderMarketplace(c.id, $('mpSearch').value.trim().toLowerCase());
+        $('mpChips').appendChild(b);
+      });
+      renderMarketplace(); updateCartCount();
+    }
+    function runMarketplaceSearch(){ renderMarketplace(null, $('mpSearch').value.trim().toLowerCase()); }
+    function renderMarketplace(category=null, query=''){
+      $('mpGrid').innerHTML='';
+      let list = MP_PRODUCTS.slice();
+      if (category) list = list.filter(p=>p.cat===category);
+      if (query) list = list.filter(p=>p.title.toLowerCase().includes(query)||p.cat.includes(query));
+      if (!list.length){ $('mpGrid').innerHTML='<div class="small muted">No products found.</div>'; return; }
+      list.forEach(p=>{
+        const el=document.createElement('div'); el.className='card product'; el.dataset.id=p.id;
+        el.innerHTML=`<img src="${p.img}" alt="${p.title}"/><div><strong>${p.title}</strong></div>
+          <div class="row" style="justify-content:space-between"><div class="price">$${Number(p.price).toFixed(2)}</div><div class="small muted">Stock: ${p.stock}</div></div>
+          <button class="btn primary" type="button">${p.stock>0?'Add to Cart':'Out of Stock'}</button>`;
+        const btn=el.querySelector('button'); btn.disabled=p.stock<=0; btn.onclick=()=>addToCart(p.id);
+        $('mpGrid').appendChild(el);
+      });
+    }
+    let cart = loadCart();
+    function addToCart(productId){
+      const prod=MP_PRODUCTS.find(p=>p.id===productId); if(!prod||prod.stock<=0) return;
+      const i=cart.items.findIndex(x=>x.id===productId);
+      if (i>=0) cart.items[i].qty+=1; else cart.items.push({id:prod.id,title:prod.title,price:Number(prod.price),img:prod.img,qty:1});
+      saveCart(); updateCartCount();
+    }
+    function updateCartCount(){ const n=cart.items.reduce((a,b)=>a+b.qty,0); const badge=$('headerCartBadge'); if ($('cartCount')) $('cartCount').textContent=String(n); if (badge) badge.textContent=String(n); }
+    function loadCart(){ try{ return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{ return { items:[] }; } }
+    function saveCart(){ localStorage.setItem('mp_cart', JSON.stringify(cart)); }
+    function renderCart(){
+      const list=$('cartList'); const totalEl=$('cartTotal'); list.innerHTML='';
+      if(!cart.items.length){ list.innerHTML='<div class="small muted">Your cart is empty.</div>'; totalEl.textContent='0.00'; return; }
+      let total=0;
+      cart.items.forEach(item=>{
+        total+=item.price*item.qty;
+        const row=document.createElement('div'); row.className='card'; row.dataset.id=item.id;
+        row.innerHTML = `<div class="row" style="justify-content:space-between; align-items:flex-start">
+          <div class="row"><img src="${item.img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/><div style="margin-left:8px"><strong>${item.title}</strong><div class="small muted">$${Number(item.price).toFixed(2)}</div></div></div>
+          <div class="qty"><button class="btn ghost" data-k="dec" type="button">−</button><div>${item.qty}</div><button class="btn ghost" data-k="inc" type="button">＋</button><button class="btn ghost" data-k="rm" type="button">✖</button></div></div>`;
+        const [dec, , inc, rm] = row.querySelectorAll('button');
+        dec.onclick=()=>{ item.qty=Math.max(1,item.qty-1); saveCart(); renderCart(); updateCartCount(); };
+        inc.onclick=()=>{ item.qty+=1; saveCart(); renderCart(); updateCartCount(); };
+        rm.onclick =()=>{ cart.items=cart.items.filter(x=>x.id!==item.id); saveCart(); renderCart(); updateCartCount(); };
+        list.appendChild(row);
+      });
+      totalEl.textContent=total.toFixed(2);
+    }
+
+    $('placeOrderBtn').onclick = async ()=>{
+      const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+      const name=$('chkName').value.trim(), phone=$('chkPhone').value.trim(), address=$('chkAddress').value.trim(), unit=($('chkUnit').value||'').trim(), notes=($('chkNotes').value||'').trim();
+      if (!$('chkTerms').checked) return alert('Please accept the Terms');
+      if (!address) return alert('Enter delivery address');
+      if (!name||!phone) return alert('Enter name and phone');
+      if (!cart.items.length) return alert('Cart is empty');
+      const payload = { items: cart.items.map(i=>({id:i.id,title:i.title,qty:i.qty,price:i.price})), name, phone, address, unit, notes };
+      if (method==='card'){
+        try{
+          const r=await fetch(`${BASE_API}/api/payments/checkout-session`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,successUrl:location.origin+'/?checkout=success',cancelUrl:location.origin+'/?checkout=cancel'})});
+          const d=await r.json().catch(()=>({}));
+          if (d?.url){ cart.items=[]; saveCart(); updateCartCount(); location.href=d.url; return; }
+          if ((d?.id||d?.sessionId) && window.Stripe){ const stripe=window.Stripe(STRIPE_PK); cart.items=[]; saveCart(); updateCartCount(); await stripe.redirectToCheckout({sessionId: d.id||d.sessionId}); return; }
+          alert('Payment session error. Try Cash.');
+        }catch{ alert('Payment session error. Try Cash.'); }
+      } else {
+        let orderId='demo-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
+        try{ const r2=await fetch(`${BASE_API}/api/marketplace/orders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,paymentMethod:'cash'})}); const d2=await r2.json().catch(()=>({})); orderId=d2.orderId||orderId; code=d2.deliveryCode||code; }catch{}
+        $('checkoutModal').classList.remove('open'); showOrderStatus(orderId, code, 'cash'); cart.items=[]; saveCart(); updateCartCount();
+      }
+    };
+    function showOrderStatus(orderId, code, method){
+      $('orderInfo').innerHTML = `<div class="card"><div><strong>Order ID:</strong> ${orderId}</div><div style="margin-top:6px"><strong>Status:</strong> <span id="ordStatus">pending</span></div><div style="margin-top:6px"><strong>Delivery code:</strong> <span style="font-family:monospace">${code}</span></div><div class="small muted" style="margin-top:6px">${method==='card'?'Funds are held until code entry.':'Cash selected: code marks delivered.'}</div></div>`;
+      $('orderModal').classList.add('open');
+      const ord=$('ordStatus'); let t=0; const poll=setInterval(async()=>{ t+=3; let s; try{ const r=await fetch(`${BASE_API}/api/marketplace/orders/${encodeURIComponent(orderId)}`); const d=await r.json().catch(()=>({})); s=d.status; }catch{ if (t>=6&&t<12) s='accepted'; else if (t>=12&&t<18) s='out_for_delivery'; else if (t>=18) s='delivered'; else s='pending'; } ord.textContent=s||'pending'; if (s==='delivered'||t>=24) clearInterval(poll); },3000);
+    }
+
+    function wireProfilePages(){
+      $('manageServicesBtn').onclick   = ()=>{ showPage('manage-services'); loadServicesManage(); };
+      $('manageProductsBtn').onclick   = ()=>{ showPage('manage-products'); loadProductsManage(); };
+      $('emergencyContactsBtn').onclick= ()=>{ showPage('emergency-contacts'); loadContactsForm(); };
+      $('providerVerifyBtn').onclick   = ()=>{ showPage('verify-provider'); };
+      $('supportBtn').onclick          = ()=>{ showPage('support'); };
+      $('msAdd').onclick = addService;
+      $('mpAdd').onclick = addProduct;
+      $('ecSave').onclick = saveContacts;
+      $('vpSubmit').onclick = ()=>{ $('vpStatus').textContent='Submitted. Awaiting admin review.'; };
+    }
+
+    function getUserServices(){ try { return JSON.parse(localStorage.getItem('zup_user_services')||'[]'); } catch { return []; } }
+    function setUserServices(arr){ localStorage.setItem('zup_user_services', JSON.stringify(arr||[])); }
+    function addService(){
+      const cat=$('msCategory').value, type=$('msType').value.trim(), details=$('msDetails').value.trim(), price=Number($('msPrice').value||0);
+      if (!type || !details || !price) return alert('Fill category, type, details, price');
+      const id='svc-'+Date.now();
+      const images=Array.from(($('msImages').files||[])).slice(0,4).map(f=>URL.createObjectURL(f));
+      const services=getUserServices();
+      services.push({ id, cat, type, details, price, images, publicName:user.name, status:'available' });
+      setUserServices(services);
+      loadServicesManage();
+      alert('Service added');
+    }
+    function loadServicesManage(){
+      const list=$('msList'); list.innerHTML='';
+      const services=getUserServices();
+      if (!services.length){ list.innerHTML='<div class="small muted">No services yet.</div>'; return; }
+      services.forEach(s=>{
+        const el=document.createElement('div'); el.className='card';
+        el.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div><div><strong>${s.type}</strong> <span class="small muted">[${s.cat}]</span></div><div class="small muted">${s.details}</div><div class="small"><strong>Price:</strong> $${s.price.toFixed(2)}</div><div class="small"><strong>By:</strong> ${s.publicName}</div></div>
+          <div class="row" style="gap:6px">
+            <button class="btn ghost" data-k="track" data-id="${s.id}">Track</button>
+            <button class="btn ghost" data-k="edit" data-id="${s.id}">Edit</button>
+            <button class="btn ghost" data-k="cancel" data-id="${s.id}">Cancel</button>
+          </div>
+        </div>`;
+        list.appendChild(el);
+      });
+      list.querySelectorAll('button[data-k]').forEach(btn=>{
+        const id=btn.dataset.id, k=btn.dataset.k;
+        btn.onclick = ()=>{
+          if (k==='track') openTrackingPending();
+          if (k==='edit') alert('Edit coming soon');
+          if (k==='cancel') openCancelReasons('general');
+        };
+      });
+    }
+
+    function addProduct(){
+      const cat=$('mpCatSelect').value, name=$('mpName').value.trim(), desc=$('mpDesc').value.trim(), price=Number($('mpPrice').value||0), stock=Number($('mpStock').value||0);
+      if (!name || !price || !stock) return alert('Fill name, price, stock');
+      const id='u'+Date.now();
+      const imgs=Array.from(($('mpImages').files||[])).slice(0,10).map(f=>URL.createObjectURL(f));
+      const img=imgs[0] || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop';
+      const ups=getUserProducts();
+      ups.push({ id, title:name, cat, price, stock, img, user:true, seller:user.name, desc });
+      setUserProducts(ups);
+      mergeProducts(); renderMarketplace();
+      loadProductsManage();
+      alert('Product added');
+    }
+    function loadProductsManage(){
+      const box=$('mpManageList'); box.innerHTML='';
+      const ups=getUserProducts();
+      if (!ups.length){ box.innerHTML='<div class="small muted">No products yet.</div>'; return; }
+      ups.forEach(p=>{
+        const el=document.createElement('div'); el.className='card';
+        el.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div><div><strong>${p.title}</strong> <span class="small muted">[${p.cat}]</span></div><div class="small muted">${p.desc||''}</div><div class="small"><strong>Price:</strong> $${Number(p.price).toFixed(2)} • <strong>Stock:</strong> ${p.stock}</div><div class="small"><strong>Seller:</strong> ${user.name}</div></div>
+          <div class="row" style="gap:6px">
+            <button class="btn ghost" data-k="del" data-id="${p.id}">Delete</button>
+          </div>
+        </div>`;
+        box.appendChild(el);
+      });
+      box.querySelectorAll('button[data-k="del"]').forEach(b=>{
+        b.onclick=()=>{ const id=b.dataset.id; const arr=getUserProducts().filter(x=>x.id!==id); setUserProducts(arr); mergeProducts(); renderMarketplace(); loadProductsManage(); };
+      });
+    }
+
+    function loadContactsForm(){
+      const wrap=$('ecForm'); wrap.innerHTML='';
+      const saved=loadContacts();
+      for (let i=0;i<5;i++){
+        const row=document.createElement('div'); row.className='grid-2';
+        row.innerHTML=`<div class="field"><label class="small">Name ${i+1}</label><input id="ecName${i}" value="${saved[i]?.name||''}"/></div>
+                       <div class="field"><label class="small">Phone ${i+1}</label><input id="ecPhone${i}" value="${saved[i]?.phone||''}"/></div>`;
+        wrap.appendChild(row);
+      }
+    }
+    function loadContacts(){ try { return JSON.parse(localStorage.getItem('zup_contacts')||'[]'); } catch { return []; } }
+    function saveContacts(){
+      const arr=[]; for(let i=0;i<5;i++){ const name=$('ecName'+i).value.trim(), phone=$('ecPhone'+i).value.trim(); if (name||phone) arr.push({name,phone}); }
+      localStorage.setItem('zup_contacts', JSON.stringify(arr)); alert('Contacts saved');
+    }
+
+    function wireSupport(){
+      const faq=[ 'How to cancel a booking?', 'How to add a product?', 'How to become verified?', 'How to add emergency contacts?' ];
+      const ai=$('aiFaq'); ai.innerHTML=''; faq.forEach(q=>{ const b=document.createElement('button'); b.className='btn ghost'; b.type='button'; b.textContent=q; b.onclick=()=>alert(q+': Please check Profile pages.'); ai.appendChild(b); });
+      $('supSend').onclick=()=>{ const n=$('supName').value.trim(), p=$('supPhone').value.trim(), e=$('supEmail').value.trim(), r=$('supReason').value.trim(); if(!n||!p||!e||!r) return alert('Fill all fields'); alert('Support message sent'); $('supName').value=''; $('supPhone').value=''; $('supEmail').value=''; $('supReason').value=''; };
+    }
+
+    // Address suggestions (transport-only)
+    function bindAddrInput(input){
+      if (!input || input.dataset.addrBound === '1') return; input.dataset.addrBound='1';
+      const panel = document.getElementById('addrSuggest') || (function(){ const d=document.createElement('div'); d.id='addrSuggest'; d.style.cssText='position:fixed;max-height:240px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);z-index:70;display:none'; document.body.appendChild(d); return d; })();
+      let countryCode=null, bounds=null, debounce=0, activeInput=null;
+      if (!panel.dataset.bias) {
+        panel.dataset.bias='1';
+        if (coords) { const d=0.6; bounds={ minLon:coords.lng-d, minLat:coords.lat-d, maxLon:coords.lng+d, maxLat:coords.lat+d }; panel.dataset.bounds='1'; }
+        else fetch('https://ipapi.co/json/').then(r=>r.json()).then(d=>{ if (d?.country_code) countryCode=d.country_code.toLowerCase(); });
+        document.addEventListener('click',(e)=>{ if(!panel.contains(e.target) && e.target!==activeInput){ panel.style.display='none'; panel.innerHTML=''; activeInput=null; }},{passive:true});
+      }
+      function posPanel(inp){ const r=inp.getBoundingClientRect(); panel.style.left=r.left+'px'; panel.style.top=(r.bottom+6)+'px'; panel.style.width=r.width+'px'; }
+      async function queryAddr(q){
+        const p = new URLSearchParams({ format:'json', limit:'5', addressdetails:'1', q });
+        if (bounds){ p.set('viewbox', `${bounds.minLon},${bounds.maxLat},${bounds.maxLon},${bounds.minLat}`); p.set('bounded','1'); }
+        else if (countryCode){ p.set('countrycodes', countryCode); }
+        const res=await fetch(`https://nominatim.openstreetmap.org/search?${p.toString()}`,{headers:{'Accept':'application/json'}}); return await res.json().catch(()=>[]);
+      }
+      input.setAttribute('autocomplete','off');
+      input.addEventListener('input', ()=>{
+        if (!input.closest('#tiModal')) return;
+        clearTimeout(debounce); const q=input.value.trim(); if (q.length<3){ panel.style.display='none'; panel.innerHTML=''; return; }
+        debounce=setTimeout(async ()=>{
+          const items=await queryAddr(q); if (!items?.length){ panel.style.display='none'; panel.innerHTML=''; return; }
+          activeInput=input; panel.innerHTML=''; posPanel(input);
+          items.forEach(it=>{ const line=it.display_name || ''; const b=document.createElement('button'); b.type='button'; b.style.cssText='display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:#fff;border-bottom:1px solid var(--border);cursor:pointer'; b.textContent=line; b.onclick=()=>{ input.value=line; panel.style.display='none'; panel.innerHTML=''; }; panel.appendChild(b); });
+          panel.style.display='block';
+        },220);
+      },{passive:true});
+      input.addEventListener('focus',()=>{ if (input.value.trim().length>=3) posPanel(input); },{passive:true});
+      input.addEventListener('blur',()=>setTimeout(()=>{ panel.style.display='none'; panel.innerHTML=''; },150));
+    }
+
+    function getActiveMap(){ try { return JSON.parse(localStorage.getItem('zup_active_by_service')||'{}'); } catch { return {}; } }
+    function setActive(cat, obj){ const m=getActiveMap(); if (obj) m[cat]=obj; else delete m[cat]; localStorage.setItem(ACTIVE_KEY, JSON.stringify(m)); }
+    function getActive(cat){ return getActiveMap()[cat]; }
+
+    // PWA install banner
+    (function installBanner(){
+      if (document.getElementById('installBanner')) return;
+      const banner = document.createElement('div');
+      banner.id = 'installBanner';
+      banner.style.cssText = 'position:fixed;left:16px;right:16px;bottom:80px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 8px 24px rgba(17,24,39,.08);padding:12px;z-index:1000;display:none';
+      banner.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <strong>Install ZippUp</strong>
+          <button id="installClose" class="btn ghost" type="button">✖</button>
+        </div>
+        <div class="small muted" style="margin:8px 0">Add ZippUp to your home screen for a faster, full‑screen experience.</div>
+        <button id="installBtn" class="btn primary" type="button">Install App</button>`;
+      document.body.appendChild(banner);
+      let deferred = null;
+      window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; banner.style.display = 'block'; });
+      document.getElementById('installBtn').onclick = async ()=>{ if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred=null; banner.style.display='none'; };
+      document.getElementById('installClose').onclick = ()=> banner.style.display='none';
+      window.addEventListener('appinstalled', ()=> { deferred=null; banner.style.display='none'; });
+    })();
+  </script>
+  <script>
+// ZippUp focused hotfix – cart edit + sticky checkout + schedule works + profile edit + active tracking + uploads + top‑up + PWA banner
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // 0) Ensure cart helpers exist
+  if (!window.cart) { try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); } catch { window.cart = { items: [] }; } }
+  if (typeof window.updateCartCount !== 'function') {
+    window.updateCartCount = function updateCartCount() {
+      const n = window.cart.items.reduce((a,b)=>a+b.qty,0);
+      const hb = $('headerCartBadge'), cc = $('cartCount');
+      if (hb) hb.textContent = String(n);
+      if (cc) cc.textContent = String(n);
+    };
+  }
+  if (typeof window.saveCart !== 'function') {
+    window.saveCart = function saveCart() { localStorage.setItem('mp_cart', JSON.stringify(window.cart)); };
+  }
+  if (typeof window.renderCart !== 'function') {
+    window.renderCart = function renderCart() {
+      const list = $('cartList'), totalEl = $('cartTotal');
+      if (!list || !totalEl) return;
+      list.innerHTML = '';
+      if (!window.cart.items.length) {
+        list.innerHTML = '<div class="small muted">Your cart is empty.</div>';
+        totalEl.textContent = '0.00';
+        window.updateCartCount();
+        return;
+      }
+      let total = 0;
+      window.cart.items.forEach(item=>{
+        total += Number(item.price)*item.qty;
+        const row = document.createElement('div');
+        row.className = 'card';
+        row.dataset.id = item.id;
+        row.innerHTML = `
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div class="row">
+              <img src="${item.img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
+              <div style="margin-left:8px">
+                <strong>${item.title}</strong>
+                <div class="small muted">$${Number(item.price).toFixed(2)}</div>
+              </div>
+            </div>
+            <div class="qty">
+              <button class="btn ghost" data-k="dec" type="button">−</button>
+              <div>${item.qty}</div>
+              <button class="btn ghost" data-k="inc" type="button">＋</button>
+              <button class="btn ghost" data-k="rm" type="button">✖</button>
+            </div>
+          </div>`;
+        list.appendChild(row);
+      });
+      totalEl.textContent = total.toFixed(2);
+      window.updateCartCount();
+    };
+  }
+
+  // 1) Make checkout row sticky and the cart body scrollable
+  (function stickyCheckout() {
+    const body = document.querySelector('#cartModal .sheet .body');
+    if (!body) return;
+    body.style.maxHeight = '70vh';
+    body.style.overflow = 'auto';
+    const row = document.querySelector('#cartModal .sheet .body #checkoutBtn')?.closest('.row');
+    if (row) { row.style.position='sticky'; row.style.bottom='0'; row.style.background='#fff'; row.style.paddingTop='10px'; row.style.borderTop='1px solid var(--border)'; }
+  })();
+
+  // 2) Cart edit (+ / − / remove)
+  function onCartEdit(e) {
+    const btn = e.target.closest('#cartList [data-k]'); if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    const row = btn.closest('.card'); const id = row?.dataset?.id; if (!id) return;
+    const idx = window.cart.items.findIndex(i=>i.id===id); if (idx<0) return;
+    const k = btn.getAttribute('data-k');
+    if (k==='dec') window.cart.items[idx].qty = Math.max(1, window.cart.items[idx].qty-1);
+    if (k==='inc') window.cart.items[idx].qty = window.cart.items[idx].qty+1;
+    if (k==='rm')  window.cart.items.splice(idx,1);
+    window.saveCart(); window.renderCart(); window.updateCartCount();
+  }
+  document.addEventListener('click', onCartEdit, { passive:false });
+  document.addEventListener('touchend', onCartEdit, { passive:false });
+
+  // 3) Schedule buttons: open booking modal immediately
+  document.addEventListener('click', (e)=>{
+    const b = e.target.closest('button[data-k="schedule"]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    if (typeof window.openBooking === 'function') { try { window.openBooking(window.selectedProvider||{id:'manual'}); } catch {} }
+    const bm = $('bookingModal'); if (bm) bm.classList.add('open');
+  }, { passive:false });
+
+  // 4) Re-click same service with pending request -> open tracking with Cancel (reasons), not just message
+  const ACTIVE_KEY = 'zup_active_by_service';
+  function getActiveMap(){ try { return JSON.parse(localStorage.getItem(ACTIVE_KEY)||'{}'); } catch { return {}; } }
+  function setActive(cat,obj){ const m=getActiveMap(); if(obj) m[cat]=obj; else delete m[cat]; localStorage.setItem(ACTIVE_KEY, JSON.stringify(m)); }
+  function getActive(cat){ return getActiveMap()[cat]; }
+  const _openCategory = window.openCategory;
+  if (typeof _openCategory === 'function') {
+    window.openCategory = function wrapped(catId, label) {
+      const act = getActive(catId);
+      if (act && act.id) {
+        // show tracking now
+        if (typeof window.openTracking === 'function') try { window.openTracking(); } catch {}
+        const tHead = document.querySelector('#trackModal .head');
+        if (tHead && !document.getElementById('trackCancelBtn')) {
+          const btn = document.createElement('button');
+          btn.id='trackCancelBtn'; btn.className='btn ghost'; btn.type='button'; btn.textContent='Cancel';
+          btn.onclick = ()=> openCancelReasons(catId);
+          tHead.appendChild(btn);
+        }
+        return;
+      }
+      return _openCategory.apply(this, arguments);
+    }
+  }
+  function openCancelReasons(category) {
+    const modal = $('cancelReasonsModal'); if (!modal) return;
+    const list  = $('crList'); modal.classList.add('open'); list.innerHTML='';
+    ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{
+      const row=document.createElement('label'); row.className='row';
+      row.innerHTML=`<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`;
+      list.appendChild(row);
+    });
+    const other=document.createElement('input'); other.id='crOther'; other.placeholder='If Other, describe…';
+    other.style.cssText='width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px'; list.appendChild(other);
+    $('crClose').onclick=()=> modal.classList.remove('open');
+    $('crBack').onclick =()=> modal.classList.remove('open');
+    $('crConfirm').onclick=async ()=>{
+      const picked = document.querySelector('input[name="cr"]:checked')?.value || 'Other';
+      const reason = picked==='Other' ? (other.value.trim()||'Other') : picked;
+      try { if (window.requestId) await fetch(`${(window.BASE_API||'')}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason)}`, { method:'DELETE' }); } catch {}
+      setActive(category, null);
+      modal.classList.remove('open'); // auto-close so it doesn't block UI
+      // also close tracking
+      document.getElementById('trackModal')?.classList.remove('open');
+      alert('Request cancelled');
+    };
+  }
+
+  // 5) Profile Edit (public name + photo)
+  (function wireProfileEdit(){
+    const btn=$('editProfileBtn'); if (!btn) return;
+    btn.onclick = ()=> {
+      // Build a tiny modal
+      let m=document.getElementById('profileEditModal');
+      if (!m) {
+        m=document.createElement('div'); m.id='profileEditModal'; m.className='modal open';
+        m.innerHTML=`
+          <div class="sheet">
+            <div class="head"><strong>Edit Profile</strong><button class="btn ghost" id="peClose" type="button">✖</button></div>
+            <div class="body">
+              <div class="list">
+                <div class="field"><label class="small">Public name</label><input id="peName" value="${user.name||''}"/></div>
+                <div class="field"><label class="small">Photo</label><input id="pePhoto" type="file" accept="image/*"/></div>
+                <button class="btn primary" id="peSave" type="button">Save</button>
+              </div>
+            </div>
+          </div>`;
+        document.body.appendChild(m);
+      } else {
+        m.classList.add('open');
+      }
+      $('peClose').onclick=()=> m.classList.remove('open');
+      $('peSave').onclick=()=>{
+        const name=$('peName').value.trim(); if (name) user.name=name;
+        const f=$('pePhoto').files?.[0];
+        if (f) {
+          const fr=new FileReader();
+          fr.onload=()=>{ localStorage.setItem('zup_profile_photo', fr.result); updateProfileUI(); };
+          fr.readAsDataURL(f);
+        } else updateProfileUI();
+        m.classList.remove('open');
+      };
+    };
+    function updateProfileUI(){
+      $('userName').textContent=user.name||'Guest';
+      const nameEl=$('profName'); if (nameEl) nameEl.textContent=user.name||'Demo User';
+      const imgData=localStorage.getItem('zup_profile_photo');
+      if (imgData) {
+        // If you had an <img> avatar, set src here. Current UI uses emoji, so we skip.
+      }
+    }
+  })();
+
+  // 6) Availability switch green UI
+  (function greenSwitch(){
+    const t=$('availToggle'), knob=$('availKnob'); if (!t||!knob) return;
+    const on=()=>{ knob.style.transform='translateX(20px)'; knob.previousElementSibling.style.background='#10B981'; };
+    const off=()=>{ knob.style.transform='translateX(0)'; knob.previousElementSibling.style.background='#d1d5db'; };
+    if (t.checked) on(); else off();
+    t.onchange=()=> t.checked ? on() : off();
+  })();
+
+  // 7) Manage Services – show uploaded images (base64 persisted)
+  function getUserServices(){ try { return JSON.parse(localStorage.getItem('zup_user_services')||'[]'); } catch { return []; } }
+  function setUserServices(arr){ localStorage.setItem('zup_user_services', JSON.stringify(arr||[])); }
+  if (document.getElementById('msAdd')) {
+    document.getElementById('msAdd').onclick = ()=>{
+      const cat=$('msCategory').value, type=$('msType').value.trim(), details=$('msDetails').value.trim(), price=Number($('msPrice').value||0);
+      if (!type||!details||!price) return alert('Fill category, type, details, price');
+      const id='svc-'+Date.now();
+      const files=Array.from(($('msImages').files||[])).slice(0,4);
+      const images=[];
+      if (files.length) {
+        let pending=files.length;
+        files.forEach(f=>{
+          const fr=new FileReader();
+          fr.onload=()=>{ images.push(fr.result); if(--pending===0) save(); };
+          fr.readAsDataURL(f);
+        });
+      } else save();
+      function save(){
+        const services=getUserServices();
+        services.push({ id, cat, type, details, price, images, publicName:(user.name||'User'), status:'available' });
+        setUserServices(services);
+        loadServicesManage();
+        alert('Service added');
+      }
+    };
+    window.loadServicesManage = function loadServicesManage(){
+      const list=$('msList'); list.innerHTML='';
+      const services=getUserServices();
+      if (!services.length){ list.innerHTML='<div class="small muted">No services yet.</div>'; return; }
+      services.forEach(s=>{
+        const el=document.createElement('div'); el.className='card';
+        const imgs = (s.images||[]).map(src=>`<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+        el.innerHTML=`<div class="list">
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div>
+              <div><strong>${s.type}</strong> <span class="small muted">[${s.cat}]</span></div>
+              <div class="small muted">${s.details}</div>
+              <div class="small"><strong>Price:</strong> $${Number(s.price).toFixed(2)} • <strong>By:</strong> ${s.publicName}</div>
+            </div>
+            <div class="row" style="gap:6px">
+              <button class="btn ghost" data-k="track" data-id="${s.id}">Track</button>
+              <button class="btn ghost" data-k="cancel" data-id="${s.id}">Cancel</button>
+            </div>
+          </div>
+          <div class="row" style="gap:6px;flex-wrap:wrap">${imgs||'<span class="small muted">No catalog images</span>'}</div>
+        </div>`;
+        list.appendChild(el);
+      });
+      list.querySelectorAll('button[data-k="track"]').forEach(b=> b.onclick=()=> { try { openTracking(); } catch { alert('Tracking…'); } });
+      list.querySelectorAll('button[data-k="cancel"]').forEach(b=> b.onclick=()=> openCancelReasons('general'));
+    };
+  }
+
+  // 8) Manage Products – show uploaded images (base64 persisted)
+  function getUserProducts(){ try { return JSON.parse(localStorage.getItem('zup_user_products')||'[]'); } catch { return []; } }
+  function setUserProducts(arr){ localStorage.setItem('zup_user_products', JSON.stringify(arr||[])); }
+  if (document.getElementById('mpAdd')) {
+    document.getElementById('mpAdd').onclick=()=>{
+      const cat=$('mpCatSelect').value, name=$('mpName').value.trim(), desc=$('mpDesc').value.trim(), price=Number($('mpPrice').value||0), stock=Number($('mpStock').value||0);
+      if (!name||!price||!stock) return alert('Fill name, price, stock');
+      const files=Array.from(($('mpImages').files||[])).slice(0,10);
+      const images=[]; if (!files.length){ save(); } else {
+        let left=files.length;
+        files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--left===0) save(); }; fr.readAsDataURL(f); });
+      }
+      function save(){
+        const ups=getUserProducts();
+        const id='prd-'+Date.now();
+        const img=images[0] || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop';
+        ups.push({ id, title:name, cat, price, stock, img, images, desc, seller:(user.name||'User') });
+        setUserProducts(ups);
+        loadProductsManage();
+        alert('Product added');
+      }
+    };
+    window.loadProductsManage = function loadProductsManage(){
+      const box=$('mpManageList'); box.innerHTML='';
+      const ups=getUserProducts();
+      if (!ups.length){ box.innerHTML='<div class="small muted">No products yet.</div>'; return; }
+      ups.forEach(p=>{
+        const imgs=(p.images||[]).map(src=>`<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+        const el=document.createElement('div'); el.className='card';
+        el.innerHTML=`<div class="list">
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div>
+              <div><strong>${p.title}</strong> <span class="small muted">[${p.cat}]</span></div>
+              <div class="small muted">${p.desc||''}</div>
+              <div class="small"><strong>Price:</strong> $${Number(p.price).toFixed(2)} • <strong>Stock:</strong> ${p.stock} • <strong>Seller:</strong> ${p.seller||user.name}</div>
+            </div>
+            <div class="row" style="gap:6px">
+              <button class="btn ghost" data-k="del" data-id="${p.id}">Delete</button>
+            </div>
+          </div>
+          <div class="row" style="gap:6px;flex-wrap:wrap">${imgs||'<span class="small muted">No images</span>'}</div>
+        </div>`;
+        box.appendChild(el);
+      });
+      box.querySelectorAll('button[data-k="del"]').forEach(b=> b.onclick=()=>{ const id=b.dataset.id; const arr=getUserProducts().filter(x=>x.id!==id); setUserProducts(arr); loadProductsManage(); });
+    };
+  }
+
+  // 9) Verify Provider – add multiple upload inputs
+  (function wireVerify(){
+    const pane=document.getElementById('page-verify-provider'); if (!pane) return;
+    const container=pane.querySelector('.list');
+    const idRow=document.createElement('div'); idRow.className='field'; idRow.innerHTML=`<label class="small">ID/Passport documents (multiple)</label><input id="vpIdDocs" type="file" accept="image/*,application/pdf" multiple/>`;
+    const bizRow=document.createElement('div'); bizRow.className='field'; bizRow.innerHTML=`<label class="small">Business/License documents (multiple)</label><input id="vpBizDocs" type="file" accept="image/*,application/pdf" multiple/>`;
+    container.insertBefore(bizRow, document.getElementById('vpSubmit'));
+    container.insertBefore(idRow, bizRow);
+  })();
+
+  // 10) Top‑up flows (minimal dialogs; integrate API later)
+  document.querySelectorAll('[data-topup]').forEach(el=>{
+    el.onclick=()=>{
+      const k=el.dataset.topup;
+      if (k==='airtime') {
+        const net=prompt('Network (e.g., MTN, Vodacom)'); if(!net) return;
+        const num=prompt('Phone number'); if(!num) return;
+        const amt=prompt('Amount'); if(!amt) return;
+        alert(`Airtime order prepared: ${net} • ${num} • ${amt}. Integrate API/Stripe next.`);
+      } else if (k==='data') {
+        const net=prompt('Network'); if(!net) return;
+        const plan=prompt('Data plan (e.g., 1GB, 2GB)'); if(!plan) return;
+        alert(`Data order prepared: ${net} • ${plan}. Integrate API/Stripe next.`);
+      } else {
+        const bill=prompt('Bill type (Electricity, Water, DStv, etc.)'); if(!bill) return;
+        const ref=prompt('Reference / Meter Number'); if(!ref) return;
+        const amt=prompt('Amount'); if(!amt) return;
+        alert(`Bill payment prepared: ${bill} • Ref: ${ref} • ${amt}. Integrate API/Stripe next.`);
+      }
+    };
+  });
+
+  // 11) PWA install banner
+  (function installBanner(){
+    if (document.getElementById('installBanner')) return;
+    const banner=document.createElement('div');
+    banner.id='installBanner';
+    banner.style.cssText='position:fixed;left:16px;right:16px;bottom:80px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 8px 24px rgba(17,24,39,.08);padding:12px;z-index:1000;display:none';
+    banner.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><strong>Install ZippUp</strong><button id="installClose" class="btn ghost" type="button">✖</button></div><div class="small muted" style="margin:8px 0">Add ZippUp to your home screen for a faster experience.</div><button id="installBtn" class="btn primary" type="button">Install App</button>`;
+    document.body.appendChild(banner);
+    let deferred=null;
+    window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferred=e; banner.style.display='block'; });
+    $('installBtn').onclick=async()=>{ if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred=null; banner.style.display='none'; };
+    $('installClose').onclick=()=> banner.style.display='none';
+    window.addEventListener('appinstalled',()=>{ deferred=null; banner.style.display='none'; });
+  })();
+
+  // 12) Safety: button types + initial cart/UI sync
+  window.addEventListener('DOMContentLoaded', ()=>{
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn','tiStart'].forEach(id=>{ const b=$(id); if (b) b.setAttribute('type','button'); });
+    window.renderCart(); window.updateCartCount();
+  });
+})();
+</script>
+  <script>
+// ZippUp targeted hotfix: category chips + search routing + panic to saved contacts
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // 1) Override openItemsModal to use updated chips per category (electrician under Home; Construction expanded)
+  const _openItemsModal = window.openItemsModal;
+  window.openItemsModal = function openItemsModalPatched(kind) {
+    const title = kind==='fastfood'?'Fast Food':kind==='grocery'?'Groceries':'Find Service';
+    const chipsMap = {
+      fastfood:['pizza','burger','fries','chicken','drinks','meat'],
+      grocery: ['milk','bread','eggs','rice','fruits','vegetables','water'],
+      home:    ['electrician','plumber','cleaning','gardening','painting','carpentry','ac repair'],
+      tech:    ['phone repair','computer','tv repair','software','cctv install','network'],
+      auto:    ['mechanic','tires','battery','car wash','towing'],
+      construction:['builder','welder','bricklayer','laborer','mason','roofer','scaffolding'],
+      others:  ['events','tutor','legal','photography','translator','driver hire'],
+      roadside:['flat tire','jumpstart','fuel','lockout'],
+    };
+
+    const itemsTitle = $('itemsTitle');
+    const itemChips  = $('itemChips');
+    const itemSearch = $('itemSearch');
+    const itemGo     = $('itemGo');
+
+    if (!itemsTitle || !itemChips || !itemSearch || !itemGo) return _openItemsModal && _openItemsModal(kind);
+
+    itemsTitle.textContent = title;
+    itemChips.innerHTML = '';
+    (chipsMap[kind]||[]).forEach(text=>{
+      const b=document.createElement('button'); b.className='btn ghost'; b.type='button'; b.textContent=text;
+      b.onclick=()=>{ itemSearch.value=text; itemGo.click(); };
+      itemChips.appendChild(b);
+    });
+    const itemsModal = $('itemsModal'); if (itemsModal) itemsModal.classList.add('open');
+    $('closeItems')?.addEventListener('click', ()=> itemsModal.classList.remove('open'), { once:true });
+
+    $('itemVoice')?.addEventListener('click', ()=> {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert('Voice not supported'); return; }
+      const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult = (e)=>{ itemSearch.value = e.results[0][0].transcript||''; itemGo.click(); };
+      rec.start();
+    }, { once:true });
+
+    itemGo.onclick = async ()=>{
+      const q = (itemSearch.value||'').trim().toLowerCase();
+      itemsModal.classList.remove('open');
+      $('providersTitle').textContent = (q||title) + ' — Providers';
+      const list = await (window.fetchProviders ? fetchProviders(kind, q||kind) : Promise.resolve([]));
+      window.renderProviders && renderProviders(list);
+      $('providersModal')?.classList.add('open');
+    };
+  };
+
+  // 2) Override search routing to send electrician to Home (not Construction)
+  const _runHomeSearch = window.runHomeSearch;
+  window.runHomeSearch = function runHomeSearchPatched() {
+    const q = (document.getElementById('search')?.value||'').trim().toLowerCase();
+    if (!q) return _runHomeSearch && _runHomeSearch();
+
+    const go = (fn) => { try { fn(); } catch {} };
+
+    if (/(ride|taxi|cab|uber|bolt)/.test(q)) return go(()=>openCategory('transport','Transport'));
+    if (/(truck|backie|moving|load)/.test(q)) {
+      go(()=>openCategory('transport','Transport'));
+      go(()=>{ const m=$('categoryOptionsModal'); if (!m) return; $('categoryOptionsTitle').textContent='Transport Options';
+        $('categoryOptionsList').innerHTML='';
+        const el=document.createElement('div'); el.className='provider';
+        el.innerHTML=`<div class="row" style="justify-content:space-between"><div class="row"><div style="font-size:24px">🚚</div><div><strong>Truck / Backie</strong></div></div><button class="btn primary" type="button">Choose</button></div>`;
+        el.querySelector('button').onclick=()=>{ $('categoryOptionsModal').classList.remove('open'); $('providersTitle').textContent='Truck / Backie — Providers'; fetchProviders('transport','moving').then(renderProviders); $('providersModal').classList.add('open'); };
+        $('categoryOptionsList').appendChild(el);
+        m.classList.add('open');
+      });
+      return;
+    }
+    if (/(food|pizza|burger|fries|chicken|drinks)/.test(q)) return go(()=>openItemsModal('fastfood'));
+    if (/(grocery|milk|bread|eggs|rice|fruit|vegetable|veggies|water)/.test(q)) return go(()=>openItemsModal('grocery'));
+    if (/(ambulance|medical)/.test(q)) return go(()=>openEmergency('ambulance','Ambulance'));
+    if (/(fire)/.test(q)) return go(()=>openEmergency('fire','Fire Service'));
+    if (/(towing|tow)/.test(q)) return go(()=>openEmergency('towing','Towing'));
+    if (/(security|police)/.test(q)) return go(()=>openEmergency('security','Security'));
+
+    // electrician belongs to home now
+    if (/(electrician)/.test(q)) return go(()=>openItemsModal('home'));
+    if (/(plumber|clean|garden|paint|carpentry|ac repair)/.test(q)) return go(()=>openItemsModal('home'));
+    if (/(mechanic|tire|tyre|battery|car wash)/.test(q)) return go(()=>openItemsModal('auto'));
+    if (/(phone|computer|laptop|tv|repair|software|cctv)/.test(q)) return go(()=>openItemsModal('tech'));
+    if (/(builder|welder|bricklayer|laborer|mason|roofer|construction)/.test(q)) return go(()=>openItemsModal('construction'));
+    if (/(event|tutor|legal|photo|photography|translator|driver hire)/.test(q)) return go(()=>openItemsModal('others'));
+
+    // fallback
+    const pt=$('providersTitle'); if (pt) pt.textContent = q + ' — Providers';
+    window.fetchProviders && fetchProviders('search', q).then(lst=> window.renderProviders && renderProviders(lst));
+    $('providersModal')?.classList.add('open');
+  };
+
+  // 3) Panic: include saved contacts + live location + “[user] is in danger…”; try Share/SMS; also call backend
+  function loadContacts(){ try { return JSON.parse(localStorage.getItem('zup_contacts')||'[]'); } catch { return []; } }
+  async function reverseGeocode(lat,lng){
+    try {
+      const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+      const d = await r.json(); return (d.locality || d.city || 'Unknown') + ', ' + (d.countryName || '');
+    } catch { return null; }
+  }
+  const _triggerPanic = window.triggerPanic;
+  window.triggerPanic = async function triggerPanicPatched() {
+    try {
+      const contacts = loadContacts().filter(c=>c && (c.phone||c.name)).slice(0,5);
+      const pos = window.coords ? { latitude:coords.lat, longitude:coords.lng } : null;
+      const locName = pos ? await reverseGeocode(pos.latitude,pos.longitude) : 'Unknown location';
+      const gmaps = pos ? `https://maps.google.com/?q=${pos.latitude},${pos.longitude}` : '';
+      const text = `EMERGENCY: ${window.user?.name||'User'} is in danger near ${locName}. Please help. ${gmaps}`;
+
+      // Fire backend alert with contacts snapshot
+      try {
+        await fetch(`${(window.BASE_API||'')}/api/emergency/alert`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ type:'panic', userPublicName:(window.user?.name||'User'), location: pos, contacts, message:text })
+        });
+      } catch {}
+
+      // Try native share first
+      if (navigator.share) {
+        try { await navigator.share({ title:'Emergency', text }); } catch {}
+      } else if (contacts[0]?.phone) {
+        // Try SMS to first contact (platform dependent)
+        const smsLink = `sms:${encodeURIComponent(contacts[0].phone)}?body=${encodeURIComponent(text)}`;
+        window.location.href = smsLink;
+      } else {
+        alert(text);
+      }
+      alert('Panic alert sent.');
+    } catch {
+      return _triggerPanic && _triggerPanic();
+    }
+  };
+})();
+</script>
+  <script>
+// ZippUp hotfix: cart edit + checkout + modal close + pending->tracking + auth (email/pw + Google via Supabase)
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- CART: edit (+/−/remove) + sticky checkout + open checkout ----------
+  // Ensure core cart helpers
+  if (!window.cart) { try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); } catch { window.cart = { items: [] }; } }
+  if (typeof window.saveCart !== 'function') window.saveCart = () => localStorage.setItem('mp_cart', JSON.stringify(window.cart));
+  if (typeof window.updateCartCount !== 'function') window.updateCartCount = () => {
+    const n = window.cart.items.reduce((a,b)=>a+b.qty,0);
+    const hb = $('headerCartBadge'), cc = $('cartCount'); if (hb) hb.textContent=String(n); if (cc) cc.textContent=String(n);
+  };
+  if (typeof window.renderCart !== 'function') window.renderCart = () => {
+    const list=$('cartList'), totalEl=$('cartTotal'); if (!list||!totalEl) return;
+    list.innerHTML=''; if (!window.cart.items.length){ list.innerHTML='<div class="small muted">Your cart is empty.</div>'; totalEl.textContent='0.00'; window.updateCartCount(); return; }
+    let total=0; window.cart.items.forEach(item=>{
+      total+=Number(item.price)*item.qty;
+      const row=document.createElement('div'); row.className='card'; row.dataset.id=item.id;
+      row.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="row"><img src="${item.img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
+        <div style="margin-left:8px"><strong>${item.title}</strong><div class="small muted">$${Number(item.price).toFixed(2)}</div></div></div>
+        <div class="qty"><button class="btn ghost" data-k="dec" type="button">−</button><div>${item.qty}</div><button class="btn ghost" data-k="inc" type="button">＋</button><button class="btn ghost" data-k="rm" type="button">✖</button></div></div>`;
+      list.appendChild(row);
+    });
+    totalEl.textContent=total.toFixed(2); window.updateCartCount();
+  };
+
+  // Sticky checkout row + scroll body
+  (function stickyCheckout(){
+    const body = document.querySelector('#cartModal .sheet .body'); if (!body) return;
+    body.style.maxHeight='70vh'; body.style.overflow='auto';
+    const row = document.querySelector('#cartModal .sheet .body #checkoutBtn')?.closest('.row');
+    if (row) { row.style.position='sticky'; row.style.bottom='0'; row.style.background='#fff'; row.style.paddingTop='10px'; row.style.borderTop='1px solid var(--border)'; }
+  })();
+
+  // Delegate edit clicks
+  function onCartEdit(e){
+    const btn=e.target.closest('#cartList [data-k]'); if(!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    const id=btn.closest('.card')?.dataset?.id; if(!id) return;
+    const i=window.cart.items.findIndex(x=>x.id===id); if(i<0) return;
+    const k=btn.getAttribute('data-k');
+    if(k==='dec') window.cart.items[i].qty=Math.max(1,window.cart.items[i].qty-1);
+    if(k==='inc') window.cart.items[i].qty=window.cart.items[i].qty+1;
+    if(k==='rm')  window.cart.items.splice(i,1);
+    window.saveCart(); window.renderCart(); window.updateCartCount();
+  }
+  document.addEventListener('click', onCartEdit, { passive:false });
+  document.addEventListener('touchend', onCartEdit, { passive:false });
+
+  // Checkout open and submit wiring safety
+  const checkoutBtn=$('checkoutBtn'); if (checkoutBtn) checkoutBtn.onclick=()=>{ $('cartModal')?.classList.remove('open'); $('checkoutModal')?.classList.add('open'); };
+  const closeCart=$('closeCart'); if (closeCart) closeCart.onclick=()=> $('cartModal')?.classList.remove('open');
+
+  // ---------- MODALS: close booking; cancel dialog auto-close ----------
+  // Close any modal on [X] and clicking backdrop
+  document.querySelectorAll('.modal').forEach(m=>{
+    m.addEventListener('click',(e)=>{ if (e.target===m) m.classList.remove('open'); });
+  });
+  const closeBooking=$('closeBooking'); if (closeBooking) closeBooking.onclick=()=> $('bookingModal')?.classList.remove('open');
+
+  // Cancel reasons modal robust handlers
+  (function wireCancelModal(){
+    const modal=$('cancelReasonsModal'); if (!modal) return;
+    const crClose=$('crClose'), crBack=$('crBack'), crConfirm=$('crConfirm');
+    if (crClose) crClose.onclick=()=> modal.classList.remove('open');
+    if (crBack)  crBack.onclick =()=> modal.classList.remove('open');
+    if (crConfirm) {
+      crConfirm.onclick=async ()=>{
+        const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other';
+        const reason=picked==='Other' ? (document.getElementById('crOther')?.value.trim()||'Other') : picked;
+        try{ if (window.requestId) await fetch(`${(window.BASE_API||'')}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason)}`,{method:'DELETE'}); }catch{}
+        modal.classList.remove('open');
+        $('trackModal')?.classList.remove('open');
       };
     }
   })();
-  </script>
 
-  <!-- Firebase Auth (final) -->
-  <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
+  // ---------- Pending service -> open tracking on re-click ----------
+  const ACTIVE_KEY='zup_active_by_service';
+  const getActiveMap=()=>{ try{return JSON.parse(localStorage.getItem(ACTIVE_KEY)||'{}')}catch{return{}} };
+  const setActive=(cat,obj)=>{ const m=getActiveMap(); if(obj) m[cat]=obj; else delete m[cat]; localStorage.setItem(ACTIVE_KEY,JSON.stringify(m)); };
+  const getActive=(cat)=>getActiveMap()[cat];
+  const _openCategory=window.openCategory;
+  if (typeof _openCategory==='function') {
+    window.openCategory=function wrapped(catId,label){
+      const act=getActive(catId);
+      if (act?.id) {
+        try{ window.openTracking && window.openTracking(); }catch{}
+        // ensure Cancel button
+        const tHead=document.querySelector('#trackModal .head');
+        if (tHead && !document.getElementById('trackCancelBtn')) {
+          const btn=document.createElement('button'); btn.id='trackCancelBtn'; btn.className='btn ghost'; btn.type='button'; btn.textContent='Cancel';
+          btn.onclick=()=>{ const m=$('cancelReasonsModal'); if (!m) return; m.classList.add('open'); };
+          tHead.appendChild(btn);
+        }
+        return;
+      }
+      return _openCategory.apply(this,arguments);
+    }
+  }
+
+  // ---------- AUTH: Supabase email/password + Google ----------
+  if (false) {
+    // Add minimal Auth modal if absent
+    if (!document.getElementById('authModal')) {
+      const m=document.createElement('div'); m.id='authModal'; m.className='modal'; m.innerHTML=`
+        <div class="sheet">
+          <div class="head"><strong>Sign in / Sign up</strong><button class="btn ghost" id="authClose" type="button">✖</button></div>
+          <div class="body">
+            <div class="list">
+              <div class="field"><label class="small">Email</label><input id="authEmail" type="email" placeholder="you@example.com"/></div>
+              <div class="field"><label class="small">Password</label><input id="authPassword" type="password" placeholder="••••••••"/></div>
+              <div class="row" style="gap:8px">
+                <button class="btn primary" id="authSignIn" type="button">Sign in</button>
+                <button class="btn ghost" id="authSignUp" type="button">Sign up</button>
+                <button class="btn ghost" id="authGoogle" type="button">Sign in with Google</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(m);
+      $('authClose').onclick=()=> m.classList.remove('open');
+    }
+
+    // Config: replace with your Supabase project keys
+    const SUPABASE_URL  = 'https://xxrtlkyqjqdhkenpkwll.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4cnRsa3lxanFkaGtlbnBrd2xsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1OTkyMTEsImV4cCI6MjA3MDE3NTIxMX0.LKBzuOIjjmgoYAjMPHtJ3KkYaNC3A42nh4CHy8aKUp4';
+
+    let supa = null, currentUser = null;
+    function supaInit(){
+      if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON) return false;
+      supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+      return true;
+    }
+    async function syncUser(){
+      if (!supa) return;
+      const { data:{ session } } = await supa.auth.getSession();
+      currentUser = session?.user || null;
+      // Update UI
+      const name = currentUser?.user_metadata?.full_name || currentUser?.email || (window.user?.name||'Guest');
+      if (window.user) window.user.name = name;
+      $('userName') && ( $('userName').textContent=name );
+      $('profName') && ( $('profName').textContent=name );
+    }
+    function showAuth(){ document.getElementById('authModal')?.classList.add('open'); }
+    async function signInEmail(){
+      const email=$('authEmail')?.value?.trim(), password=$('authPassword')?.value?.trim();
+      if (!email||!password) return alert('Enter email and password');
+      const { error } = await supa.auth.signInWithPassword({ email, password });
+      if (error) return alert(error.message);
+      await syncUser(); document.getElementById('authModal')?.classList.remove('open');
+    }
+    async function signUpEmail(){
+      const email=$('authEmail')?.value?.trim(), password=$('authPassword')?.value?.trim();
+      if (!email||!password) return alert('Enter email and password');
+      const { error } = await supa.auth.signUp({ email, password, options:{ data:{ full_name: email.split('@')[0] } } });
+      if (error) return alert(error.message);
+      alert('Check your email to confirm.'); await syncUser(); document.getElementById('authModal')?.classList.remove('open');
+    }
+    async function signInGoogle(){
+      const { error } = await supa.auth.signInWithOAuth({ provider:'google' });
+      if (error) alert(error.message);
+    }
+    async function signOut(){
+      if (!supa) return;
+      await supa.auth.signOut(); currentUser=null; alert('Logged out');
+      await syncUser();
+    }
+
+    // Replace "Guest" with auth flow in menu
+    (function wireMenuAuth(){
+      if (!supaInit()) {
+        // Fallback: open auth modal on logout to allow sign-in UX
+        const logout=$('menuLogout'); if (logout) logout.onclick=()=> showAuth();
+        return;
+      }
+      $('menuLogout') && ($('menuLogout').onclick = ()=> signOut());
+      $('profileBtn') && $('profileBtn').addEventListener('dblclick', ()=> showAuth()); // quick open auth
+      $('authSignIn')  && ($('authSignIn').onclick  = ()=> signInEmail());
+      $('authSignUp')  && ($('authSignUp').onclick  = ()=> signUpEmail());
+      $('authGoogle')  && ($('authGoogle').onclick  = ()=> signInGoogle());
+      syncUser();
+    })();
+  }
+
+  // Make sure critical buttons are type="button"
+  window.addEventListener('DOMContentLoaded', ()=>{
+    ['cartBtn','openCartBtn','checkoutBtn','closeCart','placeOrderBtn','tiStart','authSignIn','authSignUp','authGoogle'].forEach(id=>{ const b=$(id); if (b) b.setAttribute('type','button'); });
+    window.renderCart(); window.updateCartCount();
+  });
+})();
+</script>
+  <script>
+// ZippUp: effective cancel + auth gate + cart/checkout reliable
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // ========= CART + CHECKOUT (reliable) =========
+  if (!window.cart) { try { window.cart = JSON.parse(localStorage.getItem('mp_cart') || '{"items":[]}'); } catch { window.cart = { items: [] }; } }
+  const saveCart = () => localStorage.setItem('mp_cart', JSON.stringify(window.cart));
+  const updateCartCount = () => {
+    const n = window.cart.items.reduce((a,b)=>a+b.qty,0);
+    const hb = $('headerCartBadge'), cc = $('cartCount'); if (hb) hb.textContent = String(n); if (cc) cc.textContent = String(n);
+  };
+  const renderCart = () => {
+    const list=$('cartList'), totalEl=$('cartTotal'); if (!list||!totalEl) return;
+    list.innerHTML=''; if (!window.cart.items.length){ list.innerHTML='<div class="small muted">Your cart is empty.</div>'; totalEl.textContent='0.00'; updateCartCount(); return; }
+    let total=0;
+    window.cart.items.forEach(item=>{
+      total+=Number(item.price)*item.qty;
+      const row=document.createElement('div'); row.className='card'; row.dataset.id=item.id;
+      row.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="row"><img src="${item.img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
+        <div style="margin-left:8px"><strong>${item.title}</strong><div class="small muted">$${Number(item.price).toFixed(2)}</div></div></div>
+        <div class="qty"><button class="btn ghost" data-k="dec" type="button">−</button><div>${item.qty}</div><button class="btn ghost" data-k="inc" type="button">＋</button><button class="btn ghost" data-k="rm" type="button">✖</button></div></div>`;
+      list.appendChild(row);
+    });
+    totalEl.textContent=total.toFixed(2); updateCartCount();
+  };
+  // Sticky checkout row
+  (function stickyCheckout(){
+    const body = document.querySelector('#cartModal .sheet .body'); if (!body) return;
+    body.style.maxHeight='70vh'; body.style.overflow='auto';
+    const row = document.querySelector('#cartModal .sheet .body #checkoutBtn')?.closest('.row');
+    if (row) { row.style.position='sticky'; row.style.bottom='0'; row.style.background='#fff'; row.style.paddingTop='10px'; row.style.borderTop='1px solid var(--border)'; }
+  })();
+  // Edit (+/−/remove)
+  function onCartEdit(e){
+    const btn=e.target.closest('#cartList [data-k]'); if(!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    const id=btn.closest('.card')?.dataset?.id; if(!id) return;
+    const i=window.cart.items.findIndex(x=>x.id===id); if(i<0) return;
+    const k=btn.getAttribute('data-k');
+    if(k==='dec') window.cart.items[i].qty=Math.max(1,window.cart.items[i].qty-1);
+    if(k==='inc') window.cart.items[i].qty=window.cart.items[i].qty+1;
+    if(k==='rm')  window.cart.items.splice(i,1);
+    saveCart(); renderCart(); updateCartCount();
+  }
+  document.addEventListener('click', onCartEdit, { passive:false });
+  // Checkout submit
+  async function placeOrder() {
+    const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+    const name=$('chkName')?.value?.trim(), phone=$('chkPhone')?.value?.trim(), address=$('chkAddress')?.value?.trim();
+    const unit=($('chkUnit')?.value||'').trim(), notes=($('chkNotes')?.value||'').trim();
+    if (!$('chkTerms')?.checked) return alert('Please accept the Terms');
+    if (!address) return alert('Enter delivery address');
+    if (!name||!phone) return alert('Enter name and phone');
+    if (!window.cart.items.length) return alert('Cart is empty');
+    const payload = { items: window.cart.items.map(i=>({id:i.id,title:i.title,qty:i.qty,price:i.price})), name, phone, address, unit, notes };
+    try {
+      if (method==='card') {
+        const r=await fetch(`${(window.BASE_API||'')}/api/payments/checkout-session`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({...payload,successUrl:location.origin+'/?checkout=success',cancelUrl:location.origin+'/?checkout=cancel'})});
+        const d=await r.json().catch(()=>({}));
+        if (d?.url) { window.cart.items=[]; saveCart(); updateCartCount(); location.href=d.url; return; }
+        if ((d?.id||d?.sessionId) && window.Stripe && window.STRIPE_PK) {
+          const stripe=window.Stripe(window.STRIPE_PK); window.cart.items=[]; saveCart(); updateCartCount();
+          await stripe.redirectToCheckout({sessionId:d.id||d.sessionId}); return;
+        }
+        alert('Payment session error. Try Cash.');
+      } else {
+        let orderId='demo-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
+        try{
+          const r2=await fetch(`${(window.BASE_API||'')}/api/marketplace/orders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,paymentMethod:'cash'})});
+          const d2=await r2.json().catch(()=>({})); orderId=d2.orderId||orderId; code=d2.deliveryCode||code;
+        }catch{}
+        $('checkoutModal')?.classList.remove('open');
+        if (typeof window.showOrderStatus==='function') window.showOrderStatus(orderId, code, 'cash');
+        window.cart.items=[]; saveCart(); updateCartCount();
+      }
+    } catch { alert('Checkout error. Try again.'); }
+  }
+  $('placeOrderBtn') && ($('placeOrderBtn').onclick = (e)=>{ e.preventDefault(); placeOrder(); });
+
+  // ========= CANCEL: actually close, clear, and navigate =========
+  const ACTIVE_KEY='zup_active_by_service';
+  const getActiveMap=()=>{ try{return JSON.parse(localStorage.getItem(ACTIVE_KEY)||'{}')}catch{return{}} };
+  const setActive=(cat,obj)=>{ const m=getActiveMap(); if(obj) m[cat]=obj; else delete m[cat]; localStorage.setItem(ACTIVE_KEY,JSON.stringify(m)); };
+  function closeCancelDialogs() {
+    $('cancelReasonsModal')?.classList.remove('open');
+    $('instantModal')?.classList.remove('open');
+    $('trackModal')?.classList.remove('open');
+  }
+  async function doCancel(category, reason) {
+    try { if (window.requestId) await fetch(`${(window.BASE_API||'')}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`, { method:'DELETE' }); } catch {}
+    setActive(category, null);
+    closeCancelDialogs();
+    // Return to Home or same service listings
+    try {
+      if (category && typeof openCategory==='function') {
+        showPage('home'); setTimeout(()=>{ openCategory(category[0]?category:category,''); }, 50);
+      } else { showPage('home'); }
+    } catch { showPage('home'); }
+  }
+  // Wire Cancel dialog buttons (auto-close)
+  (function wireCancelModal(){
+    const modal=$('cancelReasonsModal'); if (!modal) return;
+    $('crClose') && ($('crClose').onclick=()=> closeCancelDialogs());
+    $('crBack')  && ($('crBack').onclick =()=> closeCancelDialogs());
+    $('crConfirm') && ($('crConfirm').onclick=async ()=>{
+      const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other';
+      const other=document.getElementById('crOther')?.value?.trim();
+      const reason=picked==='Other' ? (other||'Other') : picked;
+      await doCancel((window.lastCategory||'general'), reason);
+    });
+  })();
+
+  // ========= Re-click same service with pending -> open tracking now =========
+  const _openCategory=window.openCategory;
+  if (typeof _openCategory==='function') {
+    window.openCategory=function wrapped(catId,label){
+      const act=getActiveMap()[catId];
+      if (act?.id) {
+        $('instantModal')?.classList.remove('open');
+        $('trackModal')?.classList.add('open');
+        const tHead=document.querySelector('#trackModal .head');
+        if (tHead && !document.getElementById('trackCancelBtn')) {
+          const btn=document.createElement('button'); btn.id='trackCancelBtn'; btn.className='btn ghost'; btn.type='button'; btn.textContent='Cancel';
+          btn.onclick=()=>{ $('cancelReasonsModal')?.classList.add('open'); };
+          tHead.appendChild(btn);
+        }
+        return;
+      }
+      return _openCategory.apply(this,arguments);
+    };
+  }
+
+  // ========= AUTH GATE (Supabase email/pw + Google) =========
+  if (false) {
+    const SUPABASE_URL  = 'https://xxrtlkyqjqdhkenpkwll.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4cnRsa3lxanFkaGtlbnBrd2xsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1OTkyMTEsImV4cCI6MjA3MDE3NTIxMX0.LKBzuOIjjmgoYAjMPHtJ3KkYaNC3A42nh4CHy8aKUp4';
+    let supa=null, currentUser=null;
+
+    function ensureAuthUI(){
+      if (document.getElementById('authGate')) return;
+      const g=document.createElement('div');
+      g.id='authGate';
+      g.style.cssText='position:fixed;inset:0;background:#fff;z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+      g.innerHTML=`
+        <div style="width:100%;max-width:420px;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:16px;background:#fff">
+          <div class="list">
+            <div style="text-align:center;font-weight:800;font-size:20px">ZippUp</div>
+            <div class="field"><label class="small">Email</label><input id="lgEmail" type="email" /></div>
+            <div class="field"><label class="small">Password</label><input id="lgPassword" type="password" /></div>
+            <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:center">
+              <button class="btn primary" id="lgSignIn" type="button">Sign in</button>
+              <button class="btn ghost" id="lgSignUp" type="button">Sign up</button>
+              <button class="btn ghost" id="lgGoogle" type="button">Google</button>
+            </div>
+            <div class="small" style="text-align:center;margin-top:8px">
+              Forgot password? <a href="#" id="lgReset">Reset</a>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(g);
+    }
+    function supaInit(){
+      if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON) return false;
+      supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+      return true;
+    }
+    async function syncUser(){
+      if (!supa) return;
+      const { data:{ session } } = await supa.auth.getSession();
+      currentUser = session?.user || null;
+      const name = currentUser?.user_metadata?.full_name || currentUser?.email || (window.user?.name||'Guest');
+      if (window.user) window.user.name = name;
+      $('userName') && ( $('userName').textContent=name );
+      $('profName') && ( $('profName').textContent=name );
+      if (currentUser) document.getElementById('authGate')?.remove();
+    }
+    async function requireAuthOnLoad(){
+      ensureAuthUI();
+      if (!supaInit()) return; // if not configured, skip gate
+      await syncUser();
+      if (!currentUser) document.getElementById('authGate').style.display='flex';
+      $('lgSignIn')  && ($('lgSignIn').onclick  = async ()=>{
+        const email=$('lgEmail').value.trim(), pw=$('lgPassword').value.trim();
+        if(!email||!pw) return alert('Enter email / password');
+        const { error } = await supa.auth.signInWithPassword({ email, password:pw });
+        if (error) return alert(error.message);
+        await syncUser(); showPage('home');
+      });
+      $('lgSignUp')  && ($('lgSignUp').onclick  = async ()=>{
+        const email=$('lgEmail').value.trim(), pw=$('lgPassword').value.trim();
+        if(!email||!pw) return alert('Enter email / password');
+        const { error } = await supa.auth.signUp({ email, password:pw, options:{ data:{ full_name: email.split('@')[0] } } });
+        if (error) return alert(error.message);
+        alert('Check your email to confirm.'); await syncUser(); showPage('home');
+      });
+      $('lgGoogle')  && ($('lgGoogle').onclick  = async ()=>{
+        const { error } = await supa.auth.signInWithOAuth({ provider:'google' });
+        if (error) alert(error.message);
+      });
+      $('lgReset')   && ($('lgReset').onclick   = async (e)=>{
+        e.preventDefault();
+        const email=$('lgEmail').value.trim(); if(!email) return alert('Enter your email');
+        const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/' });
+        if (error) return alert(error.message);
+        alert('Password reset email sent');
+      });
+      // force gate if nav clicked while logged out
+      document.querySelectorAll('.nav button,[id^="menu"]').forEach(b=>{
+        b.addEventListener('click',(e)=>{ if (!currentUser){ e.preventDefault(); ensureAuthUI(); document.getElementById('authGate').style.display='flex'; }},{capture:true});
+      });
+      // logout
+      $('menuLogout') && ($('menuLogout').onclick= async ()=>{ await supa.auth.signOut(); currentUser=null; ensureAuthUI(); document.getElementById('authGate').style.display='flex'; });
+    }
+
+    // Run
+    window.addEventListener('DOMContentLoaded', ()=>{
+      renderCart(); updateCartCount();
+      requireAuthOnLoad();
+      // Close booking modal [X]
+      $('closeBooking') && ($('closeBooking').onclick=()=> $('bookingModal')?.classList.remove('open'));
+    });
+  }
+})();
+</script>
+  <script>
+// Add ZippUp logo to the auth form (authGate)
+(function addAuthLogo() {
+  function inject() {
+    const gate = document.getElementById('authGate');
+    if (!gate) return false;
+
+    // Avoid duplicates
+    if (gate.querySelector('#authLogoWrap')) return true;
+
+    // Find the inner card/list to prepend the logo into
+    const card = gate.querySelector('[style*="max-width"]') || gate.firstElementChild || gate;
+    const target = card.querySelector('.list') || card;
+
+    const wrap = document.createElement('div');
+    wrap.id = 'authLogoWrap';
+    wrap.style.cssText = 'text-align:center;margin-bottom:12px';
+    wrap.innerHTML = `
+      <img src="/icons/icon-192.png"
+           onerror="this.onerror=null;this.src='/icons/favicon.svg'"
+           alt="ZippUp" width="72" height="72"
+           style="border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.12)"/>
+      <div style="font-weight:800;margin-top:8px;font-size:20px">ZippUp</div>
+    `;
+    target.insertAdjacentElement('afterbegin', wrap);
+    return true;
+  }
+
+  // Try now, or wait until the auth gate is created
+  if (!inject()) {
+    const mo = new MutationObserver(() => { if (inject()) mo.disconnect(); });
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+})();
+</script>
+  <script>
+// Auth UI polish: logo tagline + button pressed/loading feedback
+(function () {
+  // 1) Inject styles for pressed/loading states
+  (function addStyles(){
+    if (document.getElementById('authBtnFX')) return;
+    const s=document.createElement('style'); s.id='authBtnFX';
+    s.textContent = `
+      #authGate .btn { transition: transform .08s ease, filter .12s ease; position: relative; }
+      #authGate .btn:active, #authGate .btn.pressed { transform: scale(.98); }
+      #authGate .btn.loading { opacity:.75; pointer-events:none; }
+      #authGate .btn.loading::after {
+        content:''; width:14px; height:14px; border:2px solid currentColor;
+        border-top-color: transparent; border-radius:50%;
+        position:absolute; right:10px; top:50%; transform: translateY(-50%);
+        animation: zspin .8s linear infinite;
+      }
+      @keyframes zspin { to { transform: translateY(-50%) rotate(360deg); } }
+
+      /* Tagline style */
+      #authLogoWrap .tagline { color:#475569; font-size:14px; margin-top:6px }
+    `;
+    document.head.appendChild(s);
+  })();
+
+  // 2) Add pressed feedback to auth buttons
+  function wirePressedFX(scope) {
+    (scope || document).querySelectorAll('#authGate .btn').forEach(btn=>{
+      if (btn.dataset.fxBound === '1') return;
+      btn.dataset.fxBound = '1';
+      btn.addEventListener('pointerdown', ()=> btn.classList.add('pressed'), { passive:true });
+      btn.addEventListener('pointerup',   ()=> btn.classList.remove('pressed'), { passive:true });
+      btn.addEventListener('pointerleave',()=> btn.classList.remove('pressed'), { passive:true });
+    });
+  }
+
+  // 3) Add loading feedback on click (fallback, in case your auth code doesn’t set it)
+  function wireLoadingFallback(scope) {
+    const pairs = [
+      ['lgSignIn',  'Signing in…'],
+      ['lgSignUp',  'Creating…'],
+      ['lgGoogle',  'Opening…']
+    ];
+    pairs.forEach(([id,label])=>{
+      const btn = (scope||document).getElementById(id);
+      if (!btn || btn.dataset.loadBound === '1') return;
+      btn.dataset.loadBound = '1';
+      btn.addEventListener('click', ()=>{
+        if (btn.classList.contains('loading')) return;
+        btn.classList.add('loading');
+        const old = btn.textContent;
+        btn.textContent = label;
+        // Auto-revert after 3s if your auth handler didn’t close the gate yet
+        setTimeout(()=>{
+          if (btn.isConnected) {
+            btn.classList.remove('loading');
+            btn.textContent = old;
+          }
+        }, 3000);
+      }, { passive:true });
+    });
+  }
+
+  // 4) Replace duplicate “ZippUp” title with a tagline below the logo
+  function injectTagline() {
+    const gate = document.getElementById('authGate');
+    if (!gate) return false;
+
+    // If logo block exists, add/replace tagline there
+    const wrap = gate.querySelector('#authLogoWrap');
+    if (wrap && !wrap.querySelector('.tagline')) {
+      const t = document.createElement('div');
+      t.className = 'tagline';
+      t.textContent = 'Let's Get You Started.';
+      wrap.appendChild(t);
+    }
+
+    // If there’s an old big “ZippUp” heading inside the card, replace it with tagline
+    const big = Array.from(gate.querySelectorAll('div, h1, h2'))
+      .find(el => el.textContent.trim() === 'ZippUp' && el.style && (el.style.fontWeight === '800' || el.style.fontSize));
+    if (big) big.textContent = 'Your one‑stop on‑demand services.';
+
+    return true;
+  }
+
+  // 5) Run now or when the auth gate appears
+  function apply() {
+    injectTagline();
+    wirePressedFX();
+    wireLoadingFallback();
+  }
+  if (!apply()) {
+    const mo = new MutationObserver(()=>{
+      if (document.getElementById('authGate')) { apply(); mo.disconnect(); }
+    });
+    mo.observe(document.body, { childList:true, subtree:true });
+  }
+})();
+</script>
+
+<!-- Splash overlay -->
+<div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
   <svg width="160" height="160" viewBox="0 0 256 256" aria-hidden="true">
     <defs>
       <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
@@ -165,9 +2371,13 @@
   <div style="opacity:.9;margin-top:4px">On‑demand services, fast.</div>
 </div>
 <script>
+  // Hide splash as soon as app is ready
   window.addEventListener('load', ()=> setTimeout(()=>{ const s=document.getElementById('splash'); if(s) s.style.opacity='0'; setTimeout(()=>s&&s.remove(),250); }, 250));
 </script>
+
+<!-- Firebase Auth (final) -->
 <script>
+  // 1) Firebase init (compat API)
   const firebaseConfig = {
     apiKey: "AIzaSyApgmcfu5qGFn9tw872dQ2KkdDz_GPmL70",
     authDomain: "zippup-535ca.firebaseapp.com",
@@ -180,6 +2390,7 @@
   const auth = firebase.auth();
   auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
+  // 2) Helpers tying into your existing UI
   function setUserUI(u) {
     const name = (u?.displayName || u?.email || 'Guest');
     if (window.user) window.user.name = name;
@@ -188,6 +2399,7 @@
     const gate = document.getElementById('authGate'); if (gate) gate.remove();
   }
   function ensureGate() {
+    // If your old Supabase gate created #authGate already, we reuse it.
     let gate = document.getElementById('authGate');
     if (!gate) {
       gate = document.createElement('div');
@@ -214,6 +2426,8 @@
     gate.style.display = 'flex';
     wireGateHandlers();
   }
+
+  // 3) Wire gate buttons to Firebase
   function wireGateHandlers() {
     const $ = id => document.getElementById(id);
     const signIn = $('lgSignIn'), signUp=$('lgSignUp'), google=$('lgGoogle'), reset=$('lgReset');
@@ -249,10 +2463,16 @@
       };
     }
   }
+
+  // 4) Handle auth state and update UI; rewire Logout to Firebase
   auth.onAuthStateChanged((u)=>{ if (u) setUserUI(u); else ensureGate(); });
+
   const logoutBtn = document.getElementById('menuLogout');
   if (logoutBtn) logoutBtn.onclick = async (e)=>{ e.preventDefault(); try{ await auth.signOut(); }catch{} ensureGate(); };
+
+  // Offer quick auth gate open on profile
   const profileBtn = document.getElementById('profileBtn');
   if (profileBtn) profileBtn.addEventListener('dblclick', ()=> ensureGate(), { passive:true });
 </script>
+</body>
 </html>
