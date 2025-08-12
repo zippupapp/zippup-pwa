@@ -3869,5 +3869,181 @@ Add this script block once, after your existing scripts (before </body>)
   })();
 })();
 </script>
+  <style>
+/* Topmost Terms modal; readable; no overlap */
+#termsModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10000; align-items:center; justify-content:center; }
+#termsModal .modal-card { width:100%; max-width:720px; background:#fff; border-radius:16px; border:1px solid var(--border); overflow:hidden; }
+#termsModal .modal-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--border); }
+#termsModal .modal-body { padding:16px; max-height:65vh; overflow:auto; }
+
+/* Force full-screen checkout content to scroll inside */
+#checkoutModal .sheet { height:100vh; display:flex; flex-direction:column; }
+#checkoutModal .sheet .body { flex:1; overflow:auto; }
+
+/* Account size (visible on phones) */
+#profileBtn { padding:8px 12px !important; font-size:15px !important; max-width:170px !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+</style>
+
+<!-- Terms Modal (single, clean) -->
+<div id="termsModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Terms and Conditions</h3>
+      <button id="termsClose" class="btn ghost" type="button">✖</button>
+    </div>
+    <div class="modal-body">
+      <p><strong>Payments and delivery:</strong> Your payment is held in escrow until the seller enters the one‑time delivery code you provide after delivery.</p>
+      <p><strong>Safety:</strong> Do not share your delivery code until your goods are delivered and verified.</p>
+      <p><strong>Refunds:</strong> If there’s an issue, do not share your code; contact support from Profile → Contact Support.</p>
+      <p><strong>Privacy:</strong> Only essential order details are shared with the seller to fulfill your order.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function ZupStableFix(){
+  const $ = (id)=>document.getElementById(id);
+  const API = (window.BASE_API || 'https://zippup-backend-v3.onrender.com');
+  const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+
+  // Live cart helpers (read/write storage to avoid stale window state)
+  function getCart(){ try{ return JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{return {items:[]}} }
+  function setCart(c){ try{ localStorage.setItem('mp_cart', JSON.stringify(c||{items:[]})); }catch{} }
+  function updateBadges(){
+    try{
+      const n=getCart().items.reduce((a,b)=>a+(+b.qty||0),0);
+      const h=$('headerCartBadge'); if (h) h.textContent=String(n);
+      const cc=$('cartCount'); if (cc) cc.textContent=String(n);
+      if (typeof window.updateCartCount==='function') window.updateCartCount();
+    }catch{}
+  }
+
+  // 1) Terms: add single link and clean modal wiring
+  (function wireTerms(){
+    const chk=$('chkTerms'); if (!chk) return;
+    if (!document.getElementById('termsLink')) {
+      const a=document.createElement('a'); a.id='termsLink'; a.href='#'; a.textContent='Read Terms'; a.style.marginLeft='8px';
+      chk.parentElement?.appendChild(a);
+      a.onclick=(e)=>{ e.preventDefault(); $('termsModal').style.display='flex'; };
+    }
+    $('termsClose')?.addEventListener('click', ()=> $('termsModal').style.display='none');
+    $('termsModal')?.addEventListener('click', (e)=>{ if (e.target===e.currentTarget) e.currentTarget.style.display='none'; });
+  })();
+
+  // 2) Dropdown: replace "Contact Support" with "Confirm Delivery"
+  (function dropdownConfirmDelivery(){
+    const menu=document.getElementById('dropdown-menu'); if (!menu) return;
+    Array.from(menu.querySelectorAll('.dropdown-item')).forEach(it=>{
+      const txt=(it.textContent||'').trim().toLowerCase();
+      if (txt.includes('contact support')) it.remove();
+    });
+    if (!document.getElementById('confirmDeliveryNav')) {
+      const cd=document.createElement('div'); cd.id='confirmDeliveryNav'; cd.className='dropdown-item';
+      cd.innerHTML='<span>✅</span><span>Confirm Delivery</span>';
+      menu.appendChild(cd);
+      cd.onclick=()=> document.getElementById('confirmDeliveryModal')?.style && (document.getElementById('confirmDeliveryModal').style.display='flex');
+    }
+  })();
+
+  // 3) Profile photo: show in header + profile card
+  (function showProfilePhoto(){
+    const img=localStorage.getItem('zup_profile_photo');
+    if (!img) return;
+    const headAv = document.getElementById('user-avatar');
+    if (headAv) { headAv.style.background=`url("${img}") center/cover`; headAv.textContent=''; }
+    const profAv = document.querySelector('#page-profile .card .row > div[style*="width:48px"]');
+    if (profAv) { profAv.style.background=`url("${img}") center/cover`; profAv.textContent=''; }
+  })();
+
+  // 4) Cart list: single, reliable edit handler (delegated)
+  (function cartEditDelegate(){
+    const list=$('cartList');
+    if (!list || list.dataset.bound === '1') return;
+    list.dataset.bound = '1';
+    list.addEventListener('click', (e)=>{
+      const btn=e.target.closest('[data-k]'); if (!btn) return;
+      const row=btn.closest('.card'); const id=row?.dataset?.id; if(!id) return;
+      const cart=getCart(); const i=cart.items.findIndex(x=>x.id===id); if(i<0) return;
+      const k=btn.getAttribute('data-k');
+      if (k==='dec') cart.items[i].qty=Math.max(1,cart.items[i].qty-1);
+      if (k==='inc') cart.items[i].qty=cart.items[i].qty+1;
+      if (k==='rm')  cart.items.splice(i,1);
+      setCart(cart);
+      try{ window.renderCart && window.renderCart(); }catch{}
+      updateBadges();
+    });
+  })();
+
+  // 5) Checkout: single stable card flow; no repeated alerts
+  (function stableStripe(){
+    const btn=$('placeOrderBtn'); if (!btn) return;
+    let submitting=false;
+    btn.onclick = async (e)=>{
+      const method=[...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+      if (method !== 'card') return; // let cash path in your existing code run
+      e.preventDefault();
+      if (submitting) return;
+      submitting=true; btn.classList.add('loading'); btn.disabled=true;
+
+      const cart=getCart(); if (!cart.items.length){ alert('Your cart is empty.'); submitting=false; btn.classList.remove('loading'); btn.disabled=false; return; }
+      const name=($('chkName')?.value||'').trim(), phone=($('chkPhone')?.value||'').trim(), address=($('chkAddress')?.value||'').trim();
+      const unit=($('chkUnit')?.value||'').trim(), notes=($('chkNotes')?.value||'').trim(), terms=$('chkTerms')?.checked;
+      if (!terms){ alert('Please read and accept the Terms.'); submitting=false; btn.classList.remove('loading'); btn.disabled=false; return; }
+      if (!name||!phone||!address){ alert('Enter name, phone, and address.'); submitting=false; btn.classList.remove('loading'); btn.disabled=false; return; }
+
+      // wait for Stripe to exist
+      const stripe = await new Promise(res=>{ (function tick(){ if (window.Stripe) return res(window.Stripe(STRIPE_PK)); setTimeout(tick,80); })(); });
+      if (!stripe){ alert('Payment library not loaded. Try again.'); submitting=false; btn.classList.remove('loading'); btn.disabled=false; return; }
+
+      try{
+        const r=await fetch(`${API}/api/payments/checkout-session`,{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ items:cart.items.map(i=>({id:i.id,title:i.title,qty:i.qty,price:i.price})), customer:{name,phone}, address:{address,unit,notes},
+            successUrl:location.origin+'/?checkout=success', cancelUrl:location.origin+'/?checkout=cancel' })
+        });
+        const d=await r.json().catch(()=>({}));
+        if (d?.url){ localStorage.setItem('zup_last_order', JSON.stringify({ sessionId:d.id||d.sessionId||null, status:'pending'})); location.href=d.url; return; }
+        if (d?.id || d?.sessionId){ localStorage.setItem('zup_last_order', JSON.stringify({ sessionId:d.id||d.sessionId, status:'pending'})); const { error }=await stripe.redirectToCheckout({ sessionId:d.id||d.sessionId }); if (error) alert(error.message); return; }
+        alert('Unable to start card checkout. Try Cash.');
+      }catch{ alert('Network error. Try again or use Cash.'); }
+      finally { submitting=false; btn.classList.remove('loading'); btn.disabled=false; }
+    };
+  })();
+
+  // 6) Cancel: actually clears and exits
+  (function bindCancel(){
+    const crConfirm=$('crConfirm');
+    if (crConfirm && crConfirm.dataset.bound!=='1') {
+      crConfirm.dataset.bound='1';
+      crConfirm.onclick=async ()=>{
+        const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other';
+        const other=document.getElementById('crOther')?.value?.trim();
+        const reason=picked==='Other'?(other||'Other'):picked;
+        try { if (window.requestId) await fetch(`${API}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason)}`,{method:'DELETE'}); }catch{}
+        try{ if (window.stopInstant) window.stopInstant(); }catch{}
+        try{ if (window.trackPoll) { clearInterval(window.trackPoll); window.trackPoll=null; } }catch{}
+        window.requestId=null;
+        ['cancelReasonsModal','instantModal','trackModal','providersModal'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+        try { typeof window.showPage==='function' ? showPage('home') : (document.querySelector('[data-page="home"]')?.click()); } catch {}
+        alert('Request cancelled');
+      };
+    }
+  })();
+
+  // 7) Stripe return messages (no auto success on cancel)
+  (function stripeReturnMsg(){
+    const q=new URLSearchParams(location.search);
+    const c=q.get('checkout');
+    if (c==='success') alert("Don't share your delivery code until goods are delivered and confirmed.");
+    if (c==='cancel')  alert('Card payment cancelled. You can try again or choose Cash.');
+  })();
+
+  // 8) Light live refresh of cart UI (throttled)
+  (function cartLive(){
+    let last=''; let i=0;
+    setInterval(()=>{ if ((++i%2)===1) return; const now=localStorage.getItem('mp_cart')||''; if (now!==last){ last=now; try{ window.renderCart && window.renderCart(); }catch{} updateBadges(); } }, 600);
+  })();
+})();
+</script>
 </body>
 </html>
