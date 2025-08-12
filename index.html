@@ -1,24 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Critical: ensure stale SW/caches don’t block updates on first load -->
-  <script>
-  if (!localStorage.getItem('zupHardResetDone')) {
-    localStorage.setItem('zupHardResetDone','1');
-    (async()=>{try{
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for (const r of regs) await r.unregister();
-      }
-      if (window.caches) {
-        const ks = await caches.keys();
-        for (const k of ks) await caches.delete(k);
-      }
-      location.reload();
-    }catch(e){ console.log('SW reset error', e); }})();
-  }
-  </script>
-
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
   <title>ZippUp — On‑Demand Services</title>
@@ -49,6 +31,7 @@
     header {
       position:fixed; top:0; left:0; right:0; height:var(--header-h); z-index:100;
       background:var(--card); border-bottom:1px solid var(--border); display:flex; align-items:center;
+      padding-top: env(safe-area-inset-top, 0px);
     }
     header .row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; width:100% }
     .greet { display:flex; flex-direction:column; min-width:0 }
@@ -84,15 +67,15 @@
 
     .nav {
       position:fixed; left:0; right:0; bottom:0; height:var(--nav-h);
-      display:flex; align-items:center; justify-content:space-around; background:#fff; border-top:1px solid var(--border); z-index:90
+      display:flex; align-items:center; justify-content:space-around; background:#fff; border-top:1px solid var(--border); z-index:90;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
     .nav button { background:none; border:0; padding:8px 10px; border-radius:10px; color:var(--muted) }
     .nav button.active { color:var(--primary); background:#EFF6FF }
 
     .page {
-      position:fixed; top:var(--header-h); bottom:var(--nav-h); left:0; right:0;
-      overflow-y:auto; overflow-x:hidden; display:none; -webkit-overflow-scrolling:touch;
-      background:var(--bg);
+      position:fixed; top:calc(var(--header-h) + env(safe-area-inset-top, 0px)); bottom:var(--nav-h); left:0; right:0;
+      overflow-y:auto; overflow-x:hidden; display:none; -webkit-overflow-scrolling:touch; background:var(--bg);
     }
     .page.active { display:block }
 
@@ -123,10 +106,6 @@
 
     /* Product cards (marketplace) */
     .product img { width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--border) }
-
-    /* Safe areas */
-    body { padding-top:env(safe-area-inset-top,0px) }
-    .nav { padding-bottom:env(safe-area-inset-bottom,0px) }
   </style>
 </head>
 <body>
@@ -140,7 +119,6 @@
       <div class="row">
         <button class="btn ghost" id="notifBtn" type="button" title="Notifications">🔔</button>
         <div style="position:relative">
-          <!-- Hidden by CSS -->
           <button class="btn ghost" id="cartBtn" type="button">🛒</button>
           <span id="headerCartBadge" style="position:absolute; top:-6px; right:-6px; background:#DC2626; color:#fff; border-radius:999px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">0</span>
         </div>
@@ -151,7 +129,7 @@
             <button class="btn ghost" id="menuOrders" type="button">📦 Manage Orders</button>
             <button class="btn ghost" id="menuWallet" type="button">💰 Wallet</button>
             <button class="btn ghost" id="menuTopup" type="button">⚡ Top‑up</button>
-            <button class="btn ghost" id="menuSupport" type="button">🆘 Contact Support</button>
+            <!-- Contact Support removed as requested -->
             <button class="btn ghost" id="menuLogout" type="button">🚪 Logout</button>
           </div>
         </div>
@@ -214,7 +192,6 @@
       <div class="title">Products</div>
       <div class="grid" id="mpGrid"></div>
     </section>
-    <!-- No cart button here anymore (Marketplace is chat/call only) -->
   </main>
 
   <main id="page-profile" class="page">
@@ -249,7 +226,6 @@
         <button class="btn ghost" id="manageProductsBtn" type="button">Manage Products</button>
         <button class="btn ghost" id="emergencyContactsBtn" type="button">Emergency Contacts</button>
         <button class="btn ghost" id="providerVerifyBtn" type="button">Become Verified Provider</button>
-        <button class="btn ghost" id="supportBtn" type="button">Contact Support</button>
       </div>
     </section>
   </main>
@@ -414,7 +390,7 @@
     <button data-page="marketplace" type="button">🛍️ Marketplace</button>
   </nav>
 
-  <!-- Modals -->
+  <!-- Providers -->
   <div class="modal" id="providersModal">
     <div class="sheet">
       <div class="head">
@@ -427,6 +403,7 @@
     </div>
   </div>
 
+  <!-- Booking Form -->
   <div class="modal" id="bookingModal">
     <div class="sheet">
       <div class="head">
@@ -439,7 +416,13 @@
             <div class="field"><label class="small">Date</label><input id="bkDate" type="date" required/></div>
             <div class="field"><label class="small">Time</label><input id="bkTime" type="time" required/></div>
           </div>
-          <div class="field"><label class="small">Address</label><input id="bkAddress" required placeholder="Enter address"/></div>
+          <div class="field">
+            <label class="small">Address</label>
+            <div class="row" style="gap:8px">
+              <input id="bkAddress" required placeholder="Enter address" style="flex:1"/>
+              <button class="btn ghost" id="bkUseCurrent" type="button">📍 Use current</button>
+            </div>
+          </div>
           <div class="field"><label class="small">Details</label><textarea id="bkDesc" rows="3" placeholder="Describe the job…"></textarea></div>
           <button class="btn primary block" type="submit">Send Booking Request</button>
         </form>
@@ -447,7 +430,7 @@
     </div>
   </div>
 
-  <!-- Transport Instant Booking -->
+  <!-- Transport Instant -->
   <div class="modal" id="tiModal">
     <div class="sheet">
       <div class="head">
@@ -544,6 +527,28 @@
     </div>
   </div>
 
+  <!-- Food Options (new) -->
+  <div class="modal" id="foodOptionsModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Food</strong>
+        <button class="btn ghost" id="closeFoodOptions" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="search">
+          <div class="box">
+            <input id="foodSearch" placeholder="Search vendors or food…"/>
+            <button class="btn primary" id="foodSearchBtn" type="button">Search</button>
+          </div>
+        </div>
+        <div class="row" style="gap:8px;margin-top:8px">
+          <button class="btn primary" id="foodFastBtn" type="button">🍔 Fast food</button>
+          <button class="btn ghost" id="foodGroceryBtn" type="button">🛒 Groceries</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Items/Search -->
   <div class="modal" id="itemsModal">
     <div class="sheet">
@@ -592,7 +597,7 @@
     </div>
   </div>
 
-  <!-- Cart (used by Food/Grocery only) -->
+  <!-- Cart (Food/Grocery) -->
   <div class="modal" id="cartModal">
     <div class="sheet">
       <div class="head">
@@ -656,7 +661,7 @@
     </div>
   </div>
 
-  <!-- Terms Modal -->
+  <!-- Terms -->
   <div id="termsModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -666,7 +671,7 @@
       <div class="modal-body">
         <p><strong>Payments and delivery:</strong> Your payment is held in escrow until the seller enters the one‑time delivery code you provide after you receive goods.</p>
         <p><strong>Safety:</strong> Do not share your delivery code until the goods are delivered and verified in good condition.</p>
-        <p><strong>Refunds:</strong> If there’s an issue, do not share your code; contact support immediately from Profile → Contact Support.</p>
+        <p><strong>Refunds:</strong> If there’s an issue, do not share your code; contact support immediately from Profile.</p>
         <p><strong>Privacy:</strong> We only share essential order details with the seller to fulfill your order.</p>
       </div>
     </div>
@@ -697,7 +702,7 @@
     </div>
   </div>
 
-  <!-- Confirm Delivery Modal -->
+  <!-- Confirm Delivery -->
   <div id="confirmDeliveryModal" class="modal">
     <div class="sheet">
       <div class="head">
@@ -713,7 +718,7 @@
     </div>
   </div>
 
-  <!-- Last Order Modal -->
+  <!-- Last Order -->
   <div id="lastOrderModal" class="modal">
     <div class="sheet">
       <div class="head">
@@ -729,7 +734,7 @@
     </div>
   </div>
 
-  <!-- Notifications Modal -->
+  <!-- Notifications -->
   <div id="notifModal" class="modal">
     <div class="sheet">
       <div class="head">
@@ -796,11 +801,10 @@
     // Header interactions
     $('profileBtn').onclick = (e)=>{ e.stopPropagation(); const m=$('profileMenu'); m.style.display = (m.style.display==='block'?'none':'block'); };
     document.addEventListener('click', ()=>{ const m=$('profileMenu'); if (m) m.style.display='none'; });
-    $('menuProfile').onclick = ()=>{ $('profileMenu').style.display='none'; showPage('profile'); };
+    $('menuProfile').onclick = ()=>{ $('profileMenu').style.display='none'; showPage('profile'); updateProfileUI(); };
     $('menuOrders').onclick  = ()=>{ $('profileMenu').style.display='none'; showPage('orders'); renderOrders(); };
     $('menuWallet').onclick  = ()=>{ $('profileMenu').style.display='none'; showPage('wallet'); };
     $('menuTopup').onclick   = ()=>{ $('profileMenu').style.display='none'; showPage('topup'); };
-    $('menuSupport').onclick = ()=>{ $('profileMenu').style.display='none'; showPage('support'); };
     $('menuLogout').onclick  = async ()=>{ $('profileMenu').style.display='none'; try{ await auth.signOut(); }catch{} ensureGate(); };
 
     // Nav
@@ -871,6 +875,7 @@
     // Init
     document.addEventListener('DOMContentLoaded', () => {
       $('userName').textContent = user.name;
+      updateProfileUI();
       initLocation();
       renderServices(); renderEmergency(); renderRecent(); renderServicesAll(); renderBookings();
       initMarketplace();
@@ -890,7 +895,7 @@
       $('termsModal').addEventListener('click',(e)=>{ if(e.target===$('termsModal')) $('termsModal').style.display='none'; });
 
       // Splash
-      window.addEventListener('load', ()=> setTimeout(()=>{ const s=$('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } }, 250));
+      window.addEventListener('load', ()=> setTimeout(()=>{ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } }, 250));
     });
 
     // Location
@@ -937,7 +942,6 @@
       { id:'spares',      name:'Spare Parts' },
       { id:'others',      name:'Others' },
     ];
-    // Each has seller contact
     let MP_PRODUCTS = [
       { id:'p100', title:'Smartphone X', cat:'electronics', price:499, stock:12, img:'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop', seller:'Tony', phone:'+1234567890', whatsapp:'+1234567890' },
       { id:'p101', title:'Wireless Earbuds', cat:'electronics', price:59,  stock:34, img:'https://images.unsplash.com/photo-1585386959984-a41552231658?q=80&w=800&auto=format&fit=crop', seller:'Mary', phone:'+234810000001', whatsapp:'+234810000001' },
@@ -945,7 +949,7 @@
       { id:'p201', title:'Denim Jacket', cat:'fashion', price:69,  stock:9,  img:'https://images.unsplash.com/photo-1542060748-10c28b62716b?q=80&w=800&auto=format&fit=crop', seller:'Anita', phone:'+254710000003', whatsapp:'+254710000003' }
     ];
 
-    // Food/Grocery sample vendors and menus (with allowed payment methods)
+    // Food/Grocery sample vendors and menus
     const VENDORS = [
       { id:'v1', name:'Burger Place', kind:'fastfood', payment:['card','cash'], phone:'+12345001', whatsapp:'+12345001' },
       { id:'v2', name:'Pizza Town',  kind:'fastfood', payment:['card'], phone:'+12345002', whatsapp:'+12345002' },
@@ -1022,7 +1026,7 @@
         return;
       }
       if (catId==='food') {
-        openFoodVendors(); // Food/Grocery uses vendor-cart flow
+        openFoodOptions();
         return;
       }
       $('providersTitle').textContent = label + ' — Providers';
@@ -1154,7 +1158,7 @@
       catch{ return (instantLeft<78)?'accepted':'pending'; }
     }
     function startInstantCountdown(category){
-      $('cancelInstant').onclick = ()=>{ $('instantModal').classList.remove('open'); stopInstant(); };
+      $('cancelInstant').onclick = (e)=>{ e.preventDefault(); openCancelReasons(); };
       $('findOthers').onclick = ()=>{ $('instantModal').classList.remove('open'); $('providersModal').classList.add('open'); };
       instantTimer=setInterval(async ()=>{
         instantLeft-=1; $('countdown').textContent=String(instantLeft);
@@ -1188,7 +1192,7 @@
     }
     $('closeTrack').onclick = ()=>{ if (trackPoll) clearInterval(trackPoll); $('trackModal').classList.remove('open'); };
 
-    // Cancel request (transport/services)
+    // Cancel request
     $('trackCancelBtn').onclick = ()=> openCancelReasons();
     function openCancelReasons() {
       const modal = $('cancelReasonsModal'), crList=$('crList'); modal.classList.add('open'); crList.innerHTML='';
@@ -1206,7 +1210,6 @@
         const picked = document.querySelector('input[name="cr"]:checked')?.value || 'Other';
         const reason = picked === 'Other' ? (other.value.trim()||'Other') : picked;
         try { if (requestId) await fetch(`${BASE_API}/api/requests/${encodeURIComponent(requestId)}?reason=${encodeURIComponent(reason)}`, { method:'DELETE' }); } catch {}
-        // close and return to Services
         if (trackPoll) clearInterval(trackPoll); requestId=null;
         $('cancelReasonsModal').classList.remove('open');
         $('instantModal').classList.remove('open');
@@ -1387,9 +1390,7 @@
       $('manageProductsBtn').onclick   = ()=>{ showPage('manage-products'); loadProductsManage(); };
       $('emergencyContactsBtn').onclick= ()=>{ showPage('emergency-contacts'); loadContactsForm(); };
       $('providerVerifyBtn').onclick   = ()=>{ showPage('verify-provider'); };
-      $('supportBtn').onclick          = ()=>{ showPage('support'); };
       $('vpSubmit').onclick = ()=>{ $('vpStatus').textContent='Submitted. Awaiting admin review.'; };
-      // Dropdown helpers also present in header
       $('confirmClose').onclick = ()=> $('confirmDeliveryModal').classList.remove('open');
       $('lastOrderClose').onclick = ()=> $('lastOrderModal').classList.remove('open');
     }
@@ -1413,20 +1414,39 @@
     $('ecSave').onclick = saveContacts;
 
     // Support stub
-    function wireSupport(){
-      // no-op (kept minimal)
-    }
+    function wireSupport(){}
 
-    // Food/Grocery flow (single-vendor cart)
+    // Food flow
+    function openFoodOptions(){ $('foodOptionsModal').classList.add('open'); }
+    $('closeFoodOptions').onclick = ()=> $('foodOptionsModal').classList.remove('open');
+    $('foodFastBtn').onclick = ()=>{ $('foodOptionsModal').classList.remove('open'); openFoodVendorsFiltered('fastfood'); };
+    $('foodGroceryBtn').onclick = ()=>{ $('foodOptionsModal').classList.remove('open'); openFoodVendorsFiltered('grocery'); };
+    $('foodSearchBtn').onclick = ()=>{
+      const q = ( $('foodSearch')?.value || '' ).toLowerCase().trim();
+      $('foodOptionsModal').classList.remove('open');
+      openFoodVendorsSearch(q);
+    };
+
     function wireFoodFlow(){
       $('closeFoodVendors').onclick = ()=> $('foodVendorsModal').classList.remove('open');
       $('closeFoodMenu').onclick = ()=> $('foodMenuModal').classList.remove('open');
       $('foodCheckoutBtn').onclick = ()=> openCheckout();
     }
+    function openFoodVendorsFiltered(kind){
+      renderVendorsList((VENDORS||[]).filter(v=>v.kind===kind));
+    }
+    function openFoodVendorsSearch(q){
+      const inVendors = VENDORS.filter(v=>v.name.toLowerCase().includes(q));
+      const inMenusVendorIds = Object.keys(MENUS).filter(vid => (MENUS[vid]||[]).some(m=>m.title.toLowerCase().includes(q)));
+      const keep = new Set(inVendors.map(v=>v.id).concat(inMenusVendorIds));
+      renderVendorsList(VENDORS.filter(v=>keep.has(v.id)));
+    }
     function openFoodVendors(){
-      const list=$('foodVendorsList'); list.innerHTML='';
-      $('foodVendorsTitle').textContent='Food & Grocery Vendors';
-      VENDORS.forEach(v=>{
+      renderVendorsList(VENDORS);
+    }
+    function renderVendorsList(list){
+      const box=$('foodVendorsList'); box.innerHTML='';
+      list.forEach(v=>{
         const el=document.createElement('div'); el.className='card';
         el.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-start">
           <div><div><strong>${v.name}</strong></div><div class="small muted">${v.kind==='fastfood'?'Fast food':'Grocery'} • Payments: ${v.payment.join(', ')}</div></div>
@@ -1435,12 +1455,12 @@
         el.querySelector('[data-k="menu"]').onclick = ()=> openFoodMenu(v);
         el.querySelector('[data-k="call"]').onclick = ()=> location.href=`tel:${encodeURIComponent(v.phone||'')}`;
         el.querySelector('[data-k="wa"]').onclick   = ()=> location.href=`https://wa.me/${encodeURIComponent((v.whatsapp||'').replace(/\D/g,''))}`;
-        list.appendChild(el);
+        box.appendChild(el);
       });
+      $('foodVendorsTitle').textContent='Food Vendors';
       $('foodVendorsModal').classList.add('open');
     }
     function openFoodMenu(vendor){
-      // enforce single-vendor cart
       if (cart.vendorId && cart.vendorId !== vendor.id) {
         if (!confirm(`Your cart has items from ${cart.vendorName}. Clear cart to order from ${vendor.name}?`)) return;
         resetCart();
@@ -1471,7 +1491,7 @@
       $('foodCartTotal').textContent=total.toFixed(2);
     }
 
-    // Cart modal (for Food/Grocery)
+    // Cart modal (Food/Grocery)
     function renderCart(){
       const list=$('cartList'); const totalEl=$('cartTotal'); list.innerHTML='';
       if(!cart.items.length){ list.innerHTML='<div class="small muted">Your cart is empty.</div>'; totalEl.textContent='0.00'; return; }
@@ -1499,7 +1519,6 @@
         if (k==='dec') cart.items[i].qty=Math.max(1,cart.items[i].qty-1);
         if (k==='inc') cart.items[i].qty=cart.items[i].qty+1;
         if (k==='rm')  cart.items.splice(i,1);
-        // if empty, reset vendor
         if (!cart.items.length) { resetCart(); } else saveCart();
         renderCart(); window.updateBellBadge && updateBellBadge();
       };
@@ -1508,7 +1527,6 @@
     // Checkout open
     function openCheckout(){
       if (!cart.items.length) { alert('Your cart is empty.'); return; }
-      // Render editable items at top of form
       const wrap=$('chkItemsList'); wrap.innerHTML='';
       cart.items.forEach(it=>{
         const row=document.createElement('div'); row.className='card'; row.dataset.id=it.id;
@@ -1518,7 +1536,6 @@
         </div>`;
         wrap.appendChild(row);
       });
-      // edit handlers
       wrap.onclick=(e)=>{
         const b=e.target.closest('[data-k]'); if(!b) return;
         const id=b.closest('.card')?.dataset?.id; const k=b.getAttribute('data-k');
@@ -1527,11 +1544,9 @@
         if (k==='inc') cart.items[i].qty=cart.items[i].qty+1;
         if (k==='rm')  cart.items.splice(i,1);
         if (!cart.items.length) { resetCart(); $('checkoutModal').classList.remove('open'); return; }
-        saveCart(); openCheckout(); // re-render
+        saveCart(); openCheckout();
       };
-
-      // Vendor payment rules
-      const hint=$('vendorPayHint'); hint.textContent = `Vendor accepts: ${cart.vendorPayment.join(', ') || '—'}`;
+      $('vendorPayHint').textContent = `Vendor accepts: ${cart.vendorPayment.join(', ') || '—'}`;
       $('checkoutModal').classList.add('open');
     }
 
@@ -1544,7 +1559,6 @@
       if (!address) return alert('Enter delivery address');
       if (!name||!phone) return alert('Enter name and phone');
 
-      // Enforce vendor payment rules
       if (cart.vendorPayment.length && !cart.vendorPayment.includes(method)) {
         return alert(`This vendor does not accept ${method.toUpperCase()} payment. Allowed: ${cart.vendorPayment.join(', ')}`);
       }
@@ -1564,7 +1578,6 @@
           alert('Payment session error. Try Cash.');
         }catch{ alert('Payment session error. Try Cash.'); }
       } else {
-        // Cash
         let orderId='ord-'+Date.now(), code=genCode();
         try{
           const r2=await fetch(`${BASE_API}/api/marketplace/orders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,paymentMethod:'cash'})});
@@ -1587,11 +1600,10 @@
         <div class="small muted" style="margin-top:6px">Vendor: ${vendorName||'-'}</div>
       </div>`;
       $('orderModal').classList.add('open');
-      // fake poll
       const ord=$('ordStatus'); let t=0; const poll=setInterval(async()=>{ t+=3; let s; try{ const r=await fetch(`${BASE_API}/api/marketplace/orders/${encodeURIComponent(orderId)}`); const d=await r.json().catch(()=>({})); s=d.status; }catch{ if (t>=6&&t<12) s='accepted'; else if (t>=12&&t<18) s='out_for_delivery'; else if (t>=18) s='delivered'; else s='pending'; } ord.textContent=s||'pending'; if (s==='delivered'||t>=24) clearInterval(poll); },3000);
     }
 
-    // Orders persistence and manage page
+    // Orders
     function saveLastOrder(o){ localStorage.setItem('zup_last_order', JSON.stringify(o||{})); addOrderRecord(o); }
     function getLastOrder(){ try{ return JSON.parse(localStorage.getItem('zup_last_order')||'{}'); }catch{return{}} }
     function addOrderRecord(o){
@@ -1607,7 +1619,7 @@
       const me = auth.currentUser?.email || 'me';
       const all = loadOrders();
       const buyerList = all.filter(x=>x.buyer===me);
-      const sellerList = all.filter(x=>x.seller && x.seller!==me); // simple demo split
+      const sellerList = all.filter(x=>x.seller && x.seller!==me);
 
       const buyerBox=$('buyerOrders'); buyerBox.innerHTML='';
       if (!buyerList.length) buyerBox.innerHTML='<div class="small muted">No orders.</div>';
@@ -1646,7 +1658,6 @@
         if (!code) return alert('Enter the code');
         const last=getLastOrder();
         if (String(last.code||'') === code) {
-          // expire code
           localStorage.setItem('zup_last_order', JSON.stringify({ ...last, status:'delivered', code:null }));
           $('confirmStatus').textContent='Delivery confirmed. Payment will be released.';
           setTimeout(()=>{ $('confirmDeliveryModal').classList.remove('open'); }, 800);
@@ -1662,9 +1673,7 @@
       };
     }
 
-    // Terms link also available in checkout via readTerms
-
-    // Firebase auth gate
+    // Auth gate branding + handlers
     function setUserUI(u){ const name=(u?.displayName || u?.email || 'Guest'); user.name=name; $('userName').textContent=name; $('profName').textContent=name; document.getElementById('authGate')?.remove(); }
     function ensureGate(){
       let gate=document.getElementById('authGate');
@@ -1675,7 +1684,10 @@
         gate.innerHTML=`
           <div style="width:100%;max-width:420px;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 8px 24px rgba(17,24,39,.08);padding:16px;background:#fff">
             <div class="list">
-              <div style="text-align:center;font-weight:800;font-size:20px;margin-bottom:8px">ZippUp</div>
+              <div style="text-align:center;margin-bottom:10px">
+                <div style="font-weight:800;font-size:18px">ZippUp, speed up ur hustle my Gee</div>
+                <div style="font-size:13px;color:#475569;margin-top:4px">One stop to your OnDemand services.</div>
+              </div>
               <div class="field"><label class="small">Email</label><input id="lgEmail" type="email"/></div>
               <div class="field"><label class="small">Password</label><input id="lgPassword" type="password"/></div>
               <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px">
@@ -1700,8 +1712,50 @@
     }
     auth.onAuthStateChanged((u)=>{ if (u) setUserUI(u); else ensureGate(); });
 
-    // Read-only helpers
-    function getUserEmail(){ return auth.currentUser?.email || 'me'; }
+    // Profile edit
+    function updateProfileUI(){
+      $('userName').textContent=(user?.name||'Guest');
+      $('profName').textContent=(user?.name||'Demo User');
+      const saved=localStorage.getItem('zup_profile_photo');
+      if (saved) { const av=$('user-avatar'); av.style.backgroundImage=`url("${saved}")`; av.style.backgroundSize='cover'; av.style.backgroundPosition='center'; av.textContent=''; }
+    }
+    $('editProfileBtn').onclick = ()=>{
+      let m=$('profileEditModal');
+      if (!m) {
+        m=document.createElement('div'); m.id='profileEditModal'; m.className='modal open';
+        m.innerHTML=`
+          <div class="sheet">
+            <div class="head"><strong>Edit Profile</strong><button class="btn ghost" id="peClose" type="button">✖</button></div>
+            <div class="body">
+              <div class="list">
+                <div class="field"><label class="small">Public name</label><input id="peName" value="${(user?.name||'')}" /></div>
+                <div class="field"><label class="small">Photo</label><input id="pePhoto" type="file" accept="image/*"/></div>
+                <button class="btn primary" id="peSave" type="button">Save</button>
+              </div>
+            </div>
+          </div>`;
+        document.body.appendChild(m);
+        m.addEventListener('click',(e)=>{ if(e.target===m) m.classList.remove('open'); });
+        $('peClose').onclick=()=> m.classList.remove('open');
+        $('peSave').onclick=()=>{
+          const name=$('peName').value.trim(); if (name) user.name=name;
+          const f=$('pePhoto').files?.[0];
+          if (f) {
+            const fr=new FileReader();
+            fr.onload=()=>{ localStorage.setItem('zup_profile_photo', fr.result); updateProfileUI(); m.classList.remove('open'); };
+            fr.readAsDataURL(f);
+          } else { updateProfileUI(); m.classList.remove('open'); }
+        };
+      } else m.classList.add('open');
+    };
+
+    // Booking: Use current
+    $('bkUseCurrent').onclick = async ()=>{
+      try {
+        if (!coords) await initLocation();
+        if (coords) { const name = await reverseGeocode(coords.lat, coords.lng); $('bkAddress').value = name || ''; }
+      } catch {}
+    };
   </script>
 </body>
 </html>
