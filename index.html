@@ -167,6 +167,40 @@ header .row { padding: 10px 16px; }
 .grid, .row, .sheet, .modal, .list { max-width: 100%; }
 img, video, canvas { max-width: 100%; height: auto; display: block; }
 button, input, select, textarea { max-width: 100%; }
+    /* Keep header/nav fixed and ensure right controls never get cut off */
+header { z-index: 100; width: 100%; }
+header .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+header .row > .greet {
+  flex: 1;               /* left side takes remaining space */
+  min-width: 0;          /* allow text to shrink instead of forcing overflow */
+}
+header .row > .row {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;        /* right-side buttons never shrink off-screen */
+}
+header .btn { white-space: nowrap; }
+
+/* Ensure dropdown stays on-screen on small phones */
+#profileMenu {
+  right: 0; left: auto;
+  max-width: 90vw;
+  top: calc(100% + 8px);
+}
+
+/* Let tight rows wrap instead of pushing layout sideways */
+.controls, .row { flex-wrap: wrap; }
+
+/* Respect notches and avoid overlay issues */
+:root { --header-h: 56px; --nav-h: 64px; }
+body { padding-top: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+       padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)); }
+.nav { height: var(--nav-h); padding-bottom: env(safe-area-inset-bottom, 0px); }
   </style>
 </head>
 <body>
