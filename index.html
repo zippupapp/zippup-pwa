@@ -1,5 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+  <script>
+if (!localStorage.getItem('zupHardResetDone')) {
+  localStorage.setItem('zupHardResetDone','1');
+  (async()=>{try{
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) await r.unregister();
+    }
+    if (window.caches) {
+      const ks = await caches.keys();
+      for (const k of ks) await caches.delete(k);
+    }
+    location.reload();
+  }catch(e){ console.log('SW reset error', e); }})();
+}
+</script>
 <head>
 <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
