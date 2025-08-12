@@ -1910,5 +1910,27 @@
       alert('Sent');
     };
   </script>
+  <script>
+(function killSplash(){
+  function hide() {
+    try {
+      const s = document.getElementById('splash');
+      if (s) { s.style.opacity = '0'; setTimeout(()=> s && s.remove(), 200); }
+      const home = document.getElementById('page-home');
+      if (home && !home.classList.contains('active')) home.classList.add('active');
+    } catch {}
+  }
+  // Remove splash on DOM ready, on load, on any error, and after a short timeout
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(hide, 0);
+  } else {
+    document.addEventListener('DOMContentLoaded', hide, { once:true });
+  }
+  window.addEventListener('load', hide, { once:true });
+  window.addEventListener('error', hide);
+  window.addEventListener('unhandledrejection', hide);
+  setTimeout(hide, 1500);
+})();
+</script>
 </body>
 </html>
