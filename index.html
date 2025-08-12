@@ -8,7 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
   <title>ZippUp — On‑Demand Services</title>
   <meta name="theme-color" content="#2563EB"/>
   <link rel="manifest" href="manifest.json"/>
@@ -118,6 +118,55 @@ header .row { padding: 10px 16px; }
 /* Defensive: ensure no child forces overflow */
 .row, .grid, .sheet, .modal, .list { max-width: 100%; }
 img, video { max-width: 100%; height: auto; }
+    :root { --header-h: 56px; --nav-h: 64px; }
+
+/* Hard lock to device width; no sideways scroll; no pinch-zoom layout shifts */
+html, body {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Header and footer fixed in place */
+header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  display: flex; align-items: center;
+  background: var(--card);
+  z-index: 20;
+}
+header .row { padding: 10px 16px; }
+
+/* Bottom nav fixed */
+.nav {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: var(--nav-h);
+  display: flex; align-items: center; justify-content: space-around;
+  z-index: 15;
+}
+
+/* Content area is the viewport minus header/footer; only this scrolls */
+.page {
+  display: none;
+  position: fixed;
+  top: var(--header-h);
+  bottom: var(--nav-h);
+  left: 0; right: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0 !important; /* override old padding */
+}
+.page.active { display: block; }
+
+/* Defensive: prevent any child from forcing horizontal overflow */
+.grid, .row, .sheet, .modal, .list { max-width: 100%; }
+img, video, canvas { max-width: 100%; height: auto; display: block; }
+button, input, select, textarea { max-width: 100%; }
   </style>
 </head>
 <body>
