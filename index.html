@@ -106,6 +106,9 @@
 
     /* Product cards (marketplace) */
     .product img { width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--border) }
+    /* Keep greet/location fully visible under notches */
+header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
+.page { top: calc(var(--header-h) + env(safe-area-inset-top, 0px)); }
   </style>
 </head>
 <body>
@@ -1757,5 +1760,44 @@
       } catch {}
     };
   </script>
+  <script>
+(function cancelFix(){
+  const $=id=>document.getElementById(id);
+  function closeAll(){ ['cancelReasonsModal','instantModal','trackModal','providersModal'].forEach(id=>$(id)?.classList.remove('open')); }
+  function doCancel(reason){
+    try{ if (window.requestId && window.BASE_API) fetch(`${BASE_API}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`,{method:'DELETE'});}catch{}
+    try{ if (window.stopInstant) window.stopInstant(); }catch{}
+    try{ if (window.trackPoll){ clearInterval(window.trackPoll); window.trackPoll=null; } }catch{}
+    window.requestId=null; closeAll();
+    try{ if (typeof showPage==='function') showPage('services'); }catch{}
+    alert('Request cancelled');
+  }
+  const ensureReasons=()=>{
+    const m=$('cancelReasonsModal'); if (!m) return;
+    const list=$('crList'); if (!list) return;
+    if (!list.children.length){
+      ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{ const row=document.createElement('label'); row.className='row'; row.innerHTML=`<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`; list.appendChild(row); });
+      const other=document.createElement('input'); other.id='crOther'; other.placeholder='If Other, describe…'; other.style.cssText='width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px'; list.appendChild(other);
+    }
+    $('crClose')&&($('crClose').onclick=()=>m.classList.remove('open'));
+    $('crBack') &&($('crBack').onclick =()=>m.classList.remove('open'));
+    $('crConfirm')&&($('crConfirm').onclick=()=>{ const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other'; const other=$('crOther')?.value?.trim(); doCancel(picked==='Other'?(other||'Other'):picked); });
+  };
+  const openReasons=()=>{ const m=$('cancelReasonsModal'); if (m){ ensureReasons(); m.classList.add('open'); } else doCancel('User cancelled'); };
+  const ci=$('cancelInstant'); if (ci) ci.onclick=(e)=>{ e.preventDefault(); openReasons(); };
+  const tcb=$('trackCancelBtn'); if (tcb) tcb.onclick=(e)=>{ e.preventDefault(); openReasons(); };
+})();
+</script>
+  <script>
+(function backbars(){
+  document.querySelectorAll('.page').forEach(p=>{
+    if (p.id==='page-home' || p.querySelector('.backbar')) return;
+    const bar=document.createElement('div'); bar.className='backbar';
+    bar.innerHTML='<button class="backbtn" type="button">← Back</button><strong style="margin-left:8px">'+(p.querySelector('.title')?.textContent||p.id.replace('page-',''))+'</strong>';
+    p.insertBefore(bar, p.firstChild);
+    bar.querySelector('.backbtn').onclick=()=> (history.length>1?history.back():document.querySelector('.nav button[data-page="home"]')?.click());
+  });
+})();
+</script>
 </body>
 </html>
