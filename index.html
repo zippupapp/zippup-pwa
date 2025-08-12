@@ -201,6 +201,49 @@ header .btn { white-space: nowrap; }
 body { padding-top: calc(var(--header-h) + env(safe-area-inset-top, 0px));
        padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)); }
 .nav { height: var(--nav-h); padding-bottom: env(safe-area-inset-bottom, 0px); }
+    /* Respect safe areas and clamp page to viewport between header/footer */
+.page {
+  position: fixed;
+  top: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  left: 0; right: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Header layout: left text shrinks, right buttons never get pushed off */
+header { z-index: 100; width: 100%; }
+header .row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+header .row > .greet { flex:1; min-width:0; }
+header .row > .greet > strong,
+header .row > .greet > .small { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+header .row > .row { flex-shrink:0; gap:8px; }
+header .btn { white-space:nowrap; }
+
+/* Keep dropdown on-screen */
+#profileMenu { right:0; left:auto; max-width:90vw; top:calc(100% + 8px); }
+
+/* Mobile compaction: show 👤 icon only; tighten paddings so it fits */
+@media (max-width: 420px) {
+  #notifBtn, #cartBtn { padding:8px; }
+  #profileBtn {
+    max-width:44px;
+    padding:8px 10px;
+    overflow:hidden; text-overflow:clip; white-space:nowrap; /* shows leading 👤, hides “Account” */
+  }
+  /* Pin dropdown below header on phones */
+  #profileMenu {
+    position: fixed;
+    top: calc(var(--header-h) + env(safe-area-inset-top, 0px) + 8px);
+    right: 8px; left: auto;
+    z-index: 1000;
+  }
+}
+
+/* Defensive: no sideways overflow from components */
+.grid, .row, .sheet, .modal, .list { max-width: 100%; }
+img, video, canvas { max-width:100%; height:auto; display:block; }
+button, input, select, textarea { max-width:100%; }
   </style>
 </head>
 <body>
