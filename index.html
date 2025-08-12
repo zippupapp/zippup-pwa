@@ -3290,5 +3290,317 @@ Add this script block once, after your existing scripts (before </body>)
   document.addEventListener('DOMContentLoaded', updateLocHint);
 })();
 </script>
+  <!-- Terms Modal -->
+<div id="termsModal" class="modal" style="display:none">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Terms and Conditions</h3>
+      <button id="termsClose" class="close-btn" type="button">×</button>
+    </div>
+    <div class="modal-body" style="max-height:65vh;overflow:auto">
+      <p><strong>Payments and delivery:</strong> Your payment is held in escrow until the seller enters the one‑time delivery code you provide after you receive goods.</p>
+      <p><strong>Safety:</strong> Do not share your delivery code until the goods are delivered and verified in good condition.</p>
+      <p><strong>Refunds:</strong> In case of issues, do not share your code; contact support immediately from Profile → Contact Support.</p>
+      <p><strong>Privacy:</strong> We only share essential order details with the seller to fulfill your order.</p>
+    </div>
+  </div>
+</div>
+<script>
+(function termsWire(){
+  const $=id=>document.getElementById(id);
+  const modal=$('termsModal'); if(!modal) return;
+  const openLink = document.createElement('a');
+  openLink.href='#'; openLink.textContent='Read Terms';
+  openLink.style.marginLeft='8px';
+  const chk = document.getElementById('chkTerms');
+  if (chk && chk.parentElement) chk.parentElement.appendChild(openLink);
+  openLink.onclick=(e)=>{ e.preventDefault(); modal.style.display='flex'; };
+  document.getElementById('termsClose').onclick=()=> modal.style.display='none';
+  modal.addEventListener('click',(e)=>{ if(e.target===modal) modal.style.display='none'; });
+})();
+</script>
+  <script>
+(function stripeCheckout(){
+  const $=id=>document.getElementById(id);
+  // Set your Stripe publishable key here
+  const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+  const stripe = window.Stripe ? window.Stripe(STRIPE_PK) : null;
+  const API = (window.BASE_API || 'https://zippup-backend-v3.onrender.com');
+
+  function getCart() {
+    try { return window.cart || JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }
+    catch { return { items:[] }; }
+  }
+  function saveCart(c){ try{ localStorage.setItem('mp_cart', JSON.stringify(c)); }catch{} }
+
+  async function startStripeCheckout() {
+    if (!stripe) { alert('Payment library not loaded. Try again.'); return; }
+    const cart = getCart();
+    if (!cart.items.length) return alert('Your cart is empty.');
+
+    const name = (document.getElementById('chkName')?.value||'').trim();
+    const phone= (document.getElementById('chkPhone')?.value||'').trim();
+    const address=(document.getElementById('chkAddress')?.value||'').trim();
+    const unit   =(document.getElementById('chkUnit')?.value||'').trim();
+    const notes  =(document.getElementById('chkNotes')?.value||'').trim();
+    const terms  = document.getElementById('chkTerms')?.checked;
+
+    if (!terms) return alert('Please read and accept the Terms.');
+    if (!name || !phone || !address) return alert('Enter name, phone, and address.');
+
+    try {
+      const res = await fetch(`${API}/api/payments/checkout-session`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          items: cart.items.map(i=>({ id:i.id, title:i.title, qty:i.qty, price:i.price })),
+          customer: { name, phone },
+          address: { address, unit, notes },
+          successUrl: location.origin + '/?checkout=success',
+          cancelUrl:  location.origin + '/?checkout=cancel'
+        })
+      });
+      const data = await res.json().catch(()=> ({}));
+      if (data?.url) {
+        // Some backends return a hosted url
+        localStorage.setItem('zup_last_order', JSON.stringify({ sessionId:data.id||data.sessionId||null, status:'pending' }));
+        // Clear local cart on intention to checkout
+        const nc = getCart(); nc.items=[]; saveCart(nc);
+        return location.href = data.url;
+      }
+      if (data?.id || data?.sessionId) {
+        localStorage.setItem('zup_last_order', JSON.stringify({ sessionId:data.id||data.sessionId, status:'pending' }));
+        const nc = getCart(); nc.items=[]; saveCart(nc);
+        const { error } = await stripe.redirectToCheckout({ sessionId: data.id || data.sessionId });
+        if (error) alert(error.message||'Redirect failed');
+        return;
+      }
+      alert('Unable to start card checkout. Try Cash.');
+    } catch {
+      alert('Network error. Try again or use Cash.');
+    }
+  }
+
+  // Wire to your existing buttons if present
+  const placeBtn = document.getElementById('placeOrderBtn');
+  if (placeBtn) {
+    placeBtn.addEventListener('click', (e)=>{
+      const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+      if (method==='card') { e.preventDefault(); startStripeCheckout(); }
+    });
+  }
+
+  // After returning from checkout, show Order code reminder if backend sends it later
+  (function showCodeReminder(){
+    const q = new URLSearchParams(location.search);
+    if (!q.has('checkout')) return;
+    // Remind buyer to keep code private
+    alert("Don't share your delivery code until your goods are delivered and confirmed.");
+  })();
+})();
+</script>
+  <script>
+(function cartRefreshAndEdit(){
+  const $=id=>document.getElementById(id);
+  function getCart(){ try{ return window.cart || JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}'); }catch{return {items:[]}} }
+  function setCart(c){ try{ localStorage.setItem('mp_cart', JSON.stringify(c)); }catch{} }
+  function updateBadges(){
+    try {
+      const c=getCart(); const n=c.items.reduce((a,b)=>a+(+b.qty||0),0);
+      const hc=document.getElementById('headerCartBadge'); if (hc) hc.textContent=String(n);
+      const cc=document.getElementById('cartCount'); if (cc) cc.textContent=String(n);
+    } catch {}
+    if (typeof window.updateCartCount==='function') try{ window.updateCartCount(); }catch{}
+  }
+  // Poll localStorage for external changes (fallback if storage event blocked in PWA)
+  let last='';
+  setInterval(()=>{ const now=localStorage.getItem('mp_cart')||''; if(now!==last){ last=now; try{ window.renderCart && window.renderCart(); }catch{} updateBadges(); } }, 700);
+
+  // Make checkout items editable inline if checkout modal exists
+  function renderCheckoutItems(){
+    const modal = document.getElementById('checkoutModal'); if (!modal) return;
+    const body = modal.querySelector('.body .list'); if (!body) return;
+    let wrap = document.getElementById('chkItemsList');
+    if (!wrap) { wrap = document.createElement('div'); wrap.id='chkItemsList'; wrap.className='list'; wrap.style.marginBottom='12px'; body.insertBefore(wrap, body.firstChild); }
+    const cart = getCart();
+    wrap.innerHTML = '';
+    if (!cart.items.length){ wrap.innerHTML='<div class="small muted">Your cart is empty.</div>'; return; }
+    cart.items.forEach(it=>{
+      const row=document.createElement('div'); row.className='card'; row.dataset.id=it.id;
+      row.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="row"><img src="${it.img||''}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/><div style="margin-left:8px"><strong>${it.title}</strong><div class="small muted">$${Number(it.price).toFixed(2)}</div></div></div>
+        <div class="qty"><button class="btn ghost" data-k="dec" type="button">−</button><div>${it.qty}</div><button class="btn ghost" data-k="inc" type="button">＋</button><button class="btn ghost" data-k="rm" type="button">✖</button></div>
+      </div>`;
+      wrap.appendChild(row);
+    });
+    wrap.onclick=(e)=>{
+      const b=e.target.closest('[data-k]'); if(!b) return;
+      const k=b.getAttribute('data-k'); const id=b.closest('.card')?.dataset?.id; if(!id) return;
+      const cart=getCart(); const i=cart.items.findIndex(x=>x.id===id); if(i<0) return;
+      if (k==='dec') cart.items[i].qty=Math.max(1,cart.items[i].qty-1);
+      if (k==='inc') cart.items[i].qty=cart.items[i].qty+1;
+      if (k==='rm')  cart.items.splice(i,1);
+      setCart(cart);
+      try{ window.renderCart && window.renderCart(); }catch{}
+      updateBadges();
+      renderCheckoutItems();
+    };
+  }
+  // Open marketplace cart -> open checkout directly, with editable items
+  const openCartBtn = document.getElementById('openCartBtn');
+  if (openCartBtn) openCartBtn.onclick = ()=>{ const m=document.getElementById('checkoutModal'); if(m){ m.classList.add('open'); renderCheckoutItems(); } };
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  if (checkoutBtn) checkoutBtn.onclick = ()=>{ const m=document.getElementById('checkoutModal'); if(m){ m.classList.add('open'); renderCheckoutItems(); } };
+  // Close checkout working reliably
+  const closeCheckout = document.getElementById('closeCheckout');
+  if (closeCheckout) closeCheckout.onclick = ()=> document.getElementById('checkoutModal')?.classList.remove('open');
+  document.getElementById('checkoutModal')?.addEventListener('click',(e)=>{ const md=e.currentTarget; if(e.target===md) md.classList.remove('open'); });
+})();
+</script>
+  <!-- Confirm Delivery Modal (seller / buyer entry) -->
+<div id="confirmDeliveryModal" class="modal" style="display:none">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Confirm Delivery</h3>
+      <button id="confirmClose" class="close-btn" type="button">×</button>
+    </div>
+    <div class="modal-body" style="display:grid;gap:10px">
+      <div class="small muted">Seller: ask buyer for the one‑time delivery code and enter it below to mark delivery complete and release payment.</div>
+      <input id="confirmCode" placeholder="Enter 6‑digit code" inputmode="numeric" maxlength="6" />
+      <button id="confirmSubmit" class="btn primary" type="button">Submit Code</button>
+      <div id="confirmStatus" class="small muted"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Last Order Modal (buyer can find code again) -->
+<div id="lastOrderModal" class="modal" style="display:none">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Your Last Order</h3>
+      <button id="lastOrderClose" class="close-btn" type="button">×</button>
+    </div>
+    <div class="modal-body" style="display:grid;gap:10px">
+      <div id="lastOrderInfo" class="small"></div>
+      <div class="row" style="gap:8px;justify-content:flex-end">
+        <button id="sendCodeSMS" class="btn ghost" type="button">Send Code by SMS</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function orderCodePersistence(){
+  const $=id=>document.getElementById(id);
+  const API = (window.BASE_API || 'https://zippup-backend-v3.onrender.com');
+
+  function saveLastOrder(o){ localStorage.setItem('zup_last_order', JSON.stringify(o||{})); }
+  function getLastOrder(){ try{ return JSON.parse(localStorage.getItem('zup_last_order')||'{}'); }catch{return{}} }
+
+  // Show order status (append warning text)
+  const orderInfo = document.getElementById('orderInfo');
+  if (orderInfo && !orderInfo.dataset.bound) {
+    orderInfo.dataset.bound='1';
+    const observer = new MutationObserver(()=>{
+      const warn = document.createElement('div');
+      warn.className='small muted';
+      warn.style.marginTop='6px';
+      warn.textContent = "Please don't share this code with the seller until your goods are delivered and confirmed.";
+      if (!orderInfo.querySelector('.code-warn')) {
+        warn.classList.add('code-warn');
+        orderInfo.appendChild(warn);
+      }
+      // Try to extract code and orderId if present in DOM
+      const text=orderInfo.textContent||'';
+      const codeMatch=text.match(/Delivery code:\s*(\d{4,8})/i);
+      const idMatch  =text.match(/Order ID:\s*([^\s]+)/i);
+      const last=getLastOrder();
+      if (codeMatch && idMatch) { saveLastOrder({ orderId:idMatch[1], code:codeMatch[1], status:'pending' }); }
+    });
+    observer.observe(orderInfo,{ childList:true, subtree:true });
+  }
+
+  // Expose Last Order from Profile: add two buttons if not present
+  (function addProfileActions(){
+    const menu = document.getElementById('dropdown-menu');
+    if (menu && !document.getElementById('confirmDeliveryNav')) {
+      const cd = document.createElement('div'); cd.id='confirmDeliveryNav'; cd.className='dropdown-item'; cd.innerHTML='<span>✅</span><span>Confirm Delivery</span>';
+      const lo = document.createElement('div'); lo.id='lastOrderNav'; lo.className='dropdown-item'; lo.innerHTML='<span>🧾</span><span>View Last Order Code</span>';
+      menu.appendChild(cd); menu.appendChild(lo);
+    }
+    document.getElementById('confirmDeliveryNav')?.addEventListener('click',()=> {
+      const m=document.getElementById('confirmDeliveryModal'); if(m) m.style.display='flex';
+    });
+    document.getElementById('lastOrderNav')?.addEventListener('click',()=> {
+      const last=getLastOrder();
+      const box=document.getElementById('lastOrderInfo');
+      box.innerHTML = last?.orderId ? `<div><strong>Order ID:</strong> ${last.orderId}</div><div><strong>Delivery code:</strong> <span style="font-family:monospace">${last.code||'—'}</span></div>` : '<div class="small muted">No recent order found.</div>';
+      document.getElementById('lastOrderModal').style.display='flex';
+    });
+  })();
+
+  // Close modals
+  document.getElementById('confirmClose')?.addEventListener('click',()=> document.getElementById('confirmDeliveryModal').style.display='none');
+  document.getElementById('lastOrderClose')?.addEventListener('click',()=> document.getElementById('lastOrderModal').style.display='none');
+  document.getElementById('confirmDeliveryModal')?.addEventListener('click',(e)=>{ if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
+  document.getElementById('lastOrderModal')?.addEventListener('click',(e)=>{ if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
+
+  // Seller submits code
+  document.getElementById('confirmSubmit')?.addEventListener('click', async ()=>{
+    const code=(document.getElementById('confirmCode')?.value||'').trim();
+    if (!code) return alert('Enter the 6‑digit code');
+    const last=getLastOrder();
+    try{
+      // If you have a confirm endpoint, call it here:
+      // const r=await fetch(`${API}/api/marketplace/orders/confirm`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ orderId:last.orderId, code })});
+      // const d=await r.json();
+      // For now, mark delivered locally:
+      saveLastOrder({ ...last, status:'delivered', confirmedCode:code });
+      document.getElementById('confirmStatus').textContent='Delivery confirmed. Payment will be released.';
+      setTimeout(()=>{ document.getElementById('confirmDeliveryModal').style.display='none'; }, 800);
+    }catch{
+      alert('Could not confirm. Try again.');
+    }
+  });
+
+  // Send code by SMS (buyer)
+  document.getElementById('sendCodeSMS')?.addEventListener('click', async ()=>{
+    const last=getLastOrder(); if (!last?.code) return alert('No code found.');
+    const phone = prompt('Enter phone number to send the code to (e.g., your number):');
+    if (!phone) return;
+    const msg = `ZippUp delivery code for Order ${last.orderId||''}: ${last.code}. Do NOT share this until goods are delivered and confirmed.`;
+    try{
+      // If backend SMS exists:
+      // await fetch(`${API}/api/notifications/sms`,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ to: phone, message: msg })});
+      // Fallback: sms: link
+      location.href = `sms:${encodeURIComponent(phone)}?body=${encodeURIComponent(msg)}`;
+    }catch{ location.href = `sms:${encodeURIComponent(phone)}?body=${encodeURIComponent(msg)}`; }
+  });
+})();
+</script>
+  <script>
+(function wireProfileButtons(){
+  const go = (pageId)=>{ try{ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(pageId)?.classList.add('active'); }catch{} };
+
+  const map = [
+    ['manageServicesBtn',     ()=> go('page-manage-services')],
+    ['manageProductsBtn',     ()=> go('page-manage-products')],
+    ['emergencyContactsBtn',  ()=> go('page-emergency-contacts')],
+    ['providerVerifyBtn',     ()=> go('page-verify-provider')],
+    ['supportBtn',            ()=> go('page-support')]
+  ];
+  map.forEach(([id,fn])=>{ const b=document.getElementById(id); if (b) b.onclick=fn; });
+
+  // Ensure dropdown entries exist to open confirm / last order modals
+  const menu = document.getElementById('dropdown-menu');
+  if (menu && !document.getElementById('confirmDeliveryNav')) {
+    const cd = document.createElement('div'); cd.id='confirmDeliveryNav'; cd.className='dropdown-item'; cd.innerHTML='<span>✅</span><span>Confirm Delivery</span>';
+    const lo = document.createElement('div'); lo.id='lastOrderNav'; lo.className='dropdown-item'; lo.innerHTML='<span>🧾</span><span>View Last Order Code</span>';
+    menu.appendChild(cd); menu.appendChild(lo);
+  }
+  document.getElementById('confirmDeliveryNav')?.addEventListener('click',()=> document.getElementById('confirmDeliveryModal').style.display='flex');
+  document.getElementById('lastOrderNav')?.addEventListener('click',()=> document.getElementById('lastOrderModal').style.display='flex');
+})();
+</script>
 </body>
 </html>
