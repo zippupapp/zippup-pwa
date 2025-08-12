@@ -244,6 +244,41 @@ header .btn { white-space:nowrap; }
 .grid, .row, .sheet, .modal, .list { max-width: 100%; }
 img, video, canvas { max-width:100%; height:auto; display:block; }
 button, input, select, textarea { max-width:100%; }
+    /* Keep header content on-screen and give Account room */
+header { overflow: visible; }
+header .row:last-child {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min-content;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Compact the two right-side buttons (notif + cart) */
+#notifBtn, #cartBtn {
+  padding: 6px !important;
+  width: 36px !important;
+  height: 36px !important;
+}
+
+/* Make the cart badge smaller and tighter to the icon */
+#headerCartBadge {
+  transform: scale(0.85);
+  top: -4px !important;
+  right: -4px !important;
+}
+
+/* On small phones, free space by hiding the location subtitle and tightening text */
+@media (max-width: 420px) {
+  .greet .small { display: none; }
+  .greet strong { font-size: 14px; }
+  #profileBtn { padding: 6px 10px; } /* keep Account visible */
+}
+
+/* Optional fallback for very narrow devices: hide notif to guarantee space */
+@media (max-width: 340px) {
+  #notifBtn { display: none; }
+}
   </style>
 </head>
 <body>
