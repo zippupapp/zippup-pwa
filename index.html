@@ -2984,5 +2984,182 @@ Add this script block once, after your existing scripts (before </body>)
   }
 })();
 </script>
+  <style id="zup-css-fixes">
+  /* Remove header cart + badge completely */
+  #cartBtn, #headerCartBadge { display: none !important; }
+
+  /* Make Account a bit larger so it fits but stays visible on phones */
+  #profileBtn {
+    padding: 8px 12px;
+    font-size: 15px;
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Full‑screen checkout; content scrolls inside */
+  #checkoutModal .sheet {
+    height: calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    display: flex;
+    flex-direction: column;
+  }
+  #checkoutModal .sheet .body {
+    flex: 1;
+    overflow: auto;
+  }
+</style>
+  <script id="zup-js-fixes">
+(function () {
+  const $ = (id)=>document.getElementById(id);
+
+  // A) Remove any floating cart bubble if it exists anywhere
+  (function removeFloatingCart(){
+    document.querySelectorAll('#footerCartFab, #footerCartBadge, #footerOpenCart').forEach(n=>n.remove());
+  })();
+
+  // B) Ensure Account sizing takes effect even if inline styles exist
+  (function growAccount(){
+    const pb = $('profileBtn');
+    if (pb) { pb.style.padding = '8px 12px'; pb.style.fontSize = '15px'; pb.style.maxWidth = '160px'; }
+  })();
+
+  // C) Booking cancel: really cancel and close everything
+  function setActiveMap(map){ localStorage.setItem('zup_active_by_service', JSON.stringify(map||{})); }
+  function getActiveMap(){ try { return JSON.parse(localStorage.getItem('zup_active_by_service')||'{}'); } catch { return {}; } }
+  async function cancelActive(category, reason){
+    try {
+      if (window.requestId) {
+        await fetch(`${(window.BASE_API||'')}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`, { method:'DELETE' });
+      }
+    } catch {}
+    // Clear active state for the category
+    const m = getActiveMap();
+    if (category) delete m[category];
+    setActiveMap(m);
+    if (window.activeRequests && category in window.activeRequests) window.activeRequests[category] = false;
+
+    // Stop any timers/polling
+    try { if (typeof window.stopInstant === 'function') window.stopInstant(); } catch {}
+    try { if (window.trackPoll) { clearInterval(window.trackPoll); window.trackPoll = null; } } catch {}
+    window.requestId = null;
+
+    // Close modals
+    ['cancelReasonsModal','instantModal','trackModal'].forEach(id=> $(id)?.classList.remove('open'));
+
+    // Return to Home
+    try { window.showPage && showPage('home'); } catch {}
+    alert('Request cancelled');
+  }
+  // Re‑bind cancel reasons confirm
+  (function wireCancelConfirm(){
+    const crConfirm = $('crConfirm');
+    if (crConfirm) {
+      crConfirm.onclick = async ()=>{
+        const picked = document.querySelector('input[name="cr"]:checked')?.value || 'Other';
+        const other = document.getElementById('crOther')?.value?.trim();
+        const reason = picked === 'Other' ? (other || 'Other') : picked;
+        const cat = (window.lastCategory || 'general');
+        await cancelActive(cat, reason);
+      };
+    }
+    const tcb = $('trackCancelBtn');
+    if (tcb) tcb.onclick = ()=> $('cancelReasonsModal')?.classList.add('open');
+  })();
+
+  // D) Checkout: open full‑screen directly from marketplace cart icon; add inline edit in checkout
+  function renderCheckoutItems(){
+    const modal = $('checkoutModal'); if (!modal) return;
+    const bodyList = modal.querySelector('.body .list'); if (!bodyList) return;
+
+    let wrap = document.getElementById('chkItemsList');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'chkItemsList';
+      wrap.className = 'list';
+      wrap.style.marginBottom = '12px';
+      bodyList.insertBefore(wrap, bodyList.firstChild);
+    }
+    const cart = (window.cart || { items: [] });
+    if (!cart.items.length) { wrap.innerHTML = '<div class="small muted">Your cart is empty.</div>'; return; }
+    wrap.innerHTML = '';
+    cart.items.forEach(item=>{
+      const row = document.createElement('div');
+      row.className = 'card';
+      row.dataset.id = item.id;
+      row.innerHTML = `
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div class="row">
+            <img src="${item.img}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
+            <div style="margin-left:8px">
+              <strong>${item.title}</strong>
+              <div class="small muted">$${Number(item.price).toFixed(2)}</div>
+            </div>
+          </div>
+          <div class="qty">
+            <button class="btn ghost" data-k="dec" type="button">−</button>
+            <div>${item.qty}</div>
+            <button class="btn ghost" data-k="inc" type="button">＋</button>
+            <button class="btn ghost" data-k="rm"  type="button">✖</button>
+          </div>
+        </div>`;
+      wrap.appendChild(row);
+    });
+
+    // Editing inside checkout
+    wrap.addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-k]'); if (!btn) return;
+      const id = btn.closest('.card')?.dataset?.id; if (!id) return;
+      const k = btn.getAttribute('data-k');
+      const idx = window.cart.items.findIndex(i=>i.id===id); if (idx<0) return;
+      if (k==='dec') window.cart.items[idx].qty = Math.max(1, window.cart.items[idx].qty-1);
+      if (k==='inc') window.cart.items[idx].qty = window.cart.items[idx].qty+1;
+      if (k==='rm')  window.cart.items.splice(idx,1);
+      try { window.saveCart && window.saveCart(); } catch {}
+      try { window.updateCartCount && window.updateCartCount(); } catch {}
+      renderCheckoutItems();
+      // If empty, close checkout
+      if (!window.cart.items.length) $('checkoutModal')?.classList.remove('open');
+    }, { passive:false });
+  }
+
+  // Open cart icon in marketplace -> go straight to checkout (full‑screen)
+  const openCartFab = $('openCartBtn');
+  if (openCartFab) {
+    openCartFab.onclick = ()=>{
+      const items = (window.cart?.items || []);
+      if (!items.length) { alert('Your cart is empty.'); return; }
+      try { window.renderCart && window.renderCart(); } catch {}
+      $('checkoutModal')?.classList.add('open');
+      renderCheckoutItems();
+    };
+  }
+
+  // E) Ensure checkout close works and backdrop closes it
+  (function wireCheckoutClose(){
+    const closeX = $('closeCheckout');
+    if (closeX) closeX.onclick = ()=> $('checkoutModal')?.classList.remove('open');
+    const modal = $('checkoutModal');
+    if (modal) {
+      modal.addEventListener('click', (e)=>{ if (e.target === modal) modal.classList.remove('open'); });
+    }
+  })();
+
+  // F) Also ensure the plain "Checkout" button in cart modal triggers full‑screen checkout with editable items
+  const checkoutBtn = $('checkoutBtn');
+  if (checkoutBtn) {
+    checkoutBtn.onclick = ()=>{
+      $('cartModal')?.classList.remove('open');
+      $('checkoutModal')?.classList.add('open');
+      renderCheckoutItems();
+    };
+  }
+
+  // G) On load, remove any leftover cart badges and floating elements
+  window.addEventListener('DOMContentLoaded', ()=>{
+    document.querySelectorAll('#headerCartBadge, #footerCartFab, #footerCartBadge').forEach(n=>n.remove());
+  });
+})();
+</script>
 </body>
 </html>
