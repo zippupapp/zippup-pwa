@@ -278,6 +278,88 @@ header .row:last-child {
 /* Optional fallback for very narrow devices: hide notif to guarantee space */
 @media (max-width: 340px) {
   #notifBtn { display: none; }
+  /* Hide header cart so Account has room */
+#cartBtn { display: none !important; }
+
+/* Footer cart bubble near Marketplace tab */
+#footerCartFab {
+  position: fixed;
+  z-index: 1000;
+  bottom: calc(var(--nav-h) + 6px);
+  left: 50%; /* JS will align to Marketplace button exactly */
+  transform: translateX(-50%);
+  pointer-events: none; /* container lets clicks pass except the button */
+}
+#footerCartFab button {
+  pointer-events: auto;
+  width: 48px; height: 48px;
+  border-radius: 999px;
+  padding: 0;
+  font-size: 20px;
+}
+#footerCartFab .badge {
+  position: absolute;
+  top: -6px; right: -6px;
+  background:#DC2626; color:#fff;
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 0 6px; line-height: 18px; min-width: 18px; text-align: center;
+}
+@media (max-width: 420px) {
+  #footerCartFab button { width: 44px; height: 44px; font-size: 19px; }
+}
+Add this script block once, after your existing scripts (before </body>)
+<script>
+(function footerCartFab(){
+  if (document.getElementById('footerCartFab')) return;
+
+  const fab = document.createElement('div');
+  fab.id = 'footerCartFab';
+  fab.innerHTML = `
+    <button class="btn primary" id="footerOpenCart" type="button">🛒</button>
+    <span id="footerCartBadge" class="badge">0</span>
+  `;
+  document.body.appendChild(fab);
+
+  function positionFab() {
+    const marketBtn = document.querySelector('.nav button[data-page="marketplace"]');
+    if (!marketBtn) return;
+    const r = marketBtn.getBoundingClientRect();
+    fab.style.left = (r.left + r.width / 2) + 'px';
+  }
+
+  function openCart() {
+    if (typeof window.renderCart === 'function') try { window.renderCart(); } catch {}
+    const m = document.getElementById('cartModal');
+    if (m) m.classList.add('open');
+  }
+
+  function syncBadge() {
+    try {
+      const current = (window.cart?.items || JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}').items);
+      const n = current.reduce((a,b)=> a + (b.qty||0), 0);
+      const b = document.getElementById('footerCartBadge');
+      if (b) b.textContent = String(n);
+    } catch {}
+  }
+
+  document.getElementById('footerOpenCart').onclick = openCart;
+  window.addEventListener('resize', positionFab);
+  window.addEventListener('orientationchange', positionFab);
+  window.addEventListener('DOMContentLoaded', positionFab);
+  setTimeout(positionFab, 0);
+  setTimeout(positionFab, 250);
+
+  // Hook into existing count updater if present
+  const prevUpdate = window.updateCartCount;
+  window.updateCartCount = function() {
+    if (prevUpdate) try { prevUpdate(); } catch {}
+    syncBadge();
+  };
+  // Initial sync
+  syncBadge();
+})();
+</script>
 }
   </style>
 </head>
