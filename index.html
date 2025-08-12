@@ -2,22 +2,6 @@
 <html lang="en">
 <head>
   <!-- Critical: ensure stale SW/caches don’t block updates on first load -->
-  <script>
-  if (!localStorage.getItem('zupHardResetDone')) {
-    localStorage.setItem('zupHardResetDone','1');
-    (async()=>{try{
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for (const r of regs) await r.unregister();
-      }
-      if (window.caches) {
-        const ks = await caches.keys();
-        for (const k of ks) await caches.delete(k);
-      }
-      location.reload();
-    }catch(e){ console.log('SW reset error', e); }})();
-  }
-  </script>
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
@@ -1892,6 +1876,25 @@ header { padding-top: env(safe-area-inset-top, 0px); }
   }
   // initial avatar
   const saved=localStorage.getItem('zup_profile_photo'); if (saved) applyAvatar(saved);
+})();
+</script>
+  <script>
+(function killSplash(){
+  function hide() {
+    try {
+      const s = document.getElementById('splash');
+      if (s) { s.style.opacity = '0'; setTimeout(()=> s && s.remove(), 200); }
+    } catch {}
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(hide, 0);
+  } else {
+    document.addEventListener('DOMContentLoaded', hide, { once:true });
+  }
+  window.addEventListener('load', hide, { once:true });
+  window.addEventListener('error', hide);
+  window.addEventListener('unhandledrejection', hide);
+  setTimeout(hide, 1500);
 })();
 </script>
 </body>
