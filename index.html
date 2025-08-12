@@ -3161,5 +3161,118 @@ Add this script block once, after your existing scripts (before </body>)
   });
 })();
 </script>
+  <style id="zup-css-fixes-2">
+  /* Make Account a bit larger but still fit on phones */
+  #profileBtn {
+    padding: 8px 12px !important;
+    font-size: 15px !important;
+    max-width: 160px !important;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  /* Full‑screen checkout; scroll inside */
+  #checkoutModal .sheet {
+    height: calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    display: flex; flex-direction: column;
+  }
+  #checkoutModal .sheet .body { flex: 1; overflow: auto; }
+</style>
+  <script id="zup-js-fixes-2">
+(function () {
+  const $ = (id)=>document.getElementById(id);
+
+  // A) Central
+  <script>
+(function wirePanicModal(){
+  const $ = (id)=>document.getElementById(id);
+  const modal = $('panicModal'); if (!modal) return;
+
+  function updateLocHint() {
+    const h = $('panicLocHint'); if (!h) return;
+    if (window.coords) h.textContent = `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
+    else h.textContent = 'Unknown (we will try to fetch)';
+  }
+
+<!-- Panic Modal -->
+<div class="modal" id="panicModal">
+  <div class="sheet">
+    <div class="head">
+      <strong>Emergency Alert</strong>
+      <button class="btn ghost" id="panicClose" type="button">✖</button>
+    </div>
+    <div class="body">
+      <div class="list">
+        <div class="small muted">We’ll notify your contacts and nearby providers with your location.</div>
+        <div class="field">
+          <label class="small">Message (optional)</label>
+          <textarea id="panicMsg" rows="3" placeholder="Describe the emergency…"></textarea>
+        </div>
+        <div class="small muted">Location: <span id="panicLocHint">Fetching…</span></div>
+        <div class="row" style="gap:8px; justify-content:flex-end; margin-top:8px">
+          <button class="btn ghost" id="panicCancel" type="button">Cancel</button>
+          <button class="btn primary" id="panicSend" type="button">Send Alert</button>
+        </div>
+        <div id="panicStatus" class="small muted" style="margin-top:6px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  
+  function openModal() {
+    $('panicStatus').textContent = '';
+    $('panicMsg').value = '';
+    updateLocHint();
+    modal.classList.add('open');
+  }
+
+  // Open from floating button
+  const panicBtn = $('panicBtn');
+  if (panicBtn) panicBtn.onclick = (e)=>{ e.preventDefault(); openModal(); };
+
+  // Close handlers
+  $('panicClose').onclick = ()=> modal.classList.remove('open');
+  $('panicCancel').onclick = ()=> modal.classList.remove('open');
+  modal.addEventListener('click', (e)=>{ if (e.target === modal) modal.classList.remove('open'); });
+
+  // Send alert
+  $('panicSend').onclick = async ()=>{
+    const btn = $('panicSend');
+    const status = $('panicStatus');
+    btn.disabled = true; btn.classList.add('loading');
+    status.textContent = 'Sending alert…';
+
+    try {
+      if (!window.coords && typeof window.initLocation === 'function') {
+        try { await window.initLocation(); } catch {}
+      }
+      const body = {
+        type: 'panic',
+        userPublicName: (window.user?.name || 'User'),
+        message: ($('panicMsg').value || '').trim() || undefined,
+        location: window.coords ? { latitude: coords.lat, longitude: coords.lng } : null
+      };
+      const r = await fetch(`${(window.BASE_API||'')}/api/emergency/alert`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      const d = await r.json().catch(()=> ({}));
+
+      if (r.ok) {
+        status.textContent = 'Alert sent.';
+        if (d.trackingUrl) { modal.classList.remove('open'); location.href = d.trackingUrl; return; }
+      } else {
+        status.textContent = 'Alert sent (fallback).';
+      }
+    } catch {
+      status.textContent = 'Could not reach server. Alert noted.';
+    } finally {
+      btn.disabled = false; btn.classList.remove('loading');
+    }
+  };
+
+  // Keep hint fresh on load
+  document.addEventListener('DOMContentLoaded', updateLocHint);
+})();
+</script>
 </body>
 </html>
