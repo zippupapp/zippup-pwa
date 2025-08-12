@@ -2827,5 +2827,162 @@ Add this script block once, after your existing scripts (before </body>)
   }
 })();
 </script>
+  <style id="header-account-fit">
+  /* Remove header cart and its badge completely */
+  #cartBtn, #headerCartBadge { display: none !important; }
+
+  /* Make Account fit on phones */
+  #profileBtn {
+    padding: 6px 10px;
+    font-size: 14px;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  header .row { gap: 8px; }
+  header .row > .greet { min-width: 0; flex: 1; }
+  header .row > .row { flex-shrink: 0; gap: 6px; }
+
+  /* Bell badge styling */
+  #notifBtn { position: relative; }
+  #notifBellBadge {
+    position: absolute; top: -4px; right: -4px;
+    background:#DC2626; color:#fff;
+    border-radius: 999px; font-size: 11px;
+    padding: 0 5px; line-height: 16px; min-width: 16px;
+    text-align: center; display: none;
+  }
+
+  /* On very small phones, show icon-only for Account */
+  @media (max-width: 380px) {
+    #profileBtn { max-width: 44px; }
+  }
+</style>
+  <script id="bell-notifications">
+(function bellNotifications(){
+  const $ = (id)=>document.getElementById(id);
+
+  // 1) Ensure bell has a badge
+  if (!document.getElementById('notifBellBadge')) {
+    const b = document.createElement('span');
+    b.id = 'notifBellBadge';
+    const host = document.getElementById('notifBtn');
+    if (host) host.appendChild(b);
+  }
+
+  // 2) Build Notifications modal once
+  if (!document.getElementById('notifModal')) {
+    const m = document.createElement('div');
+    m.id = 'notifModal';
+    m.className = 'modal';
+    m.innerHTML = `
+      <div class="sheet">
+        <div class="head">
+          <strong>Notifications</strong>
+          <button class="btn ghost" id="closeNotif" type="button">✖</button>
+        </div>
+        <div class="body">
+          <div id="notifList" class="list"></div>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    document.getElementById('closeNotif').onclick = ()=> m.classList.remove('open');
+    m.addEventListener('click',(e)=>{ if (e.target===m) m.classList.remove('open'); });
+  }
+
+  function getCartCount() {
+    try {
+      const cart = (window.cart?.items) || JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}').items || [];
+      return cart.reduce((a,b)=> a + (Number(b.qty)||0), 0);
+    } catch { return 0; }
+  }
+
+  function updateBellBadge() {
+    const cnt = getCartCount(); // add other types later if needed
+    const badge = document.getElementById('notifBellBadge');
+    if (!badge) return;
+    if (cnt > 0) {
+      badge.style.display = 'inline-block';
+      badge.textContent = String(cnt);
+    } else {
+      badge.style.display = 'none';
+      badge.textContent = '';
+    }
+  }
+
+  function openCart() {
+    try { window.renderCart && window.renderCart(); } catch {}
+    const m = document.getElementById('cartModal');
+    if (m) {
+      // ensure user can see it from anywhere
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      const mp = document.getElementById('page-marketplace'); if (mp) mp.classList.add('active');
+      m.classList.add('open');
+    }
+  }
+
+  function renderNotifications() {
+    const list = document.getElementById('notifList'); if (!list) return;
+    list.innerHTML = '';
+    const items = [];
+
+    const cartCnt = getCartCount();
+    if (cartCnt > 0) {
+      items.push({
+        icon: '🛒',
+        title: 'Items in your cart',
+        text: `You have ${cartCnt} item${cartCnt>1?'s':''} in Marketplace cart.`,
+        action: () => openCart()
+      });
+    }
+
+    // TODO: push other notification types here (e.g., messages, order status)
+    // Example placeholder:
+    // items.push({ icon:'💬', title:'New message', text:'You have 1 unread message', action:()=> openMessages() });
+
+    if (!items.length) {
+      list.innerHTML = '<div class="small muted">No new notifications.</div>';
+      return;
+    }
+
+    items.forEach(n=>{
+      const row = document.createElement('div');
+      row.className = 'card';
+      row.style.cursor = 'pointer';
+      row.innerHTML = `
+        <div class="row" style="justify-content:space-between; align-items:flex-start">
+          <div class="row" style="align-items:center; gap:10px">
+            <div style="font-size:20px">${n.icon}</div>
+            <div>
+              <div><strong>${n.title}</strong></div>
+              <div class="small muted">${n.text}</div>
+            </div>
+          </div>
+          <div>›</div>
+        </div>`;
+      row.onclick = ()=> { try { n.action && n.action(); } finally { document.getElementById('notifModal').classList.remove('open'); } };
+      list.appendChild(row);
+    });
+  }
+
+  // 3) Wire bell
+  const bell = document.getElementById('notifBtn');
+  if (bell) bell.onclick = ()=> { renderNotifications(); document.getElementById('notifModal').classList.add('open'); };
+
+  // 4) Keep badge in sync with cart updates
+  const prevUpdate = window.updateCartCount;
+  window.updateCartCount = function() {
+    if (prevUpdate) try { prevUpdate(); } catch {}
+    updateBellBadge();
+  };
+  // Initial sync + compact Account label on small phones
+  updateBellBadge();
+  if (window.matchMedia('(max-width: 380px)').matches) {
+    const pb = document.getElementById('profileBtn');
+    if (pb) pb.textContent = '👤';
+  }
+})();
+</script>
 </body>
 </html>
