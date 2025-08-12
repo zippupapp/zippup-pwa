@@ -2757,5 +2757,75 @@ Add this script block once, after your existing scripts (before </body>)
   const profileBtn = document.getElementById('profileBtn');
   if (profileBtn) profileBtn.addEventListener('dblclick', ()=> ensureGate(), { passive:true });
 </script>
+  <style id="cart-relocate-css">
+  /* Hide header cart permanently so Account has space */
+  #cartBtn { display: none !important; }
+  /* Float cart above Marketplace tab */
+  #footerCartFab {
+    position: fixed; z-index: 1000;
+    bottom: calc(var(--nav-h) + 6px);
+    left: 50%; transform: translateX(-50%);
+    pointer-events: none;
+  }
+  #footerCartFab button {
+    pointer-events: auto;
+    width: 48px; height: 48px; border-radius: 999px; padding: 0; font-size: 20px;
+  }
+  #footerCartFab .badge {
+    position: absolute; top: -6px; right: -6px;
+    background:#DC2626; color:#fff; border-radius: 999px;
+    font-size: 12px; padding: 0 6px; line-height: 18px; min-width: 18px; text-align:center;
+  }
+  @media (max-width: 420px) { #footerCartFab button { width: 44px; height: 44px; font-size: 19px; } }
+</style>
+  <script id="cart-relocate-js">
+(function relocateCart(){
+  // 1) Remove header cart to free space for Account
+  const headerCart = document.getElementById('cartBtn');
+  if (headerCart && headerCart.parentElement) headerCart.parentElement.removeChild(headerCart);
+
+  // 2) Create footer cart bubble once
+  if (!document.getElementById('footerCartFab')) {
+    const fab = document.createElement('div');
+    fab.id = 'footerCartFab';
+    fab.innerHTML = `
+      <button class="btn primary" id="footerOpenCart" type="button">🛒</button>
+      <span id="footerCartBadge" class="badge">0</span>`;
+    document.body.appendChild(fab);
+
+    // Position over Marketplace tab
+    function positionFab() {
+      const marketBtn = document.querySelector('.nav button[data-page="marketplace"]');
+      if (!marketBtn) return;
+      const r = marketBtn.getBoundingClientRect();
+      fab.style.left = (r.left + r.width/2) + 'px';
+    }
+    ['resize','orientationchange','DOMContentLoaded','load'].forEach(ev => window.addEventListener(ev, positionFab));
+    setTimeout(positionFab, 0); setTimeout(positionFab, 250);
+
+    // Open cart modal
+    document.getElementById('footerOpenCart').onclick = () => {
+      try { window.renderCart && window.renderCart(); } catch {}
+      const m = document.getElementById('cartModal'); if (m) m.classList.add('open');
+    };
+
+    // Sync badge with existing cart state
+    function syncBadge() {
+      try {
+        const items = (window.cart?.items) || JSON.parse(localStorage.getItem('mp_cart')||'{"items":[]}').items || [];
+        const n = items.reduce((a,b)=>a+(b.qty||0),0);
+        const b = document.getElementById('footerCartBadge'); if (b) b.textContent = String(n);
+      } catch {}
+    }
+    // Hook existing updater if present
+    const prevUpdate = window.updateCartCount;
+    window.updateCartCount = function(){
+      if (prevUpdate) try { prevUpdate(); } catch {}
+      syncBadge();
+    };
+    syncBadge();
+  }
+})();
+</script>
 </body>
 </html>
