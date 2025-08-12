@@ -2,6 +2,22 @@
 <html lang="en">
 <head>
   <!-- Critical: ensure stale SW/caches don’t block updates on first load -->
+  <script>
+  if (!localStorage.getItem('zupHardResetDone')) {
+    localStorage.setItem('zupHardResetDone','1');
+    (async()=>{try{
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const r of regs) await r.unregister();
+      }
+      if (window.caches) {
+        const ks = await caches.keys();
+        for (const k of ks) await caches.delete(k);
+      }
+      location.reload();
+    }catch(e){ console.log('SW reset error', e); }})();
+  }
+  </script>
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
@@ -111,9 +127,6 @@
     /* Safe areas */
     body { padding-top:env(safe-area-inset-top,0px) }
     .nav { padding-bottom:env(safe-area-inset-bottom,0px) }
-    /* Header safe-area + page offset so greet/location never hide */
-header { padding-top: env(safe-area-inset-top, 0px); }
-.page { top: calc(var(--header-h) + env(safe-area-inset-top, 0px)); }
   </style>
 </head>
 <body>
@@ -426,13 +439,7 @@ header { padding-top: env(safe-area-inset-top, 0px); }
             <div class="field"><label class="small">Date</label><input id="bkDate" type="date" required/></div>
             <div class="field"><label class="small">Time</label><input id="bkTime" type="time" required/></div>
           </div>
-          <div class="field">
-  <label class="small">Address</label>
-  <div class="row" style="gap:8px">
-    <input id="bkAddress" required placeholder="Enter address" style="flex:1"/>
-    <button class="btn ghost" id="bkUseCurrent" type="button">📍 Use current</button>
-  </div>
-</div>
+          <div class="field"><label class="small">Address</label><input id="bkAddress" required placeholder="Enter address"/></div>
           <div class="field"><label class="small">Details</label><textarea id="bkDesc" rows="3" placeholder="Describe the job…"></textarea></div>
           <button class="btn primary block" type="submit">Send Booking Request</button>
         </form>
@@ -1463,28 +1470,7 @@ header { padding-top: env(safe-area-inset-top, 0px); }
       const total=cart.items.reduce((a,b)=>a+b.price*b.qty,0);
       $('foodCartTotal').textContent=total.toFixed(2);
     }
-<!-- Food Options -->
-<div class="modal" id="foodOptionsModal">
-  <div class="sheet">
-    <div class="head">
-      <strong>Food</strong>
-      <button class="btn ghost" id="closeFoodOptions" type="button">✖</button>
-    </div>
-    <div class="body">
-      <div class="search">
-        <div class="box">
-          <input id="foodSearch" placeholder="Search vendors or food…"/>
-          <button class="btn primary" id="foodSearchBtn" type="button">Search</button>
-        </div>
-      </div>
-      <div class="row" style="gap:8px;margin-top:8px">
-        <button class="btn primary" id="foodFastBtn" type="button">🍔 Fast food</button>
-        <button class="btn ghost" id="foodGroceryBtn" type="button">🛒 Groceries</button>
-      </div>
-    </div>
-  </div>
-</div>
-    
+
     // Cart modal (for Food/Grocery)
     function renderCart(){
       const list=$('cartList'); const totalEl=$('cartTotal'); list.innerHTML='';
@@ -1717,185 +1703,5 @@ header { padding-top: env(safe-area-inset-top, 0px); }
     // Read-only helpers
     function getUserEmail(){ return auth.currentUser?.email || 'me'; }
   </script>
-  <script>
-// 4A) Remove Contact Support from account dropdown
-(function(){ const el = document.getElementById('menuSupport'); if (el) el.remove(); })();
-
-// 4B) Booking "Use current" for all services
-(function(){
-  const btn = document.getElementById('bkUseCurrent');
-  if (btn) btn.onclick = async ()=>{
-    try {
-      if (!window.coords && typeof window.initLocation==='function') await window.initLocation();
-      if (window.coords && typeof window.reverseGeocode==='function') {
-        document.getElementById('bkAddress').value =
-          (await window.reverseGeocode(window.coords.lat, window.coords.lng)) || '';
-      }
-    } catch {}
-  };
-})();
-
-// 4C) Food: show options (fast food / groceries) + search
-(function(){
-  const $ = (id)=>document.getElementById(id);
-  function openFoodOptions(){ $('foodOptionsModal').classList.add('open'); }
-  function closeFoodOptions(){ $('foodOptionsModal').classList.remove('open'); }
-  $('closeFoodOptions')?.addEventListener('click', closeFoodOptions);
-  $('foodFastBtn')?.addEventListener('click', ()=>{ closeFoodOptions(); openFoodVendorsFiltered('fastfood'); });
-  $('foodGroceryBtn')?.addEventListener('click', ()=>{ closeFoodOptions(); openFoodVendorsFiltered('grocery'); });
-  $('foodSearchBtn')?.addEventListener('click', ()=>{
-    const q = ( $('foodSearch')?.value || '' ).toLowerCase().trim();
-    closeFoodOptions(); openFoodVendorsSearch(q);
-  });
-
-  // helper renderers leveraging your existing vendors/menu data
-  window.openFoodVendorsFiltered = (kind)=>{
-    const vs = (window.VENDORS||[]).filter(v=>v.kind===kind);
-    renderVendorsList(vs);
-  };
-  window.openFoodVendorsSearch = (q)=>{
-    const V=(window.VENDORS||[]), M=(window.MENUS||{});
-    const inVendors = V.filter(v=>v.name.toLowerCase().includes(q));
-    const inMenusVendorIds = Object.keys(M).filter(vid => (M[vid]||[]).some(m=>m.title.toLowerCase().includes(q)));
-    const keep = new Set(inVendors.map(v=>v.id).concat(inMenusVendorIds));
-    renderVendorsList(V.filter(v=>keep.has(v.id)));
-  };
-  function renderVendorsList(vs){
-    const list=$('foodVendorsList'); if (!list) return;
-    const V=(window.VENDORS||[]);
-    list.innerHTML='';
-    (vs && vs.length ? vs : V).forEach(v=>{
-      const el=document.createElement('div'); el.className='card';
-      el.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-start">
-        <div><div><strong>${v.name}</strong></div><div class="small muted">${v.kind==='fastfood'?'Fast food':'Grocery'} • Payments: ${v.payment.join(', ')}</div></div>
-        <div class="row" style="gap:6px"><button class="btn primary" data-k="menu">View Menu</button></div>
-      </div>`;
-      el.querySelector('[data-k="menu"]').onclick = ()=> window.openFoodMenu && window.openFoodMenu(v);
-      list.appendChild(el);
-    });
-    const t = $('foodVendorsTitle'); if (t) t.textContent='Food Vendors';
-    $('foodVendorsModal')?.classList.add('open');
-  }
-
-  // Replace Food category open to show options first
-  if (typeof window.openCategory === 'function') {
-    const _openCategory = window.openCategory;
-    window.openCategory = function(catId, label){
-      if (catId==='food') { openFoodOptions(); return; }
-      return _openCategory.apply(this, arguments);
-    };
-  }
-})();
-
-// 4D) Make Cancel buttons actually cancel request (Instant + Tracking)
-(function(){
-  const $ = (id)=>document.getElementById(id);
-  function openReasons(){ $('cancelReasonsModal')?.classList.add('open'); }
-  const ci = $('cancelInstant'); if (ci) ci.onclick = (e)=>{ e.preventDefault(); openReasons(); };
-  const tcb = $('trackCancelBtn'); if (tcb) tcb.onclick = (e)=>{ e.preventDefault(); openReasons(); };
-
-  // Confirm cancel -> real cancel + return to Services
-  const ok = $('crConfirm');
-  if (ok && !ok.dataset.bound){
-    ok.dataset.bound='1';
-    ok.onclick = async ()=>{
-      const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other';
-      const other=document.getElementById('crOther')?.value?.trim();
-      const reason=picked==='Other'?(other||'Other'):picked;
-      try {
-        if (window.requestId && window.BASE_API) {
-          await fetch(`${window.BASE_API}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason)}`,{method:'DELETE'});
-        }
-      } catch {}
-      try{ if (window.stopInstant) window.stopInstant(); }catch{}
-      try{ if (window.trackPoll) { clearInterval(window.trackPoll); window.trackPoll=null; } }catch{}
-      window.requestId=null;
-      ['cancelReasonsModal','instantModal','trackModal','providersModal'].forEach(id=>$(id)?.classList.remove('open'));
-      if (typeof window.showPage==='function') window.showPage('services');
-      alert('Request cancelled');
-    };
-  }
-})();
-
-// 4E) Auth gate branding: title + slogan (smaller)
-(function(){
-  const gate = document.getElementById('authGate'); if (!gate) return;
-  const card = gate.querySelector('[style*="max-width"]') || gate;
-  const list = card.querySelector('.list') || card;
-  if (!card.querySelector('.brand-block')) {
-    const wrap = document.createElement('div');
-    wrap.className = 'brand-block';
-    wrap.style.cssText='text-align:center;margin-bottom:10px';
-    wrap.innerHTML = `
-      <div class="brand-title" style="font-weight:800;font-size:18px;margin-top:4px">ZippUp, speed up ur hustle my Gee</div>
-      <div class="brand-tag" style="font-size:13px;color:#475569;margin-top:4px">One stop to your OnDemand services.</div>`;
-    list.insertAdjacentElement('afterbegin', wrap);
-  } else {
-    card.querySelector('.brand-title').textContent = 'ZippUp, speed up ur hustle my Gee';
-    card.querySelector('.brand-tag').textContent   = 'One stop to your OnDemand services.';
-  }
-})();
-
-// 4F) Profile edit: name + photo upload (persists and shows)
-(function(){
-  const $ = (id)=>document.getElementById(id);
-  function applyAvatar(src){ const av=$('user-avatar'); if (av){ av.style.backgroundImage=`url("${src}")`; av.style.backgroundSize='cover'; av.style.backgroundPosition='center'; av.textContent=''; } }
-  function updateProfileUI(){ $('userName').textContent=(window.user?.name||'Guest'); $('profName').textContent=(window.user?.name||'Demo User'); const saved=localStorage.getItem('zup_profile_photo'); if (saved) applyAvatar(saved); }
-  const btn=$('editProfileBtn');
-  if (btn && !btn.dataset.bound){
-    btn.dataset.bound='1';
-    btn.onclick = ()=>{
-      let m=$('profileEditModal');
-      if (!m) {
-        m=document.createElement('div'); m.id='profileEditModal'; m.className='modal open';
-        m.innerHTML=`
-          <div class="sheet">
-            <div class="head"><strong>Edit Profile</strong><button class="btn ghost" id="peClose" type="button">✖</button></div>
-            <div class="body">
-              <div class="list">
-                <div class="field"><label class="small">Public name</label><input id="peName" value="${(window.user?.name||'')}" /></div>
-                <div class="field"><label class="small">Photo</label><input id="pePhoto" type="file" accept="image/*"/></div>
-                <button class="btn primary" id="peSave" type="button">Save</button>
-              </div>
-            </div>
-          </div>`;
-        document.body.appendChild(m);
-        m.addEventListener('click',(e)=>{ if(e.target===m) m.classList.remove('open'); });
-        $('peClose').onclick=()=> m.classList.remove('open');
-        $('peSave').onclick=()=>{
-          const name=$('peName').value.trim(); if (name) window.user.name=name;
-          const f=$('pePhoto').files?.[0];
-          if (f) {
-            const fr=new FileReader();
-            fr.onload=()=>{ localStorage.setItem('zup_profile_photo', fr.result); applyAvatar(fr.result); updateProfileUI(); m.classList.remove('open'); };
-            fr.readAsDataURL(f);
-          } else { updateProfileUI(); m.classList.remove('open'); }
-        };
-      } else m.classList.add('open');
-    };
-  }
-  // initial avatar
-  const saved=localStorage.getItem('zup_profile_photo'); if (saved) applyAvatar(saved);
-})();
-</script>
-  <script>
-(function killSplash(){
-  function hide() {
-    try {
-      const s = document.getElementById('splash');
-      if (s) { s.style.opacity = '0'; setTimeout(()=> s && s.remove(), 200); }
-    } catch {}
-  }
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(hide, 0);
-  } else {
-    document.addEventListener('DOMContentLoaded', hide, { once:true });
-  }
-  window.addEventListener('load', hide, { once:true });
-  window.addEventListener('error', hide);
-  window.addEventListener('unhandledrejection', hide);
-  setTimeout(hide, 1500);
-})();
-</script>
 </body>
 </html>
