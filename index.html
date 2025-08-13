@@ -114,31 +114,30 @@ header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-
 <body>
   <!-- Header -->
   <header>
+  <div class="row">
+    <div class="greet">
+      <strong>Hello, <span id="userName">Guest</span></strong>
+      <span class="small">📍 <span id="userLoc">Detecting location…</span></span>
+    </div>
     <div class="row">
-      <div class="greet">
-        <strong>Hello, <span id="userName">Guest</span></strong>
-        <span class="small">📍 <span id="userLoc">Detecting location…</span></span>
+      <div style="position:relative">
+        <button class="btn ghost" id="cartBtn" type="button">🛒</button>
+        <span id="headerCartBadge" style="position:absolute; top:-6px; right:-6px; background:#DC2626; color:#fff; border-radius:999px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">0</span>
       </div>
-      <div class="row">
-        <button class="btn ghost" id="notifBtn" type="button" title="Notifications">🔔</button>
-        <div style="position:relative">
-          <button class="btn ghost" id="cartBtn" type="button">🛒</button>
-          <span id="headerCartBadge" style="position:absolute; top:-6px; right:-6px; background:#DC2626; color:#fff; border-radius:999px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">0</span>
-        </div>
-        <div style="position:relative">
-          <button class="btn ghost" id="profileBtn" type="button">👤 Account</button>
-          <div id="profileMenu" style="position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:200px; z-index:300; padding:6px">
-            <button class="btn ghost" id="menuProfile" type="button">👤 Profile</button>
-            <button class="btn ghost" id="menuOrders" type="button">📦 Manage Orders</button>
-            <button class="btn ghost" id="menuWallet" type="button">💰 Wallet</button>
-            <button class="btn ghost" id="menuTopup" type="button">⚡ Top‑up</button>
-            <!-- Contact Support removed as requested -->
-            <button class="btn ghost" id="menuLogout" type="button">🚪 Logout</button>
-          </div>
+      <button class="btn ghost" id="notifBtn" type="button" title="Notifications">🔔</button>
+      <div style="position:relative">
+        <button class="btn ghost" id="profileBtn" type="button">👤 Account</button>
+        <div id="profileMenu" style="position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:200px; z-index:300; padding:6px">
+          <button class="btn ghost" id="menuProfile" type="button">👤 Profile</button>
+          <button class="btn ghost" id="menuOrders" type="button">📦 Manage Orders</button>
+          <button class="btn ghost" id="menuWallet" type="button">💰 Wallet</button>
+          <button class="btn ghost" id="menuTopup" type="button">⚡ Top‑up</button>
+          <button class="btn ghost" id="menuLogout" type="button">🚪 Logout</button>
         </div>
       </div>
     </div>
-  </header>
+  </div>
+</header>
 
   <!-- Pages -->
   <main id="page-home" class="page active">
@@ -151,14 +150,14 @@ header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-
     </section>
 
     <section class="section">
-      <div class="title">Emergency</div>
-      <div class="grid" id="emergencyGrid"></div>
-    </section>
+  <div class="title">All Services</div>
+  <div class="grid" id="servicesGrid"></div>
+</section>
 
-    <section class="section">
-      <div class="title">All Services</div>
-      <div class="grid" id="servicesGrid"></div>
-    </section>
+<section class="section">
+  <div class="title">Emergency</div>
+  <div class="grid" id="emergencyGrid"></div>
+</section>
 
     <section class="section">
       <div class="title">Recent</div>
@@ -467,6 +466,23 @@ header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-
     </div>
   </div>
 
+  <div class="modal" id="roadsideModal">
+  <div class="sheet">
+    <div class="head">
+      <strong>Roadside Assistance</strong>
+      <button class="btn ghost" id="roadClose" type="button">✖</button>
+    </div>
+    <div class="body">
+      <div class="row" style="gap:8px;margin-bottom:10px">
+        <input id="roadSearch" placeholder="Search roadside help (tyres, battery, tow)..." style="flex:1"/>
+        <button class="btn ghost" id="roadVoice" type="button">🎤</button>
+        <button class="btn primary" id="roadGo" type="button">Search</button>
+      </div>
+      <div id="roadList" class="list"></div>
+    </div>
+  </div>
+</div>
+
   <!-- Instant Request -->
   <div class="modal" id="instantModal">
     <div class="sheet">
@@ -571,15 +587,14 @@ header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-
   </div>
 
   <!-- Food Vendors -->
-  <div class="modal" id="foodVendorsModal">
-    <div class="sheet">
-      <div class="head">
-        <strong id="foodVendorsTitle">Food Vendors</strong>
-        <button class="btn ghost" id="closeFoodVendors" type="button">✖</button>
-      </div>
-      <div class="body">
-        <div id="foodVendorsList" class="list"></div>
-      </div>
+  <div class="body">
+  <div class="row" style="gap:8px;margin-bottom:10px">
+    <input id="fvSearch" placeholder="Search vendors or menu items…" style="flex:1"/>
+    <button class="btn ghost" id="fvVoice" type="button">🎤</button>
+    <button class="btn primary" id="fvSearchBtn" type="button">Search</button>
+  </div>
+  <div id="foodVendorsList" class="list"></div>
+</div>
     </div>
   </div>
 
@@ -2064,6 +2079,96 @@ header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-
     bindCancel();
   } else {
     document.addEventListener('DOMContentLoaded', bindCancel, { once:true });
+  }
+})();
+</script>
+  <script>
+(function(){
+  const $ = id => document.getElementById(id);
+
+  // Voice helper (reuse if you already have)
+  function voiceToInput(inputEl, onResult){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert('Voice not supported'); return; }
+    const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+    rec.onresult = (e)=>{ const text=e.results[0][0].transcript||''; inputEl.value=text; onResult&&onResult(text); };
+    rec.start();
+  }
+
+  // Roadside dialog open + search
+  function openRoadside(){
+    const m = $('roadsideModal'); if (!m) return;
+    renderRoadsideList('');
+    m.classList.add('open');
+  }
+  function renderRoadsideList(q){
+    const list = $('roadList'); if (!list) return;
+    const all = [
+      { name:'Tyre change • Team A', eta:'5 min' },
+      { name:'Battery jumpstart • Team B', eta:'7 min' },
+      { name:'Fuel delivery • Team C', eta:'10 min' },
+      { name:'Tow truck • Wingate', eta:'12 min' }
+    ];
+    const f = (q||'').toLowerCase();
+    const rows = all.filter(x => x.name.toLowerCase().includes(f)).map(x=>`
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div><strong>${x.name}</strong><div class="small muted">ETA ${x.eta}</div></div>
+          <button class="btn primary" type="button" onclick="alert('Request sent')">Request</button>
+        </div>
+      </div>`).join('');
+    list.innerHTML = rows || '<div class="small muted">No matches</div>';
+  }
+
+  // Wire Emergency grid: roadside -> dialog; others -> existing flow
+  const emergencyGrid = document.getElementById('emergencyGrid');
+  if (emergencyGrid) {
+    emergencyGrid.addEventListener('click', (e)=>{
+      const card = e.target.closest('.card.service'); if (!card) return;
+      const label = card.innerText || '';
+      if (/roadside/i.test(label)) { openRoadside(); }
+    });
+  }
+
+  // Roadside modal controls
+  const roadClose = $('roadClose'); if (roadClose) roadClose.onclick = ()=> $('roadsideModal').classList.remove('open');
+  const roadGo = $('roadGo'); if (roadGo) roadGo.onclick = ()=> renderRoadsideList(($('roadSearch').value||'').trim());
+  const roadVoice = $('roadVoice'); if (roadVoice) roadVoice.onclick = ()=> voiceToInput($('roadSearch'), txt=>renderRoadsideList(txt));
+
+  // Food mic
+  const foodVoice = $('foodVoice'); if (foodVoice) foodVoice.onclick = ()=> voiceToInput($('foodSearch'), ()=>document.getElementById('foodSearchBtn')?.click());
+
+  // Bell stays right next to Account: ensure small gap
+  const notifBtn = $('notifBtn'); if (notifBtn) notifBtn.style.marginRight = '6px';
+})();
+</script>
+  <script>
+(function vendorsSearchMic(){
+  const $ = id => document.getElementById(id);
+
+  function filterVendors() {
+    const q = (($('fvSearch')?.value)||'').toLowerCase();
+    const box = $('foodVendorsList');
+    if (!box) return;
+    box.querySelectorAll('.card').forEach(card=>{
+      const txt = card.textContent.toLowerCase();
+      card.style.display = txt.includes(q) ? '' : 'none';
+    });
+  }
+
+  $('fvSearch')?.addEventListener('input', filterVendors);
+  $('fvSearchBtn')?.addEventListener('click', filterVendors);
+  $('fvVoice')?.addEventListener('click', ()=> {
+    if (typeof voiceToInput === 'function') voiceToInput($('fvSearch'), filterVendors);
+    else alert('Voice not supported');
+  });
+
+  // If you open vendors after clicking Fast food or Groceries, run a quick filter refresh
+  const fvModal = document.getElementById('foodVendorsModal');
+  if (fvModal) {
+    fvModal.addEventListener('transitionend', filterVendors);
+    // also refresh whenever you render vendors
+    window.applyVendorFilter = filterVendors;
   }
 })();
 </script>
