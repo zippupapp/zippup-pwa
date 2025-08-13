@@ -685,22 +685,61 @@
     </div>
   </div>
 
-  <div class="modal" id="authModal">
-    <div class="sheet">
-      <div class="head">
-        <strong>Sign in</strong>
-        <button class="btn ghost" id="authClose" type="button">✖</button>
+  <!-- Auth (full page with Email/Google/Phone/Recover) -->
+<div class="modal" id="authModal" style="display:none">
+  <div class="sheet" style="height:100vh;width:100vw;max-width:none;border-radius:0;border:0;background:var(--bg);display:flex;flex-direction:column">
+    <div class="head" style="border:0;justify-content:center">
+      <div style="text-align:center;margin:6px 0 0">
+        <div style="font-size:42px">🚀</div>
+        <div style="margin-top:4px;color:var(--muted);font-weight:600">ZippUp: Hustle faster!</div>
       </div>
-      <div class="body">
-        <div class="list">
-          <div style="text-align:center;font-weight:800;font-size:18px;margin-bottom:6px">ZippUp: Hustle faster!</div>
-          <div class="field"><label class="small">Email</label><input id="authEmail" placeholder="you@example.com"/></div>
-          <div class="field"><label class="small">Password</label><input id="authPass" type="password" placeholder="••••••••"/></div>
-          <button class="btn primary" id="authLogin" type="button">Continue</button>
+    </div>
+    <div class="body" style="flex:1;display:flex;align-items:center;justify-content:center;padding:16px">
+      <div style="width:100%;max-width:420px;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:18px">
+        <div id="authTabs" style="display:grid;grid-auto-flow:column;gap:8px;margin:10px 0 12px">
+          <button id="tabSignIn" class="btn ghost" type="button">Sign in</button>
+          <button id="tabSignUp" class="btn ghost" type="button">Sign up</button>
+          <button id="tabPhone"  class="btn ghost" type="button">Phone</button>
+          <button id="tabReset"  class="btn ghost" type="button">Recover</button>
+        </div>
+
+        <!-- Sign in -->
+        <div id="paneSignIn">
+          <div class="field"><label class="small">Email</label><input id="inEmail" placeholder="you@example.com"/></div>
+          <div class="field"><label class="small">Password</label><input id="inPass" type="password" placeholder="••••••••"/></div>
+          <button class="btn primary block" id="btnSignIn" type="button">Continue</button>
+          <div class="small muted" style="margin:10px 0; text-align:center">or</div>
+          <button class="btn block" id="googleBtn" type="button" style="width:100%;background:#fff;border:1px solid var(--border)">🔵 Continue with Google</button>
+        </div>
+
+        <!-- Sign up -->
+        <div id="paneSignUp" style="display:none">
+          <div class="field"><label class="small">Name</label><input id="upName" placeholder="Your name"/></div>
+          <div class="field"><label class="small">Email</label><input id="upEmail" placeholder="you@example.com"/></div>
+          <div class="field"><label class="small">Password</label><input id="upPass" type="password" placeholder="At least 6 characters"/></div>
+          <button class="btn primary block" id="btnSignUp" type="button">Create account</button>
+          <div class="small muted" style="margin:10px 0; text-align:center">or</div>
+          <button class="btn block" id="googleBtn2" type="button" style="width:100%;background:#fff;border:1px solid var(--border)">🔵 Continue with Google</button>
+        </div>
+
+        <!-- Phone -->
+        <div id="panePhone" style="display:none">
+          <div class="field"><label class="small">Phone (with country code)</label><input id="phNumber" placeholder="+27XXXXXXXXX"/></div>
+          <div id="recaptcha-container" style="margin:6px 0"></div>
+          <button class="btn primary block" id="btnPhoneSend" type="button">Send code</button>
+          <div class="field" style="margin-top:10px"><label class="small">Verification code</label><input id="phCode" placeholder="6‑digit code"/></div>
+          <button class="btn primary block" id="btnPhoneVerify" type="button">Verify & Sign in</button>
+        </div>
+
+        <!-- Recover -->
+        <div id="paneReset" style="display:none">
+          <div class="field"><label class="small">Email</label><input id="rsEmail" placeholder="you@example.com"/></div>
+          <button class="btn primary block" id="btnReset" type="button">Send reset link</button>
         </div>
       </div>
     </div>
   </div>
+</div>
 
   <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
     <div style="font-size:28px;font-weight:800;margin-top:12px">ZippUp</div>
@@ -1935,6 +1974,105 @@
 
   // If explicitly asked to sign in (e.g., deep link later)
   window.openAuth = ()=>{ enterAuthMode(); setTab('SignIn'); };
+})();
+</script>
+  <script>
+(function(){
+  const $=s=>document.querySelector(s);
+
+  // Gate helpers
+  function enterAuth(){ document.body.setAttribute('data-auth','1'); const m=$('#authModal'); if(m){ m.style.display='flex'; m.classList.add('open'); } }
+  function exitAuth(){ document.body.removeAttribute('data-auth'); const m=$('#authModal'); if(m){ m.classList.remove('open'); m.style.display='none'; } }
+
+  // Tabs
+  function setTab(which){
+    const panes={SignIn:'#paneSignIn',SignUp:'#paneSignUp',Phone:'#panePhone',Reset:'#paneReset'};
+    Object.entries(panes).forEach(([k,sel])=>{ const el=$(sel); if(el) el.style.display=(k===which)?'':'none'; });
+    ['#tabSignIn','#tabSignUp','#tabPhone','#tabReset'].forEach(sel=>$(sel)?.classList.remove('active'));
+    $('#tab'+which)?.classList.add('active');
+  }
+  $('#tabSignIn')?.addEventListener('click',()=>setTab('SignIn'));
+  $('#tabSignUp')?.addEventListener('click',()=>setTab('SignUp'));
+  $('#tabPhone') ?.addEventListener('click',()=>setTab('Phone'));
+  $('#tabReset') ?.addEventListener('click',()=>setTab('Reset'));
+  setTab('SignIn');
+
+  // Email/password
+  $('#btnSignIn')?.addEventListener('click', async ()=>{
+    const email=$('#inEmail')?.value.trim(), pass=$('#inPass')?.value.trim();
+    if(!email||!pass) return alert('Enter email and password');
+    try{ await firebase.auth().signInWithEmailAndPassword(email, pass); }catch(e){ alert(e?.message||'Sign in failed'); }
+  });
+  $('#btnSignUp')?.addEventListener('click', async ()=>{
+    const name=$('#upName')?.value.trim(), email=$('#upEmail')?.value.trim(), pass=$('#upPass')?.value.trim();
+    if(!name||!email||!pass) return alert('Fill name, email, password');
+    try{ const { user:u }=await firebase.auth().createUserWithEmailAndPassword(email, pass); try{ await u.updateProfile({displayName:name}); }catch{} }catch(e){ alert(e?.message||'Sign up failed'); }
+  });
+  $('#btnReset')?.addEventListener('click', async ()=>{
+    const email=$('#rsEmail')?.value.trim(); if(!email) return alert('Enter your email');
+    try{ await firebase.auth().sendPasswordResetEmail(email); alert('Reset link sent'); setTab('SignIn'); }catch(e){ alert(e?.message||'Failed to send reset link'); }
+  });
+
+  // Google
+  function gp(){ try{ return new firebase.auth.GoogleAuthProvider(); }catch{ return null; } }
+  async function signGoogle(){ const p=gp(); if(!p) return alert('Google not available'); try{ await firebase.auth().signInWithPopup(p); }catch(e){ alert(e?.message||'Google sign-in failed'); } }
+  $('#googleBtn') ?.addEventListener('click', signGoogle);
+  $('#googleBtn2')?.addEventListener('click', signGoogle);
+
+  // Phone (OTP)
+  let recaptcha, confirmationResult;
+  function getRecaptcha(){
+    if (recaptcha) return recaptcha;
+    try{ recaptcha=new firebase.auth.RecaptchaVerifier('recaptcha-container',{size:'invisible'}); }catch(e){ alert('reCAPTCHA init failed'); }
+    return recaptcha;
+  }
+  $('#btnPhoneSend')?.addEventListener('click', async ()=>{
+    const phone=($('#phNumber')?.value||'').trim();
+    if(!/^\+?[1-9]\d{6,14}$/.test(phone)) return alert('Enter valid phone (e.g. +27...)');
+    try{ confirmationResult=await firebase.auth().signInWithPhoneNumber(phone, getRecaptcha()); alert('Code sent to '+phone); }catch(e){ alert(e?.message||'Failed to send code'); }
+  });
+  $('#btnPhoneVerify')?.addEventListener('click', async ()=>{
+    const code=($('#phCode')?.value||'').trim(); if(!confirmationResult||!code) return alert('Enter the code');
+    try{
+      const cred=await confirmationResult.confirm(code);
+      const u=cred.user; if(u && !u.displayName){ try{ await u.updateProfile({displayName:u.phoneNumber||'User'});}catch{} }
+    }catch(e){ alert(e?.message||'Invalid code'); }
+  });
+
+  // Logout → gate (overrides only this button)
+  const logoutBtn=document.getElementById('menuLogout');
+  if (logoutBtn){
+    logoutBtn.onclick=async ()=>{
+      document.getElementById('profileMenu').style.display='none';
+      try{ await firebase.auth().signOut(); }catch{}
+      enterAuth();
+    };
+  }
+
+  // Auth state → update UI and redirect; also remove splash
+  function hideSplash(){ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>{ try{s.remove();}catch{} },200); } }
+  try{
+    firebase.auth().onAuthStateChanged(u=>{
+      hideSplash();
+      if (u){
+        try{
+          window.user=window.user||{};
+          user.email=u.email||u.phoneNumber||'';
+          user.name = u.displayName || (user.email?user.email.split('@')[0]:'User');
+          window.updateProfileUI && updateProfileUI();
+        }catch{}
+        exitAuth();
+        window.showPage && showPage('home');
+      }else{
+        enterAuth();
+      }
+    });
+  }catch{
+    setTimeout(()=>{ hideSplash(); enterAuth(); }, 400);
+  }
+
+  // If already signed out at load
+  if (!firebase.auth().currentUser) enterAuth();
 })();
 </script>
 </body>
