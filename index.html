@@ -1799,5 +1799,273 @@ header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-
   });
 })();
 </script>
+  <style id="zup-overrides">
+  :root { --header-h: 58px; }
+
+  /* Keep header fixed and visible under notches; greet/location and map sit below it */
+  header {
+    position: fixed !important;
+    top: 0; left: 0; right: 0;
+    height: calc(var(--header-h) + env(safe-area-inset-top, 0px)) !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+  }
+  /* If your header has a row container, keep it aligned */
+  header .row { align-items: center !important; padding: 10px 12px !important; gap: 8px !important; }
+
+  /* Raise bell and account a bit and keep them on the bar */
+  #notifBtn, #accountBtn { position: relative; top: -2px; }
+  /* Move bell closer to account */
+  #notifBtn { margin-right: 4px; }
+
+  /* Main content starts below header and above footer */
+  .page {
+    position: fixed !important;
+    top: calc(var(--header-h) + env(safe-area-inset-top, 0px)) !important;
+    bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)) !important;
+    left: 0; right: 0;
+    overflow-y: auto; overflow-x: hidden;
+  }
+
+  /* Greeting + location/map never hide */
+  .greet, .greet-wrap, #homeMap { display: block; }
+
+  /* Back buttons always clickable */
+  .backbar .back { pointer-events: auto; }
+</style>
+  <script id="zup-patches">
+(function(){
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+
+  // A) Copy/microcopy
+  try {
+    const tag = document.querySelector('.auth-tagline, [data-auth-tagline]');
+    if (tag) tag.textContent = 'ZippUp: Hustle faster!';
+  } catch {}
+  try {
+    const panicCopy = document.querySelector('#panicModal .small, #panicModal .muted, #panicModal [data-panic-copy]');
+    if (panicCopy) panicCopy.textContent = "We'll notify your contacts and nearby security with your location.";
+  } catch {}
+
+  // B) Reliable instant booking cancel
+  function stopGeolocation() {
+    try {
+      if (window.live && window.live.watchId != null && navigator.geolocation?.clearWatch) {
+        navigator.geolocation.clearWatch(window.live.watchId);
+        window.live.watchId = null;
+      }
+    } catch {}
+  }
+  function stopTimers() {
+    try {
+      if (window.live?.timer) { clearInterval(window.live.timer); window.live.timer = null; }
+      if (window.trackInterval) { clearInterval(window.trackInterval); window.trackInterval = null; }
+      if (window.statusPoll) { clearInterval(window.statusPoll); window.statusPoll = null; }
+    } catch {}
+  }
+  function closeTrackingUI() {
+    ['trackModal','instantModal','cancelReasonsModal','providersModal'].forEach(id=>{
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('open');
+    });
+  }
+  function resetLiveFlags() {
+    try {
+      if (!window.live) window.live = {};
+      window.live.active = false;
+      window.live.serviceType = null;
+      window.live.startedAt = null;
+      window.live.arrivedAt = null;
+    } catch {}
+  }
+  async function cancelActiveBooking() {
+    // Try to call your API if available; fail-safe does local cleanup
+    try {
+      if (window.requestId && window.BASE_API) {
+        fetch(`${window.BASE_API}/api/requests/${window.requestId}/cancel`, { method:'POST' }).catch(()=>{});
+      }
+    } catch {}
+    stopGeolocation();
+    stopTimers();
+    resetLiveFlags();
+    closeTrackingUI();
+    // Return user to the correct section (transport/services) or Home as fallback
+    const transportTab = document.querySelector('[data-nav="home"]');
+    if (transportTab) transportTab.click();
+  }
+  // Wire Cancel buttons without breaking your existing handlers
+  function bindCancel() {
+    const ids = ['#instantCancelBtn','#cancelBtn','#btnCancel'];
+    ids.forEach(sel=>{
+      const el = document.querySelector(sel);
+      if (el && !el.__zupCancelBound) {
+        el.__zupCancelBound = true;
+        el.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); cancelActiveBooking(); }, { passive:false });
+      }
+    });
+    // Any generic cancel action buttons
+    document.body.addEventListener('click', (e)=>{
+      const t = e.target.closest('[data-action="cancel"],[data-cancel],[data-role="cancel"]');
+      if (t) { e.preventDefault(); e.stopPropagation(); cancelActiveBooking(); }
+    }, { passive:false });
+  }
+
+  // C) Roadside button fix
+  try {
+    const road = document.getElementById('btnRoadside') || document.querySelector('[data-emer="roadside"],[data-emergency="roadside"]');
+    if (road && !road.__zupBound) {
+      road.__zupBound = true;
+      road.addEventListener('click', ()=>{
+        // Minimal provider list open
+        const providers = document.getElementById('emergencyProviders') || document.getElementById('providersList');
+        if (providers) providers.innerHTML = `
+          <div class="card"><div class="row" style="justify-content:space-between">
+            <div><strong>Roadside Team A</strong><div class="small muted">ETA 5 min</div></div>
+            <button class="btn primary">Request</button>
+          </div></div>
+        `;
+        const picker = document.getElementById('emergencyPicker'); if (picker) picker.classList.add('open');
+      });
+    }
+  } catch {}
+
+  // D) Search bars inside services categories (filter by card text)
+  function attachFilter(inputSel, listSel, itemSel) {
+    const inp = document.querySelector(inputSel);
+    const list = document.querySelector(listSel);
+    if (!inp || !list) return;
+    inp.addEventListener('input', ()=>{
+      const q = (inp.value||'').toLowerCase();
+      list.querySelectorAll(itemSel).forEach(card=>{
+        const txt = card.textContent.toLowerCase();
+        card.style.display = txt.includes(q) ? '' : 'none';
+      });
+    });
+  }
+  attachFilter('#emergencySearch', '#emergencyProviders', '.card');
+  attachFilter('#vendorSearch',   '#vendorsList',      '.card');
+  attachFilter('#marketSearch',   '#marketItems',      '.card');
+
+  // E) Restrict Manage Product to food vendors; rename button
+  (function gateManageProduct(){
+    // Try to find the Manage Product button by id or label text
+    const btn = document.getElementById('manageProductsBtn') ||
+      Array.from(document.querySelectorAll('button, a')).find(x=>/manage product/i.test(x.textContent));
+    if (!btn) return;
+    // Rename
+    btn.textContent = 'Manage Product (Food Vendors Only)';
+    // Gate
+    if (!btn.__zupGateBound) {
+      btn.__zupGateBound = true;
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        // Check vendor flag; if you have a real flag replace this check
+        const isFoodVendor = (window.currentUser?.isFoodVendor) || (window.userRole === 'seller') || false;
+        if (!isFoodVendor) {
+          alert('This section is for food vendors only. Switch to a vendor account to continue.');
+          return;
+        }
+        // Open your existing food vendor manage modal if present; else no-op
+        const mf = document.getElementById('manageFood') || document.getElementById('vendorManageModal');
+        if (mf) mf.classList.add('open');
+      });
+    }
+  })();
+
+  // F) Add "Sell products" button to Marketplace header (non-cart, Facebook-style)
+  (function addSellButton(){
+    const header = document.getElementById('marketplaceHeader') || document.querySelector('#marketplace .section .title')?.parentElement;
+    if (!header) return;
+    if (document.getElementById('sellBtn')) return;
+    const btn = document.createElement('button');
+    btn.id = 'sellBtn';
+    btn.className = 'btn ghost';
+    btn.textContent = 'Sell products';
+    btn.style.marginLeft = 'auto';
+    header.appendChild(btn);
+    btn.addEventListener('click', ()=>{
+      const sf = document.getElementById('sellForm') || document.getElementById('marketSellModal');
+      if (sf) sf.classList.add('open');
+      else alert('Open sell form (marketplace listing)');
+    });
+  })();
+
+  // G) Wallet UI additions (history, send)
+  (function wireWallet(){
+    const bal = document.getElementById('walletBalance');
+    const txc = document.getElementById('walletTx');
+    if (!bal || !txc) return;
+    function money(n){ return `$${(n||0).toFixed(2)}`; }
+    try {
+      const tx = JSON.parse(localStorage.getItem('zup_wallet_tx')||'[]');
+      bal.textContent = money((window.user?.wallet) || window.walletBalance || 0);
+      txc.innerHTML = tx.map(t=>`
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <div>${t.note||t.type}</div>
+            <div style="font-weight:700">${t.type==='debit'?'-':''}${money(t.amount)}</div>
+          </div>
+        </div>
+      `).join('') || '<div class="small muted">No transactions</div>';
+    } catch {}
+    const send = document.getElementById('walletSend'); if (send && !send.__zupBound) {
+      send.__zupBound = true;
+      send.addEventListener('click', ()=>{
+        const to = prompt('Send to (username/email)'); if (!to) return;
+        const amt = parseFloat(prompt('Amount')||'0'); if (!amt || amt<=0) return;
+        const tx = JSON.parse(localStorage.getItem('zup_wallet_tx')||'[]');
+        tx.unshift({ id:'tx'+Date.now(), type:'debit', amount:amt, note:`Send to ${to}` });
+        localStorage.setItem('zup_wallet_tx', JSON.stringify(tx));
+        alert('Transfer recorded (demo).');
+      });
+    }
+  })();
+
+  // H) Food/Grocery entry: show vendor lists + search when user taps
+  (function wireFoodEntry(){
+    const food = document.querySelector('[data-service="food"]');
+    const groc = document.querySelector('[data-service="grocery"]');
+    function openPicker(){
+      const entry = document.getElementById('foodEntry');
+      if (entry) entry.classList.add('open');
+    }
+    if (food && !food.__zupBound) { food.__zupBound = true; food.addEventListener('click', openPicker); }
+    if (groc && !groc.__zupBound) { groc.__zupBound = true; groc.addEventListener('click', openPicker); }
+  })();
+
+  // I) Ensure in-app back arrows work
+  (function bindBacks(){
+    document.body.addEventListener('click', (e)=>{
+      const b = e.target.closest('.back,[data-back]');
+      if (!b) return;
+      e.preventDefault();
+      const target = b.getAttribute('data-back');
+      if (target==='home') {
+        const homeTab = document.querySelector('.nav .item[data-nav="home"]');
+        if (homeTab) homeTab.click();
+      } else if (target) {
+        const sec = document.getElementById(target);
+        if (sec) {
+          // show target section if your app uses sections
+          sec.style.display = '';
+        }
+      }
+      // Close containing modal if any
+      const modal = e.target.closest('.modal'); if (modal) modal.classList.remove('open');
+      e.stopPropagation();
+    }, { passive:false });
+  })();
+
+  // J) Bind cancel buttons once DOM is ready
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    bindCancel();
+  } else {
+    document.addEventListener('DOMContentLoaded', bindCancel, { once:true });
+  }
+})();
+</script>
 </body>
 </html>
