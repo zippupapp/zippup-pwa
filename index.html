@@ -2751,5 +2751,95 @@ Add “Others” s
   window.addEventListener('load', showHome, { once:true });
 })();
 </script>
+  <style id="zup-ui-tweaks">
+  /* Bell sits right before Account; greet takes left; map/loc goes below header */
+  header .row { align-items: center; }
+  header .row > .greet { flex: 1; min-width: 0; }
+  #notifBtn { margin-right: 6px; }
+</style>
+  <script id="zup-bootstrap">
+(function(){
+  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+
+  // Keep Home visible
+  const home=$('#page-home'); if (home){ home.classList.add('active'); home.style.display='block'; }
+
+  // Bell immediately before Account
+  (function fixBell(){ const r=document.querySelector('header .row > .row'), b=$('#notifBtn'), a=$('#profileBtn'); if(r&&b&&a&&b.nextElementSibling!==a) r.insertBefore(b,a); })();
+
+  // Location row under header (copy value from header if present)
+  if (!$('#headerLocRow') && home){
+    const sec=document.createElement('section'); sec.className='section'; sec.id='headerLocRow';
+    sec.innerHTML='<div class="small">📍 <span id="userLocUnder">Detecting location…</span></div>';
+    home.insertBefore(sec, home.firstChild);
+    const src=$('#userLoc'); if (src?.textContent) $('#userLocUnder').textContent=src.textContent;
+    else if (navigator.geolocation){ navigator.geolocation.getCurrentPosition(p=>{ const el=$('#userLocUnder'); if(el) el.textContent=`Lat ${p.coords.latitude.toFixed(4)}, Lng ${p.coords.longitude.toFixed(4)}`; }, ()=>{ const el=$('#userLocUnder'); if(el) el.textContent='Location unavailable'; }, {timeout:8000}); }
+  }
+
+  // Digital Services button in All Services + landing page
+  (function digital(){
+    const grid=$('#servicesGrid');
+    if (grid && !grid.querySelector('[data-service="digital"]')){
+      const card=document.createElement('div');
+      card.className='card service'; card.dataset.service='digital';
+      card.innerHTML='<div class="row"><div style="font-size:28px">💳</div><h4>Digital Services</h4></div><div class="small muted" style="margin-top:6px">Airtime, data, bills, digital products</div>';
+      grid.appendChild(card);
+      grid.addEventListener('click', (e)=>{ const c=e.target.closest('.service'); if(c?.dataset.service==='digital') openDigital(); }, { once:true });
+    }
+    function openDigital(){
+      if (!$('#page-digital')){
+        const main=document.createElement('main');
+        main.id='page-digital'; main.className='page';
+        main.innerHTML='<section class="section"><div class="backbar"><button class="back" type="button">←</button><strong>Digital Services</strong></div><div class="grid" style="margin-top:8px"><div class="card service">📱 Buy Airtime</div><div class="card service">📶 Buy Data</div><div class="card service">🧾 Pay Bills</div><div class="card service">🛒 Digital Products</div></div><div class="small muted" style="margin-top:8px">Coming soon</div></section>';
+        document.body.insertBefore(main, document.querySelector('.nav'));
+        main.querySelector('.back').addEventListener('click', ()=>{ $$('.page').forEach(p=>p.classList.remove('active')); home.classList.add('active'); });
+      }
+      $$('.page').forEach(p=>p.classList.remove('active')); $('#page-digital').classList.add('active');
+    }
+  })();
+
+  // Provider search with mic (Home/Tech/Construction/Automobile) inside Providers modal
+  (function providerSearch(){
+    const body=$('#providersModal .body'), list=$('#providersList');
+    if (!body || !list || $('#provSearchRow')) return;
+    const row=document.createElement('div');
+    row.id='provSearchRow'; row.className='row'; row.style.cssText='gap:8px;margin-bottom:10px;display:none';
+    row.innerHTML='<input id="provSearch" placeholder="Search providers or specialties…" style="flex:1"/><button class="btn ghost" id="provVoice" type="button">🎤</button><button class="btn primary" id="provSearchBtn" type="button">Search</button>';
+    body.prepend(row);
+    const filter=()=>{ const q=($('#provSearch').value||'').toLowerCase(); list.querySelectorAll('.card').forEach(c=>{ c.style.display = c.textContent.toLowerCase().includes(q)?'':'none'; }); };
+    const voice=(el,cb)=>{ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return alert('Voice not supported'); const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1; rec.onresult=e=>{ el.value=e.results[0][0].transcript||''; cb(el.value); }; rec.start(); };
+    $('#provSearch').addEventListener('input', filter);
+    $('#provSearchBtn').addEventListener('click', filter);
+    $('#provVoice').addEventListener('click', ()=>voice($('#provSearch'), filter));
+    const orig=window.openCategory;
+    window.openCategory=function(catId,label){
+      const show=['home','tech','construction','auto','automobile'].includes(String(catId||'').toLowerCase());
+      row.style.display= show ? '' : 'none';
+      return orig ? orig.apply(this, arguments) : undefined;
+    };
+  })();
+
+  // Fast food / Grocery landing pages with search + mic
+  (function foodLanding(){
+    function ensurePage(id,title,searchId,listId){
+      if ($('#'+id)) return;
+      const main=document.createElement('main'); main.id=id; main.className='page'; main.style.display='none';
+      main.innerHTML='<section class="section"><div class="backbar"><button class="back" type="button">←</button><strong>'+title+'</strong></div><div class="row" style="gap:8px;margin-bottom:10px"><input id="'+searchId+'" placeholder="Search…" style="flex:1"/><button class="btn ghost" id="'+searchId+'Voice" type="button">🎤</button><button class="btn primary" id="'+searchId+'Go" type="button">Search</button></div><div id="'+listId+'" class="list"></div></section>';
+      document.body.insertBefore(main, document.querySelector('.nav'));
+      main.querySelector('.back').addEventListener('click', ()=>{ $$('.page').forEach(p=>p.classList.remove('active')); home.classList.add('active'); });
+    }
+    function show(id){ $$('.page').forEach(p=>p.classList.remove('active')); $('#'+id)?.classList.add('active'); }
+    function voice(el, cb){ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return alert('Voice not supported'); const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1; rec.onresult=e=>{ el.value=e.results[0][0].transcript||''; cb(el.value); }; rec.start(); }
+    function renderFF(q){ const list=$('#ffList'); if(!list) return; const V=(window.VENDORS||[]).filter(v=>v.kind==='fastfood'); const M=window.MENUS||{}; const f=(q||'').toLowerCase(); list.innerHTML=V.filter(v=>v.name.toLowerCase().includes(f)||(M[v.id]||[]).some(m=>m.title.toLowerCase().includes(f))).map(v=>'<div class="card"><div class="row" style="justify-content:space-between"><div><strong>'+v.name+'</strong><div class="small muted">Payments: '+v.payment.join(', ')+'</div></div><button class="btn primary" type="button" onclick="alert(\'Open '+v.name+' menu\')">Open</button></div></div>').join('')||'<div class="small muted">No vendors</div>'; }
+    function renderGR(q){ const list=$('#grList'); if(!list) return; const V=(window.VENDORS||[]).filter(v=>v.kind==='grocery'); const M=window.MENUS||{}; const f=(q||'').toLowerCase(); list.innerHTML=V.filter(v=>v.name.toLowerCase().includes(f)||(M[v.id]||[]).some(m=>m.title.toLowerCase().includes(f))).map(v=>'<div class="card"><div class="row" style="justify-content:space-between"><div><strong>'+v.name+'</strong><div class="small muted">Payments: '+v.payment.join(', ')+'</div></div><button class="btn primary" type="button" onclick="alert(\'Open '+v.name+' items\')">Open</button></div></div>').join('')||'<div class="small muted">No vendors</div>'; }
+    const fast=$('#foodFastBtn'), groc=$('#foodGroceryBtn');
+    if (fast && !fast.__bound){ fast.__bound=true; fast.addEventListener('click', ()=>{ $('#foodOptionsModal')?.classList.remove('open'); ensurePage('page-fastfood','Fast food','ffSearch','ffList'); show('page-fastfood'); renderFF(''); $('#ffSearch')?.addEventListener('input', e=>renderFF(e.target.value)); $('#ffGo')?.addEventListener('click', ()=>renderFF($('#ffSearch').value.trim())); $('#ffVoice')?.addEventListener('click', ()=>voice($('#ffSearch'), renderFF)); }); }
+    if (groc && !groc.__bound){ groc.__bound=true; groc.addEventListener('click', ()=>{ $('#foodOptionsModal')?.classList.remove('open'); ensurePage('page-grocery','Groceries','grSearch','grList'); show('page-grocery'); renderGR(''); $('#grSearch')?.addEventListener('input', e=>renderGR(e.target.value)); $('#grGo')?.addEventListener('click', ()=>renderGR($('#grSearch').value.trim())); $('#grVoice')?.addEventListener('click', ()=>voice($('#grSearch'), renderGR)); }); }
+  })();
+
+  // Global back handler (Account/Profile/Wallet/Manage Services/Products/Emergency Contacts/Verify/Top‑up)
+  document.body.addEventListener('click', (e)=>{ const b=e.target.closest('.back'); if(!b) return; e.preventDefault(); $$('.page').forEach(p=>p.classList.remove('active')); home?.classList.add('active'); }, { passive:false });
+})();
+</script>
 </body>
 </html>
