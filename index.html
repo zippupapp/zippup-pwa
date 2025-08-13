@@ -669,68 +669,57 @@
     </div>
   </div>
 
-  <div class="modal" id="chatModal">
+  <!-- Auth Modal (overlay only; no page gating) -->
+  <div class="modal" id="authModal">
     <div class="sheet">
       <div class="head">
-        <strong id="chatTitle">Chat</strong>
-        <button class="btn ghost" id="chatClose" type="button">✖</button>
+        <strong>Sign in</strong>
+        <button class="btn ghost" id="authClose" type="button">✖</button>
       </div>
       <div class="body">
-        <div id="chatList" class="list" style="max-height:50vh;overflow:auto"></div>
-        <div class="row" style="gap:8px;margin-top:8px">
-          <input id="chatInput" placeholder="Type a message…" style="flex:1"/>
-          <button class="btn primary" id="chatSend" type="button">Send</button>
+        <div class="list" id="authCard">
+          <div style="text-align:center;font-weight:800;font-size:18px;margin-bottom:6px">ZippUp: Hustle faster!</div>
+
+          <div class="row" id="authTabs" style="gap:6px;margin-bottom:10px">
+            <button id="tabSignIn" class="btn ghost" type="button">Sign in</button>
+            <button id="tabSignUp" class="btn ghost" type="button">Sign up</button>
+            <button id="tabPhone"  class="btn ghost" type="button">Phone</button>
+            <button id="tabReset"  class="btn ghost" type="button">Recover</button>
+          </div>
+
+          <div id="paneSignIn">
+            <div class="field"><label class="small">Email</label><input id="inEmail" placeholder="you@example.com"/></div>
+            <div class="field"><label class="small">Password</label><input id="inPass" type="password" placeholder="••••••••"/></div>
+            <button class="btn primary block" id="btnSignIn" type="button">Continue</button>
+            <div class="small muted" style="margin:10px 0; text-align:center">or</div>
+            <button class="btn block" id="googleBtn" type="button" style="width:100%;background:#fff;border:1px solid var(--border)">🔵 Continue with Google</button>
+          </div>
+
+          <div id="paneSignUp" style="display:none">
+            <div class="field"><label class="small">Name</label><input id="upName" placeholder="Your name"/></div>
+            <div class="field"><label class="small">Email</label><input id="upEmail" placeholder="you@example.com"/></div>
+            <div class="field"><label class="small">Password</label><input id="upPass" type="password" placeholder="At least 6 characters"/></div>
+            <button class="btn primary block" id="btnSignUp" type="button">Create account</button>
+            <div class="small muted" style="margin:10px 0; text-align:center">or</div>
+            <button class="btn block" id="googleBtn2" type="button" style="width:100%;background:#fff;border:1px solid var(--border)">🔵 Continue with Google</button>
+          </div>
+
+          <div id="panePhone" style="display:none">
+            <div class="field"><label class="small">Phone (with country code)</label><input id="phNumber" placeholder="+27XXXXXXXXX"/></div>
+            <div id="recaptcha-container" style="margin:6px 0"></div>
+            <button class="btn primary block" id="btnPhoneSend" type="button">Send code</button>
+            <div class="field" style="margin-top:10px"><label class="small">Verification code</label><input id="phCode" placeholder="6‑digit code"/></div>
+            <button class="btn primary block" id="btnPhoneVerify" type="button">Verify & Sign in</button>
+          </div>
+
+          <div id="paneReset" style="display:none">
+            <div class="field"><label class="small">Email</label><input id="rsEmail" placeholder="you@example.com"/></div>
+            <button class="btn primary block" id="btnReset" type="button">Send reset link</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-
-  <div class="body">
-  <div class="list" id="authCard">
-    <div style="text-align:center;font-weight:800;font-size:18px;margin-bottom:6px">ZippUp: Hustle faster!</div>
-
-    <div class="row" id="authTabs" style="gap:6px;margin-bottom:10px">
-      <button id="tabSignIn" class="btn ghost" type="button">Sign in</button>
-      <button id="tabSignUp" class="btn ghost" type="button">Sign up</button>
-      <button id="tabPhone"  class="btn ghost" type="button">Phone</button>
-      <button id="tabReset"  class="btn ghost" type="button">Recover</button>
-    </div>
-
-    <!-- Sign in -->
-    <div id="paneSignIn">
-      <div class="field"><label class="small">Email</label><input id="inEmail" placeholder="you@example.com"/></div>
-      <div class="field"><label class="small">Password</label><input id="inPass" type="password" placeholder="••••••••"/></div>
-      <button class="btn primary block" id="btnSignIn" type="button">Continue</button>
-      <div class="small muted" style="margin:10px 0; text-align:center">or</div>
-      <button class="btn block" id="googleBtn" type="button" style="width:100%;background:#fff;border:1px solid var(--border)">🔵 Continue with Google</button>
-    </div>
-
-    <!-- Sign up -->
-    <div id="paneSignUp" style="display:none">
-      <div class="field"><label class="small">Name</label><input id="upName" placeholder="Your name"/></div>
-      <div class="field"><label class="small">Email</label><input id="upEmail" placeholder="you@example.com"/></div>
-      <div class="field"><label class="small">Password</label><input id="upPass" type="password" placeholder="At least 6 characters"/></div>
-      <button class="btn primary block" id="btnSignUp" type="button">Create account</button>
-      <div class="small muted" style="margin:10px 0; text-align:center">or</div>
-      <button class="btn block" id="googleBtn2" type="button" style="width:100%;background:#fff;border:1px solid var(--border)">🔵 Continue with Google</button>
-    </div>
-
-    <!-- Phone -->
-    <div id="panePhone" style="display:none">
-      <div class="field"><label class="small">Phone (with country code)</label><input id="phNumber" placeholder="+27XXXXXXXXX"/></div>
-      <div id="recaptcha-container" style="margin:6px 0"></div>
-      <button class="btn primary block" id="btnPhoneSend" type="button">Send code</button>
-      <div class="field" style="margin-top:10px"><label class="small">Verification code</label><input id="phCode" placeholder="6‑digit code"/></div>
-      <button class="btn primary block" id="btnPhoneVerify" type="button">Verify & Sign in</button>
-    </div>
-
-    <!-- Recover -->
-    <div id="paneReset" style="display:none">
-      <div class="field"><label class="small">Email</label><input id="rsEmail" placeholder="you@example.com"/></div>
-      <button class="btn primary block" id="btnReset" type="button">Send reset link</button>
-    </div>
-  </div>
-</div>
 
   <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
     <div style="font-size:28px;font-weight:800;margin-top:12px">ZippUp</div>
@@ -1304,7 +1293,7 @@
     $('#ecBack').onclick = ()=> showPage('profile');
     $('#vpBack').onclick = ()=> showPage('profile');
 
-    const avail = $('#availToggle'), knob=$('#availKnob'), track=$('#availTrack');
+    const avail = $('#availToggle'), knob=$('#availKnob'), track=$('#availTrack']);
     function syncAvail(){ if (avail.checked){ track.style.background='#34D399'; knob.style.transform='translateX(20px)'; } else { track.style.background='#d1d5db'; knob.style.transform='translateX(0)'; } }
     avail.onchange = syncAvail; syncAvail();
 
@@ -1595,14 +1584,14 @@
     };
 
     $('#authClose').onclick = ()=> $('#authModal').classList.remove('open');
+    // Keep legacy manual fallback (does not affect Firebase)
     $('#authLogin').onclick = ()=>{
-      const email=$('#authEmail').value.trim();
-      const pass=$('#authPass').value.trim();
-      if (!email || !pass) { alert('Enter email and password'); return; }
-      user.email=email; user.name = email.split('@')[0];
-      updateProfileUI();
-      $('#authModal').classList.remove('open');
-      alert('Welcome, '+user.name);
+      const email=$('#authEmail')?.value?.trim();
+      const pass=$('#authPass')?.value?.trim();
+      if (email && pass) {
+        user.email=email; user.name=email.split('@')[0];
+        updateProfileUI(); $('#authModal').classList.remove('open'); alert('Welcome, '+user.name);
+      }
     };
 
     document.addEventListener('DOMContentLoaded', async ()=>{
@@ -1617,452 +1606,97 @@
 
     $('#bkUseCurrent').onclick = ()=>{ if (coords) $('#bkAddress').value = $('#userLocUnder').textContent || `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`; };
   </script>
-  <style id="zup-auth-gate">
-  body[data-auth="1"] header,
-  body[data-auth="1"] .nav,
-  body[data-auth="1"] .page { display: none !important; }
-</style>
-  <!-- Ratings -->
-<div class="modal" id="ratingModal">
-  <div class="sheet">
-    <div class="head">
-      <strong>Rate your experience</strong>
-      <button class="btn ghost" id="rateClose" type="button">✖</button>
-    </div>
-    <div class="body">
-      <div class="row" id="rateStars" style="gap:6px"></div>
-      <div class="field" style="margin-top:8px">
-        <label class="small">Comment (optional)</label>
-        <textarea id="rateNote" rows="3"></textarea>
-      </div>
-      <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px">
-        <button class="btn ghost" id="rateLater" type="button">Later</button>
-        <button class="btn primary" id="rateSubmit" type="button">Submit</button>
-      </div>
-    </div>
-  </div>
-</div>
-<script>
-(function upgrades(){
-  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
 
-  // Auth full‑page gate (Firebase)
-  function enterAuthMode(){ document.body.setAttribute('data-auth','1'); $('#authModal')?.classList.add('open'); }
-  function exitAuthMode(){ document.body.removeAttribute('data-auth'); $('#authModal')?.classList.remove('open'); typeof showPage==='function' && showPage('home'); }
-  window.enterAuthMode = enterAuthMode; window.exitAuthMode = exitAuthMode;
-
-  try {
-    firebase.auth().onAuthStateChanged(u=>{
-      if (u) {
-        user.email=u.email||''; user.name=u.displayName|| (user.email?user.email.split('@')[0]:'Guest');
-        updateProfileUI && updateProfileUI();
-        exitAuthMode();
-      } else {
-        enterAuthMode();
-      }
-    });
-  } catch {}
-
-  // Force Logout → Auth page
-  try {
-    document.getElementById('menuLogout').onclick = async ()=>{
-      $('#profileMenu').style.display='none';
-      try{ await firebase.auth().signOut(); }catch{}
-      user = { name:'Guest', email:'' };
-      enterAuthMode();
-    };
-  } catch {}
-
-  // Auth modal
-  <!-- Auth (full page) -->
-<div class="modal open" id="authModal" style="display:none">
-  <div class="sheet">
-    <div class="head">
-      <div id="authBrand">
-        <div class="logo">🚀</div>
-        <div class="tag">ZippUp: Hustle faster!</div>
-      </div>
-    </div>
-    <div class="body">
-      <div id="authCard">
-        <div id="authTabs">
-          <button id="tabSignIn" class="active" type="button">Sign in</button>
-          <button id="tabSignUp" type="button">Sign up</button>
-          <button id="tabReset"  type="button">Recover</button>
-        </div>
-
-        <div id="paneSignIn" class="auth-pane active">
-          <div class="field"><label class="small">Email</label><input id="inEmail" placeholder="you@example.com"/></div>
-          <div class="field"><label class="small">Password</label><input id="inPass" type="password" placeholder="••••••••"/></div>
-          <button class="btn primary block" id="btnSignIn" type="button">Continue</button>
-          <div class="small muted" style="margin:10px 0; text-align:center">or</div>
-          <button class="btn block" id="googleBtn" type="button">🔵 Continue with Google</button>
-        </div>
-
-        <div id="paneSignUp" class="auth-pane">
-          <div class="field"><label class="small">Name</label><input id="upName" placeholder="Your name"/></div>
-          <div class="field"><label class="small">Email</label><input id="upEmail" placeholder="you@example.com"/></div>
-          <div class="field"><label class="small">Password</label><input id="upPass" type="password" placeholder="At least 6 characters"/></div>
-          <button class="btn primary block" id="btnSignUp" type="button">Create account</button>
-          <div class="small muted" style="margin:10px 0; text-align:center">or</div>
-          <button class="btn block" id="googleBtn2" type="button">🔵 Continue with Google</button>
-        </div>
-
-        <div id="paneReset" class="auth-pane">
-          <div class="field"><label class="small">Email</label><input id="rsEmail" placeholder="you@example.com"/></div>
-          <button class="btn primary block" id="btnReset" type="button">Send reset link</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-  // Sounds on creation/accept/arrival (uses your playSound)
-  const _createServiceInstant = window.createServiceInstant;
-  window.createServiceInstant = function(){
-    try{ playSound && playSound('request'); }catch{}
-    const r = _createServiceInstant ? _createServiceInstant.apply(this, arguments) : undefined;
-    renderOrders && renderOrders();
-    return r;
-  };
-  const _addFoodOrder = window.addFoodOrder;
-  window.addFoodOrder = function(){
-    try{ playSound && playSound('request'); }catch{}
-    const r = _addFoodOrder ? _addFoodOrder.apply(this, arguments) : undefined;
-    renderOrders && renderOrders();
-    return r;
-  };
-  const _createTransportInstant = window.createTransportInstant;
-  window.createTransportInstant = function(driver, pickup, dest, stops){
-    try{ playSound && playSound('request'); }catch{}
-    const r = _createTransportInstant ? _createTransportInstant.apply(this, arguments) : undefined;
-    try { window.currentTrackingOrderId = (window.orders && window.orders[0] && window.orders[0].id) || window.currentTrackingOrderId; } catch {}
-    renderOrders && renderOrders();
-    return r;
-  };
-
-  // Roadside "Request" → creates booking (so it appears in My Bookings)
-  window.requestRoadside = function(name){
-    const id='svc-'+Date.now();
-    try {
-      orders.unshift({ id, type:'service', category:'roadside', title:name, status:'preparing', createdAt:Date.now() });
-      setOrders(orders); renderOrders && renderOrders();
-      setTimeout(()=> beginServiceTracking && beginServiceTracking(id), 10*60*1000);
-      addNotification && addNotification({ kind:'booking', text:`${name} booking created`, data:{ orderId:id } });
-      playSound && playSound('request');
-      document.getElementById('roadsideModal')?.classList.remove('open');
-    } catch {}
-  };
-  // Override list renderer to wire data-road buttons
-  window.renderRoadsideList = function(q){
-    const all = [
-      { name:'Tyre change • Team A', eta:'5 min' },
-      { name:'Battery jumpstart • Team B', eta:'7 min' },
-      { name:'Fuel delivery • Team C', eta:'10 min' },
-      { name:'Tow truck • Wingate', eta:'12 min' }
-    ];
-    const f=(q||'').toLowerCase();
-    const list = all.filter(x=>x.name.toLowerCase().includes(f));
-    const html = list.map(x=>`
-      <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center">
-          <div><strong>${x.name}</strong><div class="small muted">ETA ${x.eta}</div></div>
-          <button class="btn primary" data-road="${x.name}" type="button">Request</button>
-        </div>
-      </div>`).join('') || '<div class="small muted">No matches</div>';
-    const box = document.getElementById('roadList'); if (box) box.innerHTML = html;
-  };
-  document.getElementById('roadList')?.addEventListener('click', (e)=>{
-    const b=e.target.closest('button[data-road]'); if (!b) return;
-    requestRoadside(b.getAttribute('data-road'));
-  });
-
-  // Ratings storage
-  window.ratings = JSON.parse(localStorage.getItem('zup_ratings')||'[]');
-  function saveRatings(){ localStorage.setItem('zup_ratings', JSON.stringify(window.ratings)); }
-  function openRate(orderId){
-    const m=document.getElementById('ratingModal'); if(!m) return;
-    m.classList.add('open'); m.dataset.orderId=orderId||'';
-    const row=document.getElementById('rateStars'); row.innerHTML='';
-    let sel=5; for (let i=1;i<=5;i++){ const b=document.createElement('button'); b.className='btn ghost'; b.textContent='⭐'; b.dataset.v=i; b.onclick=()=>{ sel=i; $$(`#rateStars .btn`).forEach((x,j)=>x.style.background=(j<i)?'#FFE08A':''); }; row.appendChild(b); }
-    $$(`#rateStars .btn`).forEach((x,j)=>x.style.background=(j<5)?'#FFE08A':'');
-    document.getElementById('rateSubmit').onclick=()=>{
-      const note=$('#rateNote').value.trim();
-      const o=orders.find(x=>x.id===orderId) || {};
-      const target = o.vendorName || o.driver || (o.title||'service');
-      window.ratings.unshift({ id:'r'+Date.now(), orderId, by:user.email||'guest', target, stars:sel, note, at:Date.now() });
-      saveRatings();
-      $('#rateNote').value='';
-      m.classList.remove('open');
-      if (o.id){ o.status='completed'; setOrders(orders); renderOrders&&renderOrders(); }
-    };
-    document.getElementById('rateLater').onclick=()=> m.classList.remove('open');
-    document.getElementById('rateClose').onclick=()=> m.classList.remove('open');
-  }
-  window.openRate = openRate;
-
-  // Ask for rating when tracking stops (arrival or cancel)
-  const _stopTracking = window.stopTracking;
-  window.stopTracking = function(){
-    const id = (window.currentTrackingOrderId) || (orders && orders.find(o=>['enroute','assigned'].includes(o.status))?.id);
-    const r=_stopTracking ? _stopTracking.apply(this, arguments):undefined;
-    if (id) setTimeout(()=> openRate(id), 350);
-    return r;
-  };
-
-  // Show provider ratings on cards (avg from local ratings); user history line
-  const _renderProviders = window.renderProviders;
-  window.renderProviders = function(list, catId){
-    _renderProviders && _renderProviders.call(this, list, catId);
-    try {
-      const map = {};
-      (window.ratings||[]).forEach(r=>{ if(!r.target) return; map[r.target]=map[r.target]||{sum:0,n:0}; map[r.target].sum+=(+r.stars||0); map[r.target].n++; });
-      $$('#providersList .card').forEach(card=>{
-        const name = card.querySelector('strong')?.textContent||'';
-        const stat = map[name]; if (!stat) return;
-        const line = document.createElement('div');
-        line.className='small muted';
-        line.textContent = `⭐ ${ (stat.sum/stat.n).toFixed(1) } (${stat.n}) • Your history: ${orders.length} bookings`;
-        const info = card.querySelector('.row .row + div') || card.querySelector('.row');
-        info && info.appendChild(line);
-      });
-    } catch {}
-  };
-
-  // Ensure all current orders render and bell badge updates
-  document.addEventListener('DOMContentLoaded', ()=>{
-    renderOrders && renderOrders();
-    updateBellBadge && updateBellBadge();
-  });
-})();
-</script>
-  <!-- Ratings -->
-<div class="modal" id="ratingModal">
-  <div class="sheet">
-    <div class="head">
-      <strong>Rate your experience</strong>
-      <button class="btn ghost" id="rateClose" type="button">✖</button>
-    </div>
-    <div class="body">
-      <div class="row" id="rateStars" style="gap:6px"></div>
-      <div class="field" style="margin-top:8px">
-        <label class="small">Comment (optional)</label>
-        <textarea id="rateNote" rows="3"></textarea>
-      </div>
-      <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px">
-        <button class="btn ghost" id="rateLater" type="button">Later</button>
-        <button class="btn primary" id="rateSubmit" type="button">Submit</button>
-      </div>
-    </div>
-  </div>
-</div>
-  <style id="auth-full-css">
-  body[data-auth="1"] header,
-  body[data-auth="1"] .nav,
-  body[data-auth="1"] .page { display: none !important; }
-
-  #authModal .sheet {
-    height: 100vh; width: 100vw; max-width: none; border-radius: 0;
-    padding-top: env(safe-area-inset-top, 0); display: flex; flex-direction: column; border: 0;
-    background: var(--bg);
-  }
-  #authModal .head { border: 0; padding: 16px; justify-content: center; }
-  #authModal .body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; }
-
-  #authCard {
-    width: 100%; max-width: 420px; background: #fff; border: 1px solid var(--border);
-    border-radius: 16px; box-shadow: var(--shadow); padding: 18px;
-  }
-  #authBrand { text-align: center; margin-bottom: 10px; }
-  #authBrand .logo { font-size: 42px; }
-  #authBrand .tag { margin-top: 4px; color: var(--muted); font-weight: 600; }
-  #authTabs { display: grid; grid-auto-flow: column; gap: 8px; margin: 10px 0 12px; }
-  #authTabs button { padding: 10px 12px; border-radius: 10px; background: #F3F4F6; }
-  #authTabs button.active { background: #EEF2FF; color: #3730A3; font-weight: 700; }
-  .auth-pane { display: none; }
-  .auth-pane.active { display: block; }
-  #googleBtn { width: 100%; background: #fff; border: 1px solid var(--border); }
-</style>
+  <!-- Authentication controller (overlay only, no layout gating) -->
   <script>
-(function authFull(){
-  const $=s=>document.querySelector(s);
+  (function authOverlay(){
+    const $=s=>document.querySelector(s);
 
-  // Gate helpers (idempotent)
-  window.enterAuthMode = window.enterAuthMode || function(){ document.body.setAttribute('data-auth','1'); const m=$('#authModal'); if(m){ m.style.display='flex'; m.classList.add('open'); } };
-  window.exitAuthMode  = window.exitAuthMode  || function(){ document.body.removeAttribute('data-auth'); const m=$('#authModal'); if(m){ m.classList.remove('open'); m.style.display='none'; } };
+    function setTab(which){
+      const panes={SignIn:'#paneSignIn',SignUp:'#paneSignUp',Phone:'#panePhone',Reset:'#paneReset'};
+      Object.entries(panes).forEach(([k,sel])=>{ const el=$(sel); if(el) el.style.display=(k===which)?'':'none'; });
+      ['#tabSignIn','#tabSignUp','#tabPhone','#tabReset'].forEach(sel=>$(sel)?.classList.remove('active'));
+      $('#tab'+which)?.classList.add('active');
+    }
+    $('#tabSignIn')?.addEventListener('click',()=>setTab('SignIn'));
+    $('#tabSignUp')?.addEventListener('click',()=>setTab('SignUp'));
+    $('#tabPhone') ?.addEventListener('click',()=>setTab('Phone'));
+    $('#tabReset') ?.addEventListener('click',()=>setTab('Reset'));
+    setTab('SignIn');
 
-  // Tabs
-  function setTab(which){
-    ['SignIn','SignUp','Reset'].forEach(k=>{
-      $('#tab'+k)?.classList.toggle('active', k===which);
-      $('#pane'+k)?.classList.toggle('active', k===which);
+    // Email/password
+    $('#btnSignIn')?.addEventListener('click', async ()=>{
+      const email=$('#inEmail')?.value.trim(), pass=$('#inPass')?.value.trim();
+      if(!email||!pass) return alert('Enter email and password');
+      try{ await firebase.auth().signInWithEmailAndPassword(email, pass); }catch(e){ alert(e?.message||'Sign in failed'); }
     });
-  }
-  $('#tabSignIn')?.addEventListener('click', ()=>setTab('SignIn'));
-  $('#tabSignUp')?.addEventListener('click', ()=>setTab('SignUp'));
-  $('#tabReset') ?.addEventListener('click', ()=>setTab('Reset'));
-
-  // Firebase handlers
-  function provider(){ try { return new firebase.auth.GoogleAuthProvider(); } catch { return null; } }
-
-  $('#btnSignIn')?.addEventListener('click', async ()=>{
-    const email=$('#inEmail').value.trim(), pass=$('#inPass').value.trim();
-    if(!email||!pass) return alert('Enter email and password');
-    try { await firebase.auth().signInWithEmailAndPassword(email, pass); } catch(e){ alert(e?.message||'Sign in failed'); }
-  });
-
-  $('#btnSignUp')?.addEventListener('click', async ()=>{
-    const name=$('#upName').value.trim(), email=$('#upEmail').value.trim(), pass=$('#upPass').value.trim();
-    if(!name||!email||!pass) return alert('Fill name, email, password');
-    try {
-      const { user:u } = await firebase.auth().createUserWithEmailAndPassword(email, pass);
-      try { await u.updateProfile({ displayName:name }); } catch {}
-    } catch(e){ alert(e?.message||'Sign up failed'); }
-  });
-
-  $('#btnReset')?.addEventListener('click', async ()=>{
-    const email=$('#rsEmail').value.trim(); if(!email) return alert('Enter your email');
-    try { await firebase.auth().sendPasswordResetEmail(email); alert('Reset link sent'); setTab('SignIn'); } catch(e){ alert(e?.message||'Failed to send reset link'); }
-  });
-
-  const g = provider();
-  const googleSign = async ()=>{ if(!g) return alert('Google not available'); try{ await firebase.auth().signInWithPopup(g); }catch(e){ alert(e?.message||'Google sign-in failed'); } };
-  $('#googleBtn') ?.addEventListener('click', googleSign);
-  $('#googleBtn2')?.addEventListener('click', googleSign);
-
-  // Show gate on logout (override safely if already set)
-  const menuLogout = document.getElementById('menuLogout');
-  if (menuLogout) {
-    menuLogout.onclick = async ()=>{
-      document.getElementById('profileMenu').style.display='none';
-      try{ await firebase.auth().signOut(); }catch{}
-      enterAuthMode();
-    };
-  }
-
-  // Open Support shortcut in profile list too
-  document.getElementById('openSupportBtn')?.addEventListener('click', ()=> window.showPage && showPage('support'));
-
-  // Gate on auth state
-  try {
-    firebase.auth().onAuthStateChanged(u=>{
-      if (u) {
-        // Signed in
-        try {
-          window.user = window.user || {};
-          user.email = u.email||''; user.name = u.displayName || (user.email?user.email.split('@')[0]:'Guest');
-          window.updateProfileUI && updateProfileUI();
-        } catch {}
-        exitAuthMode();
-      } else {
-        // Signed out
-        enterAuthMode();
-      }
+    $('#btnSignUp')?.addEventListener('click', async ()=>{
+      const name=$('#upName')?.value.trim(), email=$('#upEmail')?.value.trim(), pass=$('#upPass')?.value.trim();
+      if(!name||!email||!pass) return alert('Fill name, email, password');
+      try{ const { user:u }=await firebase.auth().createUserWithEmailAndPassword(email, pass); try{ await u.updateProfile({displayName:name}); }catch{} }catch(e){ alert(e?.message||'Sign up failed'); }
     });
-  } catch {
-    // if Firebase not loaded, keep app usable
-  }
+    $('#btnReset')?.addEventListener('click', async ()=>{
+      const email=$('#rsEmail')?.value.trim(); if(!email) return alert('Enter your email');
+      try{ await firebase.auth().sendPasswordResetEmail(email); alert('Reset link sent'); setTab('SignIn'); }catch(e){ alert(e?.message||'Failed to send reset link'); }
+    });
 
-  // If explicitly asked to sign in (e.g., deep link later)
-  window.openAuth = ()=>{ enterAuthMode(); setTab('SignIn'); };
-})();
-</script>
-  <script>
-(function authOverlay(){
-  const $=s=>document.querySelector(s);
+    // Google
+    function gp(){ try{ return new firebase.auth.GoogleAuthProvider(); }catch{ return null; } }
+    async function signGoogle(){ const p=gp(); if(!p) return alert('Google not available'); try{ await firebase.auth().signInWithPopup(p); }catch(e){ alert(e?.message||'Google sign-in failed'); } }
+    $('#googleBtn') ?.addEventListener('click', signGoogle);
+    $('#googleBtn2')?.addEventListener('click', signGoogle);
 
-  // Tabs
-  function setTab(which){
-    const panes={SignIn:'#paneSignIn',SignUp:'#paneSignUp',Phone:'#panePhone',Reset:'#paneReset'};
-    Object.entries(panes).forEach(([k,sel])=>{ const el=$(sel); if(el) el.style.display=(k===which)?'':'none'; });
-    ['#tabSignIn','#tabSignUp','#tabPhone','#tabReset'].forEach(sel=>$(sel)?.classList.remove('active'));
-    $('#tab'+which)?.classList.add('active');
-  }
-  $('#tabSignIn')?.addEventListener('click',()=>setTab('SignIn'));
-  $('#tabSignUp')?.addEventListener('click',()=>setTab('SignUp'));
-  $('#tabPhone') ?.addEventListener('click',()=>setTab('Phone'));
-  $('#tabReset') ?.addEventListener('click',()=>setTab('Reset'));
-  setTab('SignIn');
+    // Phone (OTP)
+    let recaptcha, confirmationResult;
+    function getRecaptcha(){
+      if (recaptcha) return recaptcha;
+      try{ recaptcha=new firebase.auth.RecaptchaVerifier('recaptcha-container',{size:'invisible'}); }catch(e){ alert('reCAPTCHA init failed'); }
+      return recaptcha;
+    }
+    $('#btnPhoneSend')?.addEventListener('click', async ()=>{
+      const phone=($('#phNumber')?.value||'').trim();
+      if(!/^\+?[1-9]\d{6,14}$/.test(phone)) return alert('Enter valid phone (e.g. +27...)');
+      try{ confirmationResult=await firebase.auth().signInWithPhoneNumber(phone, getRecaptcha()); alert('Code sent to '+phone); }catch(e){ alert(e?.message||'Failed to send code'); }
+    });
+    $('#btnPhoneVerify')?.addEventListener('click', async ()=>{
+      const code=($('#phCode')?.value||'').trim(); if(!confirmationResult||!code) return alert('Enter the code');
+      try{
+        const cred=await confirmationResult.confirm(code);
+        const u=cred.user; if(u && !u.displayName){ try{ await u.updateProfile({displayName:u.phoneNumber||'User'});}catch{} }
+      }catch(e){ alert(e?.message||'Invalid code'); }
+    });
 
-  // Email/password
-  $('#btnSignIn')?.addEventListener('click', async ()=>{
-    const email=$('#inEmail')?.value.trim(), pass=$('#inPass')?.value.trim();
-    if(!email||!pass) return alert('Enter email and password');
-    try{ await firebase.auth().signInWithEmailAndPassword(email, pass); }catch(e){ alert(e?.message||'Sign in failed'); }
-  });
-  $('#btnSignUp')?.addEventListener('click', async ()=>{
-    const name=$('#upName')?.value.trim(), email=$('#upEmail')?.value.trim(), pass=$('#upPass')?.value.trim();
-    if(!name||!email||!pass) return alert('Fill name, email, password');
-    try{ const { user:u }=await firebase.auth().createUserWithEmailAndPassword(email, pass); try{ await u.updateProfile({displayName:name}); }catch{} }catch(e){ alert(e?.message||'Sign up failed'); }
-  });
-  $('#btnReset')?.addEventListener('click', async ()=>{
-    const email=$('#rsEmail')?.value.trim(); if(!email) return alert('Enter your email');
-    try{ await firebase.auth().sendPasswordResetEmail(email); alert('Reset link sent'); setTab('SignIn'); }catch(e){ alert(e?.message||'Failed to send reset link'); }
-  });
+    // Logout → open modal (no layout gating)
+    const logoutBtn=document.getElementById('menuLogout');
+    if (logoutBtn){
+      logoutBtn.onclick=async ()=>{
+        document.getElementById('profileMenu').style.display='none';
+        try{ await firebase.auth().signOut(); }catch{}
+        const m=document.getElementById('authModal'); if(m){ m.classList.add('open'); }
+      };
+    }
 
-  // Google
-  function gp(){ try{ return new firebase.auth.GoogleAuthProvider(); }catch{ return null; } }
-  async function signGoogle(){ const p=gp(); if(!p) return alert('Google not available'); try{ await firebase.auth().signInWithPopup(p); }catch(e){ alert(e?.message||'Google sign-in failed'); } }
-  $('#googleBtn') ?.addEventListener('click', signGoogle);
-  $('#googleBtn2')?.addEventListener('click', signGoogle);
+    // Close modal
+    document.getElementById('authClose')?.addEventListener('click', ()=>{
+      document.getElementById('authModal')?.classList.remove('open');
+    });
 
-  // Phone (OTP)
-  let recaptcha, confirmationResult;
-  function getRecaptcha(){
-    if (recaptcha) return recaptcha;
-    try{ recaptcha=new firebase.auth.RecaptchaVerifier('recaptcha-container',{size:'invisible'}); }catch(e){ alert('reCAPTCHA init failed'); }
-    return recaptcha;
-  }
-  $('#btnPhoneSend')?.addEventListener('click', async ()=>{
-    const phone=($('#phNumber')?.value||'').trim();
-    if(!/^\+?[1-9]\d{6,14}$/.test(phone)) return alert('Enter valid phone (e.g. +27...)');
-    try{ confirmationResult=await firebase.auth().signInWithPhoneNumber(phone, getRecaptcha()); alert('Code sent to '+phone); }catch(e){ alert(e?.message||'Failed to send code'); }
-  });
-  $('#btnPhoneVerify')?.addEventListener('click', async ()=>{
-    const code=($('#phCode')?.value||'').trim(); if(!confirmationResult||!code) return alert('Enter the code');
+    // Auth state → update header/profile; just hide modal
     try{
-      const cred=await confirmationResult.confirm(code);
-      const u=cred.user; if(u && !u.displayName){ try{ await u.updateProfile({displayName:u.phoneNumber||'User'});}catch{} }
-    }catch(e){ alert(e?.message||'Invalid code'); }
-  });
-
-  // Logout → open modal (no page gating, no layout changes)
-  const logoutBtn=document.getElementById('menuLogout');
-  if (logoutBtn){
-    logoutBtn.onclick=async ()=>{
-      document.getElementById('profileMenu').style.display='none';
-      try{ await firebase.auth().signOut(); }catch{}
-      const m=document.getElementById('authModal'); if(m){ m.classList.add('open'); }
-    };
-  }
-
-  // Close (kept as-is)
-  document.getElementById('authClose')?.addEventListener('click', ()=>{
-    document.getElementById('authModal')?.classList.remove('open');
-  });
-
-  // Auth state → update header/profile; just hide modal, do not touch layout
-  try{
-    firebase.auth().onAuthStateChanged(u=>{
-      if (u){
-        try{
-          window.user=window.user||{};
-          user.email=u.email||u.phoneNumber||'';
-          user.name = u.displayName || (user.email?user.email.split('@')[0]:'User');
-          window.updateProfileUI && updateProfileUI();
-        }catch{}
-        document.getElementById('authModal')?.classList.remove('open');
-        window.showPage && showPage('home');
-      }else{
-        // Optionally auto-open once for new users (no layout gating)
-        if (!localStorage.getItem('zup_auth_seen')) {
-          localStorage.setItem('zup_auth_seen','1');
-          document.getElementById('authModal')?.classList.add('open');
+      firebase.auth().onAuthStateChanged(u=>{
+        if (u){
+          try{
+            window.user=window.user||{};
+            user.email=u.email||u.phoneNumber||'';
+            user.name = u.displayName || (user.email?user.email.split('@')[0]:'User');
+            window.updateProfileUI && updateProfileUI();
+          }catch{}
+          document.getElementById('authModal')?.classList.remove('open');
+          window.showPage && showPage('home');
         }
-      }
-    });
-  }catch{}
-})();
-</script>
+      });
+    }catch{}
+  })();
+  </script>
 </body>
 </html>
