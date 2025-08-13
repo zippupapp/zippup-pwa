@@ -117,6 +117,13 @@ header .row > .greet { flex:1; min-width:0; }
 header .row { align-items: center; }
 header .row > .greet { flex: 1; min-width: 0; }
 #notifBtn { margin-right: 6px; } /* bell just before Account */
+    /* Header alignment and order */
+header .row { align-items: center; }
+header .row > .greet { flex: 1; min-width: 0; }
+#notifBtn { margin-right: 6px; } /* bell sits immediately before Account */
+
+/* Hide the location line inside header; we’ll show it under header */
+header #userLoc { display: none !important; }
   </style>
 </head>
 <body>
@@ -148,6 +155,9 @@ header .row > .greet { flex: 1; min-width: 0; }
 </header>
 
   <!-- Pages -->
+  <section class="section" id="headerLocRow">
+  <div class="small">📍 <span id="userLocUnder">Detecting location…</span></div>
+</section>
   <section class="section" id="homeMapSection">
   <div id="homeMap" style="height:160px;border-radius:12px;border:1px solid var(--border)"></div>
 </section>
@@ -325,45 +335,14 @@ header .row > .greet { flex: 1; min-width: 0; }
   </main>
 
   <main id="page-manage-products" class="page">
-    <section class="section">
-      <div class="title">Manage Products</div>
-      <div class="card">
-        <div class="list">
-          <div class="grid-2">
-            <div class="field">
-              <label class="small">Category</label>
-              <select id="mpCatSelect">
-                <option value="electronics">Electronics</option>
-                <option value="fashion">Fashion</option>
-                <option value="home">Home & Garden</option>
-                <option value="sports">Sports</option>
-                <option value="automobile">Automobile</option>
-                <option value="spares">Spare Parts</option>
-                <option value="others">Others</option>
-              </select>
-            </div>
-            <div class="field">
-              <label class="small">Product name</label>
-              <input id="mpName" placeholder="e.g., iPhone 13"/>
-            </div>
-          </div>
-          <div class="field">
-            <label class="small">Description</label>
-            <textarea id="mpDesc" rows="3" placeholder="Describe the product…"></textarea>
-          </div>
-          <div class="grid-2">
-            <div class="field"><label class="small">Price</label><input id="mpPrice" type="number" min="0" step="0.01"/></div>
-            <div class="field"><label class="small">Stock</label><input id="mpStock" type="number" min="0" step="1"/></div>
-          </div>
-          <div class="field">
-            <label class="small">Images (up to 10)</label>
-            <input id="mpImages" type="file" accept="image/*" multiple/>
-            <div class="hint">Optional</div>
-          </div>
-          <button class="btn primary" id="mpAdd" type="button">+ Add Product</button>
-        </div>
-      </div>
-      <div class="list" style="margin-top:12px" id="mpManageList"></div>
+    <section class="section"><div class="title">Manage Product (Food Vendors Only)</div>
+<div class="card">
+  <div class="small muted" style="margin-bottom:8px">Upload multiple items per batch; up to 5 images per item; set payment options.</div>
+  <div id="foodItemsForm"></div>
+  <button class="btn ghost" id="addFoodRow" type="button">+ Add another item</button>
+  <button class="btn primary" id="saveFoodItems" type="button" style="margin-top:10px">Save items</button>
+</div>
+<div class="list" id="foodItemsList" style="margin-top:12px"></div>
     </section>
   </main>
 
@@ -378,6 +357,19 @@ header .row > .greet { flex: 1; min-width: 0; }
     </section>
   </main>
 
+<main id="page-digital" class="page" style="display:none">
+  <section class="section">
+    <div class="backbar"><button class="back" type="button">←</button><strong>Digital Services</strong></div>
+    <div class="grid" style="margin-top:8px">
+      <div class="card service">📱 Buy Airtime</div>
+      <div class="card service">📶 Buy Data</div>
+      <div class="card service">🧾 Pay Bills</div>
+      <div class="card service">🛒 Digital Products</div>
+    </div>
+    <div class="small muted" style="margin-top:8px">Coming soon</div>
+  </section>
+</main>
+  
 <main id="page-digital" class="page" style="display:none"></main>
   <script>
 (function renderDigitalPage(){
@@ -476,6 +468,11 @@ Add “Others” s
 </div>
   
   <!-- Providers -->
+  <div class="row" id="provSearchRow" style="gap:8px;margin-bottom:10px;display:none">
+  <input id="provSearch" placeholder="Search providers or specialties…" style="flex:1"/>
+  <button class="btn ghost" id="provVoice" type="button">🎤</button>
+  <button class="btn primary" id="provSearchBtn" type="button">Search</button>
+</div>
   <div class="row" id="provSearchRow" style="gap:8px;margin-bottom:10px;display:none">
   <input id="provSearch" placeholder="Search providers or specialties…" style="flex:1"/>
   <button class="btn ghost" id="provVoice" type="button">🎤</button>
@@ -957,6 +954,38 @@ Add “Others” s
       window.updateBellBadge = updateBadge;
     })();
 
+    <div class="modal" id="sellModal">
+  <div class="sheet">
+    <div class="head"><strong>Sell a product</strong><button class="btn ghost" type="button" onclick="document.getElementById('sellModal').classList.remove('open')">✖</button></div>
+    <div class="body">
+      <div class="grid-2">
+        <div class="field"><label class="small">Category</label>
+          <select id="sellCat">
+            <option value="electronics">Electronics</option>
+            <option value="fashion">Fashion</option>
+            <option value="home">Home & Garden</option>
+            <option value="sports">Sports</option>
+            <option value="automobile">Automobile</option>
+            <option value="spares">Spare Parts</option>
+            <option value="others">Others</option>
+          </select>
+        </div>
+        <div class="field"><label class="small">Type</label><input id="sellType" placeholder="e.g., Phone"/></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label class="small">Title</label><input id="sellTitle"/></div>
+        <div class="field"><label class="small">Price</label><input id="sellPrice" type="number" min="0" step="0.01"/></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label class="small">Stock</label><input id="sellStock" type="number" min="0"/></div>
+        <div class="field"><label class="small">Images (up to 10)</label><input id="sellImages" type="file" accept="image/*" multiple/></div>
+      </div>
+      <div class="field"><label class="small">Description</label><textarea id="sellDesc" rows="3"></textarea></div>
+      <button class="btn primary" id="sellSubmit" type="button">Submit</button>
+    </div>
+  </div>
+</div>
+    
     // Panic modal
     (function wirePanic(){
       const modal=$('panicModal');
@@ -2446,6 +2475,238 @@ Add “Others” s
   document.getElementById('grGo')?.addEventListener('click', ()=>renderGR(document.getElementById('grSearch').value.trim()));
   document.getElementById('grSearch')?.addEventListener('input', e=>renderGR(e.target.value));
   document.getElementById('grVoice')?.addEventListener('click', ()=>voice(document.getElementById('grSearch'), renderGR));
+})();
+</script>
+  <script>
+(function fixBellBeforeAccount(){
+  const right = document.querySelector('header .row > .row');
+  const bell = document.getElementById('notifBtn');
+  const acct = document.getElementById('profileBtn');
+  if (right && bell && acct && bell.nextElementSibling !== acct) right.insertBefore(bell, acct);
+})();
+</script>
+  <script>
+(function syncLocUnderHeader(){
+  const el = document.getElementById('userLocUnder');
+  if (!el) return;
+  const src = document.getElementById('userLoc');
+  if (src && src.textContent && src.textContent !== 'Detecting location…') {
+    el.textContent = src.textContent;
+    return;
+  }
+  // fallback: try geolocation once
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(p=>{
+      el.textContent = `Lat ${p.coords.latitude.toFixed(4)}, Lng ${p.coords.longitude.toFixed(4)}`;
+    }, ()=>{ el.textContent = 'Location unavailable'; }, { timeout: 8000 });
+  }
+})();
+</script>
+  <script>
+(function digitalButton(){
+  const grid = document.getElementById('servicesGrid');
+  if (!grid || grid.querySelector('[data-service="digital"]')) return;
+  const card = document.createElement('div');
+  card.className='card service'; card.dataset.service='digital';
+  card.innerHTML='<div class="row"><div style="font-size:28px">💳</div><h4>Digital Services</h4></div><div class="small muted" style="margin-top:6px">Airtime, data, bills, digital products</div>';
+  grid.appendChild(card);
+  grid.addEventListener('click', (e)=>{
+    const c=e.target.closest('.service'); if(!c) return;
+    if (c.dataset.service==='digital'){
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.getElementById('page-digital')?.classList.add('active');
+    }
+  }, { once:true });
+  // back action
+  document.querySelector('#page-digital .backbar .back')?.addEventListener('click', ()=>{
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-home')?.classList.add('active');
+  });
+})();
+</script>
+  <script>
+(function providersSearch(){
+  const row = document.getElementById('provSearchRow');
+  const list = document.getElementById('providersList');
+  if (!row || !list) return;
+
+  function filter(){ const q=(document.getElementById('provSearch').value||'').toLowerCase(); list.querySelectorAll('.card').forEach(c=>{ c.style.display = c.textContent.toLowerCase().includes(q)?'':'none'; }); }
+  function voice(el, cb){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return alert('Voice not supported');
+    const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+    rec.onresult=e=>{ el.value=e.results[0][0].transcript||''; cb(el.value); }; rec.start();
+  }
+  document.getElementById('provSearch')?.addEventListener('input', filter);
+  document.getElementById('provSearchBtn')?.addEventListener('click', filter);
+  document.getElementById('provVoice')?.addEventListener('click', ()=>voice(document.getElementById('provSearch'), filter));
+
+  const orig = window.openCategory;
+  window.openCategory = function(catId, label){
+    const showSearch = ['home','tech','construction','auto','automobile'].includes(String(catId||'').toLowerCase());
+    row.style.display = showSearch ? '' : 'none';
+    return orig ? orig.apply(this, arguments) : undefined;
+  };
+})();
+</script>
+  <script>
+(function manageFoodProducts(){
+  const wrap = document.getElementById('foodItemsForm');
+  const list = document.getElementById('foodItemsList');
+  if (!wrap || !list) return;
+
+  function ensureRow(){
+    const row = document.createElement('div');
+    row.className='card'; row.style.margin='8px 0';
+    row.innerHTML = `
+      <div class="grid-2">
+        <div class="field"><label class="small">Category</label>
+          <select class="f-cat">
+            <option value="fastfood">Fast food</option>
+            <option value="grocery">Groceries</option>
+          </select>
+        </div>
+        <div class="field"><label class="small">Title</label><input class="f-title" placeholder="Item title"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label class="small">Price</label><input class="f-price" type="number" min="0" step="0.01"></div>
+        <div class="field"><label class="small">Images (up to 5)</label><input class="f-imgs" type="file" accept="image/*" multiple></div>
+      </div>
+      <div class="field"><label class="small">Description</label><textarea class="f-desc" rows="2"></textarea></div>
+      <div class="row"><label class="small"><input type="checkbox" class="f-cash" checked> Cash</label><label class="small"><input type="checkbox" class="f-card" checked> Card</label></div>
+    `;
+    wrap.appendChild(row);
+  }
+  function getSaved(){ try { return JSON.parse(localStorage.getItem('zup_food_menu')||'[]'); } catch { return []; } }
+  function setSaved(arr){ localStorage.setItem('zup_food_menu', JSON.stringify(arr||[])); }
+  function loadList(){
+    const data = getSaved(); list.innerHTML='';
+    if (!data.length) { list.innerHTML='<div class="small muted">No items yet.</div>'; return; }
+    data.forEach((it, idx)=>{
+      const card=document.createElement('div'); card.className='card';
+      const imgs=(it.images||[]).map(src=>`<img src="${src}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+      card.innerHTML = `
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div>
+            <div><strong>${it.title}</strong> <span class="small muted">[${it.cat}]</span></div>
+            <div class="small muted">${it.desc||''}</div>
+            <div class="small"><strong>Price:</strong> $${Number(it.price).toFixed(2)} • <strong>Pay:</strong> ${(it.pay||[]).join(', ')||'—'}</div>
+          </div>
+          <div class="row" style="gap:6px">
+            <button class="btn ghost" data-k="edit" data-i="${idx}">Edit</button>
+            <button class="btn ghost" data-k="del" data-i="${idx}">Delete</button>
+          </div>
+        </div>
+        <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">${imgs||'<span class="small muted">No images</span>'}</div>
+      `;
+      list.appendChild(card);
+    });
+    list.onclick = (e)=>{
+      const b=e.target.closest('[data-k]'); if(!b) return;
+      const i=Number(b.getAttribute('data-i')); const data=getSaved();
+      if (b.getAttribute('data-k')==='del'){ data.splice(i,1); setSaved(data); loadList(); }
+      if (b.getAttribute('data-k')==='edit'){
+        const it=data[i]; wrap.innerHTML=''; ensureRow();
+        const r=wrap.querySelector('.card');
+        r.querySelector('.f-cat').value=it.cat;
+        r.querySelector('.f-title').value=it.title;
+        r.querySelector('.f-price').value=it.price;
+        r.querySelector('.f-desc').value=it.desc||'';
+        r.querySelector('.f-cash').checked=(it.pay||[]).includes('cash');
+        r.querySelector('.f-card').checked=(it.pay||[]).includes('card');
+        // on save, replace item
+        document.getElementById('saveFoodItems').onclick = ()=> saveItems(i);
+      }
+    };
+  }
+  function readImages(input, limit){
+    const files=Array.from((input.files||[])).slice(0,limit);
+    if (!files.length) return Promise.resolve([]);
+    return new Promise(res=>{
+      const imgs=[]; let left=files.length;
+      files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ imgs.push(fr.result); if(--left===0) res(imgs); }; fr.readAsDataURL(f); });
+    });
+  }
+  async function saveItems(replaceIdx){
+    const cards = Array.from(wrap.querySelectorAll('.card'));
+    const items=[];
+    for (const c of cards){
+      const cat=c.querySelector('.f-cat').value;
+      const title=c.querySelector('.f-title').value.trim();
+      const price=parseFloat(c.querySelector('.f-price').value||'0');
+      const desc=c.querySelector('.f-desc').value.trim();
+      const imgs=await readImages(c.querySelector('.f-imgs'), 5);
+      const pay=[]; if (c.querySelector('.f-cash').checked) pay.push('cash'); if (c.querySelector('.f-card').checked) pay.push('card');
+      if (title && price>0) items.push({ cat, title, price, desc, images:imgs, pay });
+    }
+    if (!items.length) return alert('Add at least one valid item');
+    const saved=getSaved();
+    if (typeof replaceIdx==='number'){ saved[replaceIdx]=items[0]; } else { saved.unshift(...items); }
+    setSaved(saved); wrap.innerHTML=''; ensureRow(); loadList(); alert('Saved');
+    // reset save button handler to default (batch save)
+    document.getElementById('saveFoodItems').onclick = ()=> saveItems(undefined);
+  }
+
+  document.getElementById('addFoodRow')?.addEventListener('click', ensureRow);
+  document.getElementById('saveFoodItems')?.addEventListener('click', ()=> saveItems(undefined));
+
+  // init
+  if (!wrap.querySelector('.card')) ensureRow();
+  loadList();
+})();
+</script>
+  <script>
+(function marketplaceSell(){
+  const page = document.getElementById('page-marketplace');
+  if (!page) return;
+
+  // Inject "Sell Products" button above listings (first section)
+  const firstSection = page.querySelector('.section');
+  if (firstSection && !document.getElementById('sellProductsBtn')){
+    const bar=document.createElement('div');
+    bar.className='row'; bar.style.cssText='justify-content:space-between;align-items:center;margin-bottom:8px';
+    bar.innerHTML='<div class="title" style="margin:0">Marketplace</div><button class="btn ghost" id="sellProductsBtn" type="button">Sell Products</button>';
+    firstSection.insertBefore(bar, firstSection.firstChild);
+    document.getElementById('sellProductsBtn').onclick = ()=> document.getElementById('sellModal')?.classList.add('open');
+  }
+
+  function getUserProducts(){ try { return JSON.parse(localStorage.getItem('zup_user_products')||'[]'); } catch { return []; } }
+  function setUserProducts(arr){ localStorage.setItem('zup_user_products', JSON.stringify(arr||[])); }
+  function b64(files, limit){
+    const fs=Array.from(files||[]).slice(0,limit);
+    if (!fs.length) return Promise.resolve([]);
+    return new Promise(res=>{
+      const imgs=[]; let left=fs.length;
+      fs.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ imgs.push(fr.result); if(--left===0) res(imgs); }; fr.readAsDataURL(f); });
+    });
+  }
+  document.getElementById('sellSubmit')?.addEventListener('click', async ()=>{
+    const cat=document.getElementById('sellCat').value;
+    const type=document.getElementById('sellType').value.trim();
+    const title=document.getElementById('sellTitle').value.trim();
+    const price=parseFloat(document.getElementById('sellPrice').value||'0');
+    const stock=parseInt(document.getElementById('sellStock').value||'0',10);
+    const desc=(document.getElementById('sellDesc').value||'').trim();
+    const imgs = await b64(document.getElementById('sellImages').files, 10);
+    if (!title || !price || !stock) return alert('Fill title, price, stock');
+    const list = getUserProducts();
+    list.unshift({ id:'u'+Date.now(), cat, type, title, price, stock, desc, images:imgs, img:imgs[0]||'', seller:(window.user?.name||'You') });
+    setUserProducts(list);
+    alert('Listing submitted');
+    document.getElementById('sellModal')?.classList.remove('open');
+    // Re-render marketplace if you have a renderer
+    if (typeof renderMarketplace==='function') try{ renderMarketplace(); }catch{}
+  });
+})();
+</script>
+  <script>
+(function backArrows(){
+  document.body.addEventListener('click', (e)=>{
+    const b=e.target.closest('.back'); if(!b) return;
+    e.preventDefault();
+    // Default: go Home
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-home')?.classList.add('active');
+  });
 })();
 </script>
 </body>
