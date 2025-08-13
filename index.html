@@ -2709,5 +2709,47 @@ Add “Others” s
   });
 })();
 </script>
+  <script>
+(function restoreHome(){
+  function showHome() {
+    try {
+      // Ensure Home is visible and active
+      var home = document.getElementById('page-home');
+      if (home) {
+        home.classList.add('active');
+        home.style.display = 'block';
+      }
+      // Deactivate others (do not force display:none; let your CSS handle)
+      document.querySelectorAll('.page').forEach(function(p){
+        if (p.id !== 'page-home') p.classList.remove('active');
+      });
+      // Close splash and any blocking modals
+      var s = document.getElementById('splash'); if (s) s.style.display = 'none';
+      document.querySelectorAll('.modal').forEach(function(m){ m.classList.remove('open'); });
+
+      // Keep Home tab selected
+      var homeBtn = document.querySelector('.nav [data-page="home"]');
+      if (homeBtn) {
+        document.querySelectorAll('.nav button').forEach(function(b){ b.classList.remove('active'); });
+        homeBtn.classList.add('active');
+      }
+
+      // Hard CSS guard in case something else forces display:none
+      if (!document.getElementById('home-guard-style')) {
+        var st = document.createElement('style');
+        st.id = 'home-guard-style';
+        st.textContent = '#page-home{display:block!important}';
+        document.head.appendChild(st);
+      }
+    } catch (e) {}
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showHome, { once:true });
+  } else {
+    showHome();
+  }
+  window.addEventListener('load', showHome, { once:true });
+})();
+</script>
 </body>
 </html>
