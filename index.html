@@ -1937,5 +1937,108 @@
   window.openAuth = ()=>{ enterAuthMode(); setTab('SignIn'); };
 })();
 </script>
+  <script id="zup-auth-all">
+(function(){
+  const $=s=>document.querySelector(s);
+
+  // Auth gate (full-page)
+  function enterAuth(){ document.body.setAttribute('data-auth','1'); const m=$('#authModal'); if(m){ m.style.display='flex'; m.classList.add('open'); } }
+  function exitAuth(){ document.body.removeAttribute('data-auth'); const m=$('#authModal'); if(m){ m.classList.remove('open'); m.style.display='none'; } }
+  window.enterAuthMode=enterAuth; window.exitAuthMode=exitAuth;
+
+  // Tabs
+  function setTab(which){
+    const panes={SignIn:'#paneSignIn',SignUp:'#paneSignUp',Reset:'#paneReset',Phone:'#panePhone'};
+    Object.entries(panes).forEach(([k,sel])=>{
+      const el=$(sel); if(!el) return;
+      el.style.display = (k===which)?'':'none';
+    });
+    ['#tabSignIn','#tabSignUp','#tabReset','#tabPhone'].forEach(sel=>$(sel)?.classList.remove('active'));
+    $('#tab'+which)?.classList.add('active');
+  }
+  window.setTab=setTab;
+  $('#tabSignIn')?.addEventListener('click',()=>setTab('SignIn'));
+  $('#tabSignUp')?.addEventListener('click',()=>setTab('SignUp'));
+  $('#tabReset') ?.addEventListener('click',()=>setTab('Reset'));
+  $('#tabPhone') ?.addEventListener('click',()=>setTab('Phone'));
+  setTab('SignIn');
+
+  // Email/Password
+  $('#btnSignIn')?.addEventListener('click', async ()=>{
+    const email=$('#inEmail')?.value.trim(), pass=$('#inPass')?.value.trim();
+    if(!email||!pass) return alert('Enter email and password');
+    try{ await firebase.auth().signInWithEmailAndPassword(email, pass); }catch(e){ alert(e?.message||'Sign in failed'); }
+  });
+  $('#btnSignUp')?.addEventListener('click', async ()=>{
+    const name=$('#upName')?.value.trim(), email=$('#upEmail')?.value.trim(), pass=$('#upPass')?.value.trim();
+    if(!name||!email||!pass) return alert('Fill name, email, password');
+    try{
+      const { user:u }=await firebase.auth().createUserWithEmailAndPassword(email, pass);
+      try{ await u.updateProfile({ displayName:name }); }catch{}
+    }catch(e){ alert(e?.message||'Sign up failed'); }
+  });
+  $('#btnReset')?.addEventListener('click', async ()=>{
+    const email=$('#rsEmail')?.value.trim(); if(!email) return alert('Enter your email');
+    try{ await firebase.auth().sendPasswordResetEmail(email); alert('Reset link sent'); setTab('SignIn'); }catch(e){ alert(e?.message||'Failed to send reset link'); }
+  });
+
+  // Google
+  function googleProvider(){ try{ return new firebase.auth.GoogleAuthProvider(); }catch{ return null; } }
+  async function googleSign(){ const gp=googleProvider(); if(!gp) return alert('Google not available'); try{ await firebase.auth().signInWithPopup(gp); }catch(e){ alert(e?.message||'Google sign-in failed'); } }
+  $('#googleBtn') ?.addEventListener('click', googleSign);
+  $('#googleBtn2')?.addEventListener('click', googleSign);
+
+  // Phone (OTP)
+  let recaptcha, confirmationResult;
+  function getRecaptcha(){
+    if (recaptcha) return recaptcha;
+    try{ recaptcha=new firebase.auth.RecaptchaVerifier('recaptcha-container',{size:'invisible'}); }catch(e){ alert('reCAPTCHA init failed'); }
+    return recaptcha;
+  }
+  $('#btnPhoneSend')?.addEventListener('click', async ()=>{
+    const phone=($('#phNumber')?.value||'').trim();
+    if(!/^\+?[1-9]\d{6,14}$/.test(phone)) return alert('Enter valid phone (e.g. +27...)');
+    try{ confirmationResult=await firebase.auth().signInWithPhoneNumber(phone, getRecaptcha()); alert('Code sent to '+phone); }catch(e){ alert(e?.message||'Failed to send code'); }
+  });
+  $('#btnPhoneVerify')?.addEventListener('click', async ()=>{
+    const code=($('#phCode')?.value||'').trim(); if(!confirmationResult||!code) return alert('Enter the code');
+    try{
+      const cred=await confirmationResult.confirm(code);
+      const u=cred.user; if(u && !u.displayName){ try{ await u.updateProfile({displayName:u.phoneNumber||'User'});}catch{} }
+    }catch(e){ alert(e?.message||'Invalid code'); }
+  });
+
+  // Logout → gate
+  const logoutBtn=document.getElementById('menuLogout');
+  if (logoutBtn){
+    logoutBtn.onclick=async ()=>{
+      document.getElementById('profileMenu').style.display='none';
+      try{ await firebase.auth().signOut(); }catch{}
+      enterAuth();
+    };
+  }
+
+  // Auth state → update UI and redirect
+  try{
+    firebase.auth().onAuthStateChanged(u=>{
+      if (u){
+        try{
+          window.user=window.user||{};
+          user.email=u.email||u.phoneNumber||'';
+          user.name = u.displayName || (user.email?user.email.split('@')[0]:'User');
+          window.updateProfileUI && updateProfileUI();
+        }catch{}
+        exitAuth();
+        window.showPage && showPage('home');
+      }else{
+        enterAuth();
+      }
+    });
+  }catch{}
+
+  // Ensure gate on first load if signed out
+  if (!firebase.auth().currentUser) enterAuth();
+})();
+</script>
 </body>
 </html>
