@@ -93,7 +93,15 @@
     #checkoutModal .sheet, #sellModal .sheet, #trackModal .sheet { height: calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; }
     #checkoutModal .sheet .body, #sellModal .sheet .body, #trackModal .sheet .body { flex:1; overflow:auto; }
 
+    /* scrolling comfort for manage-products and marketplace */
+    #page-manage-products, #page-marketplace { overflow-x:auto; overflow-y:auto; }
+
     .backbar { position:sticky; top:0; background:#fff; border-bottom:1px solid var(--border); z-index:5; display:flex; align-items:center; gap:8px; padding:8px 4px 8px 0; }
+
+    /* Support FAQ styles */
+    #faqList .q { font-weight:700; cursor:pointer }
+    #faqList .a { display:none; color:#374151 }
+    #faqList .item { padding:10px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:#fff }
   </style>
 </head>
 <body>
@@ -341,10 +349,17 @@
       <div class="backbar"><button class="btn ghost" id="supportBack" type="button">← Back</button><strong>Contact Support</strong></div>
       <div class="card">
         <div class="list">
-          <div class="field"><label class="small">Topic</label><input id="supTopic" placeholder="Billing, Orders, App issue…"/></div>
+          <div class="title" style="margin-top:0">Help center</div>
+          <div id="faqList"></div>
+          <div class="small muted" style="margin:8px 0 6px">Not satisfied with the answers? Fill the form below to contact support.</div>
+          <div class="grid-2">
+            <div class="field"><label class="small">Full name</label><input id="supName" placeholder="Your name"/></div>
+            <div class="field"><label class="small">Email</label><input id="supEmail" placeholder="you@example.com"/></div>
+          </div>
+          <div class="field"><label class="small">Contact number</label><input id="supPhone" placeholder="+27XXXXXXXXX"/></div>
           <div class="field"><label class="small">Message</label><textarea id="supMsg" rows="4" placeholder="Describe your issue…"></textarea></div>
           <button class="btn primary" id="supSend" type="button">Send</button>
-          <div class="small muted">Support: hello@zippup.app</div>
+          <div class="small" style="margin-top:8px">Prefer to call? <a href="tel:0784079686">078 407 9686</a></div>
         </div>
       </div>
     </section>
@@ -392,6 +407,7 @@
               <input id="bkAddress" required placeholder="Enter address" style="flex:1"/>
               <button class="btn ghost" id="bkUseCurrent" type="button">📍 Use current</button>
             </div>
+            <div id="bkSuggest" class="list" style="margin-top:6px"></div>
           </div>
           <div class="field"><label class="small">Details</label><textarea id="bkDesc" rows="3" placeholder="Describe the job…"></textarea></div>
           <button class="btn primary block" type="submit">Send Booking Request</button>
@@ -685,7 +701,7 @@
     </div>
   </div>
 
-  <!-- Auth modal (kept as overlay; no page gating) -->
+  <!-- Auth modal (overlay only) -->
   <div class="modal" id="authModal" style="display:none">
     <div class="sheet" style="height:100vh;width:100vw;max-width:none;border-radius:0;border:0;background:var(--bg);display:flex;flex-direction:column">
       <div class="head" style="border:0;justify-content:center">
@@ -745,6 +761,7 @@
   <script>
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
     const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+    const stripe = (()=>{ try { return Stripe(STRIPE_PK); } catch { return null; } })();
 
     const firebaseConfig = {
       apiKey: "AIzaSyApgmcfu5qGFn9tw872dQ2KkdDz_GPmL70",
@@ -817,6 +834,50 @@
     $('#openSupportBtn').onclick = ()=> showPage('support');
     $('#supportBack').onclick = ()=> showPage('profile');
     $('#supSend').onclick = ()=>{ alert('Support request sent'); showPage('profile'); };
+
+    // Global search (text and voice)
+    function runGlobalSearch(qRaw){
+      const q=(qRaw||'').trim().toLowerCase();
+      if(!q) return;
+      // Marketplace products
+      const mpMatch = (MP_PRODUCTS.concat(getUserProducts())).filter(p=> (p.title||'').toLowerCase().includes(q) || (p.type||'').toLowerCase().includes(q) || (p.cat||'').toLowerCase().includes(q));
+      if (mpMatch.length){
+        showPage('marketplace');
+        $('#mpSearch').value=q;
+        renderMarketplace(null, q);
+        return;
+      }
+      // Food vendors or menu items
+      const vendorIds = Object.keys(MENUS).filter(vid => (MENUS[vid]||[]).some(m=> (m.title||'').toLowerCase().includes(q)));
+      if (vendorIds.length || VENDORS.some(v=> (v.name||'').toLowerCase().includes(q))){
+        $('#foodOptionsModal').classList.remove('open');
+        openFoodVendorsSearch(q);
+        return;
+      }
+      // Service categories
+      const svcMap = {
+        transport:['transport','taxi','ride','truck','backie'],
+        food:['food','restaurant','grocery','groceries','menu'],
+        tech:['tech','phone','computer','laptop','repair'],
+        home:['home','clean','cleaning','maintenance'],
+        construction:['build','builder','construction','electrician','plumber'],
+        auto:['auto','mechanic','tyre','tire','battery','roadside'],
+        others:['others','event','tutor','more'],
+        digital:['digital','airtime','data','bills','voucher']
+      };
+      for (const [cat,keys] of Object.entries(svcMap)){
+        if (keys.some(k=> q.includes(k))){ openCategory(cat, cat[0].toUpperCase()+cat.slice(1)); return; }
+      }
+      // Fallback: providers modal filtered
+      $('#provSearchRow').style.display='';
+      $('#providersTitle').textContent = 'Providers — Search';
+      renderProviders(dummyProviders('general'), 'general');
+      $('#providersModal').classList.add('open');
+      $('#provSearch').value=q;
+      document.getElementById('provSearchBtn').click();
+    }
+    $('#searchBtn').onclick = ()=> runGlobalSearch($('#search').value);
+    $('#voiceBtn').onclick  = ()=> voiceToInput($('#search'), runGlobalSearch);
 
     const SERVICES = [
       { id:'transport',   name:'Transport',         icon:'🚗', desc:'Ride & moving' },
@@ -975,7 +1036,7 @@
         if (!coords) return;
         trackMap = L.map('trackMap',{ zoomControl:true }).setView([coords.lat, coords.lng], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(trackMap);
-        const you = L.circleMarker([coords.lat, coords.lng],{radius:7,color:'#10B981',fillColor:'#10B981',fillOpacity:.9}).addTo(trackMap).bindPopup('You');
+        L.circleMarker([coords.lat, coords.lng],{radius:7,color:'#10B981',fillColor:'#10B981',fillOpacity:.9}).addTo(trackMap).bindPopup('You');
         let drvLat = coords.lat + 0.01, drvLng = coords.lng + 0.01;
         const drv = L.circleMarker([drvLat, drvLng],{radius:7,color:'#2563EB',fillColor:'#2563EB',fillOpacity:.9}).addTo(trackMap).bindPopup('Driver');
         trackInterval = setInterval(()=>{
@@ -1003,6 +1064,7 @@
       showPage('home');
     };
 
+    // Food demo data
     const VENDORS = [
       { id:'v1', name:'Burger Place', kind:'fastfood', payment:['card','cash'] },
       { id:'v2', name:'Pizza Town',   kind:'fastfood', payment:['card'] },
@@ -1021,6 +1083,7 @@
       ]
     };
 
+    // Food flows
     $('#closeFoodOptions').onclick = ()=> $('#foodOptionsModal').classList.remove('open');
     $('#foodFastBtn').onclick = ()=> { $('#foodOptionsModal').classList.remove('open'); openFoodVendors('fastfood'); };
     $('#foodGroceryBtn').onclick = ()=> { $('#foodOptionsModal').classList.remove('open'); openFoodVendors('grocery'); };
@@ -1142,7 +1205,29 @@
     $('#backToCart').onclick = ()=>{ $('#checkoutModal').classList.remove('open'); $('#cartModal').classList.add('open'); };
     $('#closeCheckout').onclick = ()=> $('#checkoutModal').classList.remove('open');
 
-    $('#placeOrderBtn').onclick = ()=>{
+    async function stripeCheckout(orderId){
+      if (!stripe) { alert('Payment library not loaded'); return; }
+      try {
+        const origin = location.origin;
+        const payload = {
+          items: cart.items.map(i=>({ name:i.title, amount: Math.round(i.price*100), quantity:i.qty })),
+          metadata: { orderId, vendor: cart.vendorName||'' },
+          success_url: `${origin}/?success=1&order=${encodeURIComponent(orderId)}`,
+          cancel_url: `${origin}/?canceled=1&order=${encodeURIComponent(orderId)}`
+        };
+        const r = await fetch(`${BASE_API}/api/payments/checkout-session`, {
+          method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload)
+        });
+        const j = await r.json();
+        const sid = j.id || j.sessionId || j.session_id;
+        if (!sid) throw new Error('No session');
+        await stripe.redirectToCheckout({ sessionId: sid });
+      } catch(e){
+        alert('Unable to start payment. Please try again.');
+      }
+    }
+
+    $('#placeOrderBtn').onclick = async ()=>{
       const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
       if (!$('#chkTerms').checked) return alert('Please accept the Terms');
       if (!cart.items.length) return alert('Cart is empty');
@@ -1151,6 +1236,9 @@
       }
       const orderId='ord-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
       addFoodOrder(orderId, code, method);
+      if (method==='card') {
+        await stripeCheckout(orderId);
+      }
       $('#checkoutModal').classList.remove('open');
       $('#orderInfo').innerHTML = `<div class="card">
         <div><strong>Order ID:</strong> ${orderId}</div>
@@ -1245,10 +1333,20 @@
     function getUserProducts(){ try { return JSON.parse(localStorage.getItem('zup_user_products')||'[]'); } catch { return []; } }
     function setUserProducts(arr){ localStorage.setItem('zup_user_products', JSON.stringify(arr||[])); }
 
+    async function fetchProductsFromApi(){
+      try {
+        const r = await fetch(`${BASE_API}/api/marketplace/products`);
+        const j = await r.json();
+        if (Array.isArray(j)) MP_PRODUCTS = j.map(p=>({
+          id: p.id||('p'+Math.random()), title:p.title, cat:p.category, price:p.price, stock:p.stock, img:p.images?.[0]||'', seller:p.sellerName||'Seller', phone:p.phone||''
+        }));
+      } catch {}
+    }
+
     function initMarketplace(){
       const chips=$('#mpChips'); chips.innerHTML='';
       MP_CATEGORIES.forEach(c=>{ const b=document.createElement('button'); b.className='btn ghost'; b.textContent=c.name; b.onclick=()=> renderMarketplace(c.id, $('#mpSearch').value.trim().toLowerCase()); chips.appendChild(b); });
-      renderMarketplace();
+      fetchProductsFromApi().finally(()=>renderMarketplace());
       $('#sellProductsBtn').onclick = ()=> $('#sellModal').classList.add('open');
       $('#mpSearchBtn').onclick = ()=> renderMarketplace(null, $('#mpSearch').value.trim().toLowerCase());
       $('#mpVoice').onclick = ()=> voiceToInput($('#mpSearch'), ()=> renderMarketplace(null, $('#mpSearch').value.trim().toLowerCase()));
@@ -1261,7 +1359,7 @@
       const grid=$('#mpGrid'); grid.innerHTML='';
       const list = (MP_PRODUCTS.concat(getUserProducts())).filter(p=>{
         if (category && p.cat!==category) return false;
-        if (query && !(p.title.toLowerCase().includes(query)||p.cat.includes(query))) return false;
+        if (query && !(p.title.toLowerCase().includes(query)||String(p.cat).toLowerCase().includes(query))) return false;
         return true;
       });
       if (!list.length){ grid.innerHTML='<div class="small muted">No products found.</div>'; return; }
@@ -1290,9 +1388,16 @@
       const desc=$('#sellDesc').value.trim();
       if (!title || !price || !stock) return alert('Fill title, price, stock');
       const images = await (files.length? Promise.all(files.map(f=>new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(f); }))): Promise.resolve([]));
-      const list=getUserProducts();
-      list.unshift({ id:'u'+Date.now(), cat, type, title, price, stock, desc, images, img:images[0]||'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop', seller:(user.name||'You'), phone:'+12025550123' });
-      setUserProducts(list);
+      const item = { id:'u'+Date.now(), cat, type, title, price, stock, desc, images, img:images[0]||'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop', seller:(user.name||'You'), phone:'+12025550123' };
+      // Try API save, fallback to local
+      let ok=false;
+      try{
+        const r = await fetch(`${BASE_API}/api/marketplace/listings`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(item) });
+        ok = r.ok;
+      }catch{}
+      if(!ok){
+        const list=getUserProducts(); list.unshift(item); setUserProducts(list);
+      }
       $('#sellModal').classList.remove('open');
       renderMarketplace();
       alert('Listing submitted');
@@ -1372,7 +1477,10 @@
         if (!title || !price) continue;
         out.push({ id:'fi'+Date.now()+Math.random(), kind, title, price, desc, images, payment:pm });
       }
-      const cur=getFoodItems(); setFoodItems(out.concat(cur));
+      // Try API save, fallback local
+      let ok=false;
+      try { const r=await fetch(`${BASE_API}/api/food/items`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(out)}); ok=r.ok; } catch {}
+      if(!ok){ const cur=getFoodItems(); setFoodItems(out.concat(cur)); }
       renderFoodItemsList();
       alert('Items saved');
     };
@@ -1466,8 +1574,27 @@
       rec.onresult = (e)=>{ const text=e.results[0][0].transcript||''; inputEl.value=text; onResult&&onResult(text); };
       rec.start();
     }
-    $('#voiceBtn').onclick = ()=> voiceToInput($('#search'), (txt)=>{ const q=(txt||$('#search').value||'').toLowerCase(); if (q.includes('taxi') || q.includes('ride')) $('#transportOptionsModal').classList.add('open'); else if(q.includes('food')) $('#foodOptionsModal').classList.add('open'); else alert('Search coming soon'); });
     $('#mpVoice').onclick  = ()=> voiceToInput($('#mpSearch'), ()=>$('#mpSearchBtn').click());
+
+    // Address suggestions for booking
+    let suggestTimer=null;
+    $('#bkAddress').addEventListener('input', ()=>{
+      clearTimeout(suggestTimer);
+      const q = $('#bkAddress').value.trim();
+      if (!q) { $('#bkSuggest').innerHTML=''; return; }
+      suggestTimer=setTimeout(async ()=>{
+        try{
+          const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=jsonv2&addressdetails=1&limit=5`);
+          const j=await r.json();
+          $('#bkSuggest').innerHTML = (j||[]).map(x=>`<div class="card" data-addr="${x.display_name.replace(/"/g,'&quot;')}">${x.display_name}</div>`).join('');
+        }catch{ $('#bkSuggest').innerHTML=''; }
+      }, 300);
+    });
+    $('#bkSuggest').addEventListener('click',(e)=>{
+      const d=e.target.closest('[data-addr]'); if(!d) return;
+      $('#bkAddress').value = d.getAttribute('data-addr')||'';
+      $('#bkSuggest').innerHTML='';
+    });
 
     function updateProfileUI(){
       $('#profName').textContent=(user?.name||'Guest');
@@ -1598,10 +1725,9 @@
       updateBellBadge();
     };
 
-    // Auth controller (overlay only, no page gating)
+    // Auth controller (overlay only)
     (function authController(){
       const $=s=>document.querySelector(s);
-      // Tabs
       const tabs = { SignIn:'#paneSignIn', SignUp:'#paneSignUp', Phone:'#panePhone', Reset:'#paneReset' };
       function setTab(which){
         Object.keys(tabs).forEach(k=>{
@@ -1617,12 +1743,10 @@
       $('#tabReset') ?.addEventListener('click', ()=>setTab('Reset'));
       setTab('SignIn');
 
-      // Open/close auth modal
       function openAuth(){ const m=$('#authModal'); if (m) { m.style.display='flex'; m.classList.add('open'); } }
       function closeAuth(){ const m=$('#authModal'); if (m) { m.classList.remove('open'); m.style.display='none'; } }
       $('#authClose')?.addEventListener('click', closeAuth);
 
-      // Firebase handlers
       function provider(){ try { return new firebase.auth.GoogleAuthProvider(); } catch { return null; } }
 
       $('#btnSignIn')?.addEventListener('click', async ()=>{
@@ -1677,7 +1801,6 @@
         try { await confirmationResult.confirm(code); } catch(e){ alert(e?.message||'Invalid code'); }
       });
 
-      // Auth state
       auth.onAuthStateChanged(u=>{
         if (u) {
           user.email=u.email||''; user.name=u.displayName || (user.email?user.email.split('@')[0]:'Guest');
@@ -1688,9 +1811,27 @@
         }
       });
 
-      // Logout already wired above to open modal
-      // Also open Support from profile list
       $('#openSupportBtn')?.addEventListener('click', ()=> showPage && showPage('support'));
+    })();
+
+    // Support FAQ content
+    (function supportFAQ(){
+      const faq = [
+        { q:'How do I track my driver?', a:'Open My Bookings → Track on the active booking.' },
+        { q:'How do payments work?', a:'Food uses upfront card/cash per vendor rules. Transport charges at trip end. Other services start billing after arrival + 7 minutes grace.' },
+        { q:'Where is my delivery code?', a:'Open Manage Orders and select your active Food order to view the code.' },
+        { q:'How do I become a provider?', a:'Go to Profile → Become Verified Provider and submit your documents.' }
+      ];
+      const box = document.getElementById('faqList');
+      if (!box) return;
+      box.innerHTML = faq.map((f,i)=>`
+        <div class="item"><div class="q" data-i="${i}">${f.q}</div><div class="a" id="a${i}">${f.a}</div></div>
+      `).join('');
+      box.addEventListener('click', (e)=>{
+        const i = e.target.closest('.q')?.dataset?.i; if (i==null) return;
+        const a = document.getElementById('a'+i);
+        if (a) a.style.display = a.style.display==='block' ? 'none' : 'block';
+      });
     })();
 
     function renderOrdersOnce(){ renderOrders && renderOrders(); }
