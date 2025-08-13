@@ -109,6 +109,10 @@
     /* Keep greet/location fully visible under notches */
 header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
 .page { top: calc(var(--header-h) + env(safe-area-inset-top, 0px)); }
+    /* Header: push greet left, keep bell right before Account */
+header .row { align-items:center; }
+header .row > .greet { flex:1; min-width:0; }
+#notifBtn { margin-right:6px; }
   </style>
 </head>
 <body>
@@ -367,6 +371,27 @@ header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-
     </section>
   </main>
 
+<main id="page-digital" class="page" style="display:none"></main>
+  <script>
+(function renderDigitalPage(){
+  const page = document.getElementById('page-digital'); if (!page) return;
+  page.classList.add('active'); page.classList.remove('active'); /* keep hidden until opened */
+  page.innerHTML = `
+    <section class="section">
+      <div class="backbar"><button class="back" type="button" onclick="document.querySelector('.nav button[data-page=home]')?.click()">←</button><strong>Digital Services</strong></div>
+      <div class="grid">
+        <div class="card service" data-digital="airtime">📱 Buy Airtime</div>
+        <div class="card service" data-digital="data">📶 Buy Data</div>
+        <div class="card service" data-digital="bills">🧾 Pay Bills</div>
+        <div class="card service" data-digital="products">🛒 Digital Products</div>
+      </div>
+      <div class="small muted" style="margin-top:10px">Coming soon</div>
+    </section>
+  `;
+})();
+</script>
+Add “Others” s
+  
   <main id="page-verify-provider" class="page">
     <section class="section">
       <div class="title">Become Verified Provider</div>
@@ -392,6 +417,20 @@ header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-
     <button data-page="marketplace" type="button">🛍️ Marketplace</button>
   </nav>
 
+<div class="modal" id="othersModal">
+  <div class="sheet">
+    <div class="head"><strong>Others</strong><button class="btn ghost" type="button" onclick="document.getElementById('othersModal').classList.remove('open')">✖</button></div>
+    <div class="body">
+      <div class="row" style="gap:8px;margin-bottom:10px">
+        <input id="othersSearch" placeholder="Search providers or tasks…" style="flex:1"/>
+        <button class="btn ghost" id="othersVoice" type="button">🎤</button>
+        <button class="btn primary" id="othersGo" type="button">Search</button>
+      </div>
+      <div id="othersList" class="list"></div>
+    </div>
+  </div>
+</div>
+  
   <!-- Providers -->
   <div class="modal" id="providersModal">
     <div class="sheet">
@@ -2192,6 +2231,70 @@ header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-
   window.addEventListener('load', hide, { once:true });
   window.addEventListener('error', hide, true);
   setTimeout(hide, 1200);
+})();
+</script>
+  <script>
+(function fixBellOrder(){
+  const headerRight = document.querySelector('header .row > .row');
+  const notif = document.getElementById('notifBtn');
+  const profile = document.getElementById('profileBtn');
+  if (headerRight && notif && profile && notif.nextElementSibling !== profile) {
+    headerRight.insertBefore(notif, profile);
+  }
+})();
+</script>
+  <script>
+(function addDigitalService(){
+  const grid = document.getElementById('servicesGrid');
+  if (!grid || grid.querySelector('[data-service="digital"]')) return;
+  const card = document.createElement('div');
+  card.className = 'card service';
+  card.setAttribute('data-service','digital');
+  card.innerHTML = '<div class="row"><div style="font-size:28px">💳</div><h4>Digital Services</h4></div><div class="small muted" style="margin-top:6px">Airtime, data, bills, digital products</div>';
+  grid.appendChild(card);
+  grid.addEventListener('click', (e)=>{
+    const c = e.target.closest('.service'); if (!c) return;
+    if (c.getAttribute('data-service')==='digital') {
+      document.getElementById('page-digital')?.classList.add('active');
+      document.getElementById('page-home')?.classList.remove('active');
+    }
+  }, { once:true });
+})();
+</script>
+  <script>
+(function othersSearch(){
+  const grid = document.getElementById('servicesGrid');
+  function open() { document.getElementById('othersModal').classList.add('open'); render(''); }
+  function render(q){
+    const list = document.getElementById('othersList');
+    const all = [
+      { name:'Event Planner' }, { name:'Tutor (Math)' }, { name:'Photographer' },
+      { name:'Laundry Pickup' }, { name:'Errands Runner' }
+    ];
+    const f = (q||'').toLowerCase();
+    list.innerHTML = all.filter(x=>x.name.toLowerCase().includes(f)).map(x=>`
+      <div class="card"><div class="row" style="justify-content:space-between">
+        <div><strong>${x.name}</strong></div>
+        <button class="btn primary" type="button" onclick="alert('Request sent')">Request</button>
+      </div></div>`).join('') || '<div class="small muted">No matches</div>';
+  }
+  if (grid && !grid.__othersBound){
+    grid.__othersBound = true;
+    grid.addEventListener('click', (e)=>{
+      const c = e.target.closest('.service'); if (!c) return;
+      if ((c.textContent||'').toLowerCase().includes('others')) open();
+    });
+  }
+  const go = document.getElementById('othersGo'); if (go) go.onclick = ()=>render(document.getElementById('othersSearch').value.trim());
+  const mic= document.getElementById('othersVoice');
+  if (mic) mic.onclick = ()=> {
+    const input = document.getElementById('othersSearch');
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return alert('Voice not supported');
+    const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+    rec.onresult = e=>{ input.value = e.results[0][0].transcript||''; render(input.value); };
+    rec.start();
+  };
 })();
 </script>
 </body>
