@@ -11,10 +11,11 @@
 
   <!-- SDKs -->
   <script src="https://js.stripe.com/v3"></script>
+  <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
     :root {
@@ -33,12 +34,12 @@
       padding-top: env(safe-area-inset-top, 0px);
     }
     header .row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; width:100% }
+    .small { color:var(--muted); font-size:13px }
     .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:12px; border:0; cursor:pointer; font-weight:600 }
     .btn.primary { background:var(--primary); color:#fff }
     .btn.primary:hover { background:var(--primary-600) }
     .btn.ghost { background:#F3F4F6 }
     .btn.block { width:100% }
-    .small { color:var(--muted); font-size:13px }
 
     .search { padding:16px }
     .search .box { display:flex; gap:8px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:8px 10px }
@@ -47,9 +48,18 @@
     .title { font-weight:700; margin-bottom:10px }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; max-width:100% }
     @media(min-width:720px){ .grid{ grid-template-columns:repeat(3,minmax(0,1fr)) } }
-    .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:14px; box-shadow:var(--shadow) }
+    .card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow) }
     .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap }
     .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; border-radius:999px; background:#EEF2FF; color:#3730A3 }
+    .badge { padding:4px 8px; font-size:12px; border-radius:999px }
+    .success{ background:#ECFDF5; color:#065F46 }
+    .muted { color:var(--muted) }
+    .avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--border); background:#eef2ff; display:flex; align-items:center; justify-content:center; font-size:18px }
+    .field { display:flex; flex-direction:column; gap:6px }
+    .field input, .field textarea, .field select { padding:10px; border:1px solid var(--border); border-radius:10px }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:100% }
+    .price { font-weight:700; color:#111 }
+    .hint { font-size:12px; color:#6b7280 }
 
     .nav {
       position:fixed; left:0; right:0; bottom:0; height:var(--nav-h);
@@ -69,35 +79,39 @@
     .modal.open { display:flex }
     .sheet { width:100%; max-width:720px; background:#fff; border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow); max-width:100% }
     .sheet .head { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between }
-    .sheet .body { padding:16px; max-height:calc(100vh - 120px); overflow:auto }
+    .sheet .body { padding:16px }
 
-    /* Full-screen height forms */
-    #checkoutModal .sheet, #sellModal .sheet { height: calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column }
-    #checkoutModal .sheet .body, #sellModal .sheet .body { flex:1; overflow:auto }
+    /* Panic floating button */
+    .floating-panic { position:fixed; right:16px; bottom:80px; width:60px; height:60px; border-radius:50%; background:var(--danger); color:#fff; border:0; font-size:20px; box-shadow:var(--shadow); z-index:96; display:flex; align-items:center; justify-content:center }
 
-    /* Header alignment */
+    /* Hide header cart */
+    #cartBtn, #headerCartBadge { display:none !important; }
+
+    /* Product cards (marketplace) */
+    .product img { width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--border) }
+
+    /* Header alignment: push actions into header fully */
+    header .row { align-items:center; }
     header .row > .left { flex:1; min-width:0; }
     #notifBtn { margin-right:6px; }
-
-    /* Floating panic */
-    .floating-panic { position:fixed; right:16px; bottom:80px; width:56px; height:56px; border-radius:50%; background:var(--danger); color:#fff; border:0; font-size:20px; box-shadow:var(--shadow); z-index:96; display:flex; align-items:center; justify-content:center }
   </style>
 </head>
 <body>
   <!-- Header -->
   <header>
     <div class="row">
-      <div class="left"></div>
+      <div class="left">
+        <!-- greeting removed by request -->
+      </div>
       <div class="row">
         <button class="btn ghost" id="notifBtn" type="button" title="Notifications">🔔</button>
         <div style="position:relative">
           <button class="btn ghost" id="profileBtn" type="button">👤 Account</button>
-          <div id="profileMenu" style="position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:220px; z-index:300; padding:6px">
+          <div id="profileMenu" style="position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:200px; z-index:300; padding:6px">
             <button class="btn ghost" id="menuProfile" type="button">👤 Profile</button>
-            <button class="btn ghost" id="menuOrders" type="button">📋 My Bookings</button>
+            <button class="btn ghost" id="menuOrders" type="button">📦 Manage Orders</button>
             <button class="btn ghost" id="menuWallet" type="button">💰 Wallet</button>
-            <button class="btn ghost" id="menuTopup" type="button">💳 Digital Services</button>
-            <button class="btn ghost" id="menuSupport" type="button">🆘 Contact Support</button>
+            <button class="btn ghost" id="menuTopup" type="button">⚡ Top‑up</button>
             <button class="btn ghost" id="menuLogout" type="button">🚪 Logout</button>
           </div>
         </div>
@@ -112,7 +126,7 @@
       <div class="small">📍 <span id="userLocUnder">Detecting location…</span></div>
     </section>
 
-    <!-- Live map -->
+    <!-- Live map with simulated vehicles -->
     <section class="section">
       <div id="homeMap" style="height:180px;border-radius:12px;border:1px solid var(--border)"></div>
     </section>
@@ -180,27 +194,25 @@
           <div><strong>Availability</strong><div class="small muted">Go Offline / Available</div></div>
           <label style="position:relative;display:inline-block;width:48px;height:28px">
             <input id="availToggle" type="checkbox" style="display:none"/>
-            <span id="availTrack" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#d1d5db;border-radius:999px"></span>
-            <span id="availKnob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:#fff;border-radius:999px;transition:.2s"></span>
+            <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#d1d5db;border-radius:999px"></span>
+            <span style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:#fff;border-radius:999px;transition:.2s" id="availKnob"></span>
           </label>
         </div>
       </div>
 
       <div class="list" style="margin-top:12px">
         <button class="btn ghost" id="manageServicesBtn" type="button">Manage Services</button>
-        <button class="btn ghost" id="manageProductsBtn" type="button">Manage Product (Food Vendors Only)</button>
+        <button class="btn ghost" id="manageProductsBtn" type="button">Manage Products</button>
         <button class="btn ghost" id="emergencyContactsBtn" type="button">Emergency Contacts</button>
         <button class="btn ghost" id="providerVerifyBtn" type="button">Become Verified Provider</button>
       </div>
     </section>
   </main>
 
-  <!-- Orders (My Bookings) -->
+  <!-- Orders -->
   <main id="page-orders" class="page">
     <section class="section">
-      <div class="title">My Bookings</div>
-      <div id="bookingsList" class="list"></div>
-      <div class="title" style="margin-top:12px">Orders</div>
+      <div class="title">Manage Orders</div>
       <div class="card">
         <div class="list">
           <div class="small muted">Buyer view</div>
@@ -232,7 +244,7 @@
     </section>
   </main>
 
-  <!-- Digital Services -->
+  <!-- Top-up / Digital Services -->
   <main id="page-digital" class="page">
     <section class="section">
       <div class="title">Digital Services</div>
@@ -265,17 +277,10 @@
                 <option value="others">Others</option>
               </select>
             </div>
-            <div class="field" id="msTransportTypeWrap" style="display:none">
-              <label class="small">Transport type</label>
-              <select id="msTransportType">
-                <option value="ride">Ride / Taxi</option>
-                <option value="moving">Truck / Backie</option>
-              </select>
+            <div class="field">
+              <label class="small">Service type</label>
+              <input id="msType" placeholder="e.g., Driver, Plumber"/>
             </div>
-          </div>
-          <div class="field">
-            <label class="small">Service type</label>
-            <input id="msType" placeholder="e.g., Driver, Plumber"/>
           </div>
           <div class="field">
             <label class="small">Details</label>
@@ -289,7 +294,7 @@
             <div class="field">
               <label class="small">Catalog images (up to 4)</label>
               <input id="msImages" type="file" accept="image/*" multiple/>
-              <div class="small muted">Optional</div>
+              <div class="hint">Optional</div>
             </div>
           </div>
           <button class="btn primary" id="msAdd" type="button">+ Add Service</button>
@@ -332,22 +337,26 @@
       <div class="card">
         <div class="list">
           <div class="field"><label class="small">Full name</label><input id="vpName" placeholder="Your name"/></div>
-          <div class="field"><label class="small">Address</label><input id="vpAddress" placeholder="Street, City"/></div>
           <div class="field"><label class="small">Service category</label><input id="vpCategory" placeholder="e.g., Driver, Plumber"/></div>
           <div class="field"><label class="small">ID number</label><input id="vpId" placeholder="Your ID"/></div>
           <div class="field"><label class="small">ID/Passport docs</label><input id="vpIdDocs" type="file" accept="image/*,application/pdf" multiple/></div>
           <div class="field"><label class="small">Business/License docs</label><input id="vpBizDocs" type="file" accept="image/*,application/pdf" multiple/></div>
-          <div class="row" style="gap:8px;justify-content:flex-end">
-            <button class="btn ghost" id="vpBack" type="button">Back</button>
-            <button class="btn primary" id="vpSubmit" type="button">Submit</button>
-          </div>
+          <button class="btn primary" id="vpSubmit" type="button">Submit for Verification</button>
           <div id="vpStatus" class="small" style="color:#2563EB"></div>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Providers Modal -->
+  <!-- Bottom Nav -->
+  <nav class="nav">
+    <button data-page="home" class="active" type="button">🏠 Home</button>
+    <button data-page="services" type="button">🔧 Services</button>
+    <button data-page="marketplace" type="button">🛍️ Marketplace</button>
+    <button data-page="profile" type="button">👤 Profile</button>
+  </nav>
+
+  <!-- Providers Modal (with search/mic for specific categories) -->
   <div class="modal" id="providersModal">
     <div class="sheet">
       <div class="head">
@@ -361,22 +370,6 @@
           <button class="btn primary" id="provSearchBtn" type="button">Search</button>
         </div>
         <div class="list" id="providersList"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Transport Options -->
-  <div class="modal" id="transportOptionsModal">
-    <div class="sheet">
-      <div class="head">
-        <strong>Transport Options</strong>
-        <button class="btn ghost" id="transportOptionsClose" type="button">✖</button>
-      </div>
-      <div class="body">
-        <div class="grid">
-          <div class="card service" data-transport="ride">🚗 Ride / Taxi</div>
-          <div class="card service" data-transport="moving">🚚 Truck / Backie</div>
-        </div>
       </div>
     </div>
   </div>
@@ -408,56 +401,6 @@
     </div>
   </div>
 
-  <!-- Instant / Tracking -->
-  <div class="modal" id="instantModal">
-    <div class="sheet">
-      <div class="head">
-        <strong id="instantTitle">Contacting provider…</strong>
-        <button class="btn ghost" id="cancelInstant" type="button">Cancel</button>
-      </div>
-      <div class="body">
-        <div class="card">
-          <div>Time left: <strong id="countdown">90</strong>s</div>
-          <div class="small muted" id="instantHint">Waiting for provider to accept…</div>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button class="btn ghost" id="findOthers" type="button">Find other providers</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal" id="trackModal">
-    <div class="sheet">
-      <div class="head">
-        <strong>Live Tracking</strong>
-        <div class="row" style="gap:6px">
-          <button class="btn ghost" id="trackCancelBtn" type="button">Cancel</button>
-          <button class="btn ghost" id="closeTrack" type="button">✖</button>
-        </div>
-      </div>
-      <div class="body">
-        <div id="trackStatus" class="small muted">Provider accepted. En route…</div>
-        <div id="trackMapWrap" style="margin-top:10px"><div id="track-map" style="width:100%;height:360px;border-radius:12px;border:1px solid var(--border)"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Others -->
-  <div class="modal" id="othersModal">
-    <div class="sheet">
-      <div class="head"><strong>Others</strong><button class="btn ghost" id="othersClose" type="button">✖</button></div>
-      <div class="body">
-        <div class="row" style="gap:8px;margin-bottom:10px">
-          <input id="othersSearch" placeholder="Search providers or tasks…" style="flex:1"/>
-          <button class="btn ghost" id="othersVoice" type="button">🎤</button>
-          <button class="btn primary" id="othersGo" type="button">Search</button>
-        </div>
-        <div id="othersList" class="list"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- Food Options -->
   <div class="modal" id="foodOptionsModal">
     <div class="sheet">
@@ -480,7 +423,7 @@
     </div>
   </div>
 
-  <!-- Food Vendors -->
+  <!-- Food Vendors (search + close, no call/WhatsApp) -->
   <div class="modal" id="foodVendorsModal">
     <div class="sheet">
       <div class="head">
@@ -498,24 +441,18 @@
     </div>
   </div>
 
-  <!-- Food Menu -->
+  <!-- Food Menu (close works) -->
   <div class="modal" id="foodMenuModal">
     <div class="sheet">
       <div class="head">
         <strong id="foodMenuTitle">Menu</strong>
-        <div class="row" style="gap:6px">
-          <button class="btn ghost" id="foodMenuBack" type="button">← Back</button>
-          <button class="btn ghost" id="closeFoodMenu" type="button">✖</button>
-        </div>
+        <button class="btn ghost" id="closeFoodMenu" type="button">✖</button>
       </div>
       <div class="body">
         <div id="foodMenuList" class="list"></div>
         <div class="row" style="justify-content:space-between;margin-top:10px">
           <div class="price">Total: $<span id="foodCartTotal">0.00</span></div>
-          <div class="row" style="gap:6px">
-            <button class="btn ghost" id="clearCartBtn" type="button">Clear Cart</button>
-            <button class="btn primary" id="foodCheckoutBtn" type="button">Checkout</button>
-          </div>
+          <button class="btn primary" id="foodCheckoutBtn" type="button">Checkout</button>
         </div>
       </div>
     </div>
@@ -531,11 +468,8 @@
       <div class="body">
         <div id="cartList" class="list"></div>
         <div class="row" style="justify-content:space-between;margin-top:10px">
-          <button class="btn ghost" id="cartClear" type="button">Clear Cart</button>
-          <div class="row" style="gap:8px;align-items:center">
-            <div class="price">Total: $<span id="cartTotal">0.00</span></div>
-            <button class="btn primary" id="checkoutBtn" type="button">Checkout</button>
-          </div>
+          <div class="price">Total: $<span id="cartTotal">0.00</span></div>
+          <button class="btn primary" id="checkoutBtn" type="button">Checkout</button>
         </div>
       </div>
     </div>
@@ -546,10 +480,7 @@
     <div class="sheet">
       <div class="head">
         <strong>Checkout</strong>
-        <div class="row" style="gap:6px">
-          <button class="btn ghost" id="chkBack" type="button">← Back</button>
-          <button class="btn ghost" id="closeCheckout" type="button">✖</button>
-        </div>
+        <button class="btn ghost" id="closeCheckout" type="button">✖</button>
       </div>
       <div class="body">
         <div class="list" id="chkFormList">
@@ -591,7 +522,7 @@
     </div>
   </div>
 
-  <!-- Roadside -->
+  <!-- Emergency categories -->
   <div class="modal" id="roadsideModal">
     <div class="sheet">
       <div class="head">
@@ -622,10 +553,10 @@
     </div>
   </div>
 
-  <!-- Sell Product -->
+  <!-- Sell Product (Marketplace) -->
   <div class="modal" id="sellModal">
     <div class="sheet">
-      <div class="head"><strong>Sell a product</strong><div class="row" style="gap:6px"><button class="btn ghost" id="sellBack" type="button">← Back</button><button class="btn ghost" id="sellClose" type="button">✖</button></div></div>
+      <div class="head"><strong>Sell a product</strong><button class="btn ghost" type="button" onclick="document.getElementById('sellModal').classList.remove('open')">✖</button></div>
       <div class="body">
         <div class="grid-2">
           <div class="field"><label class="small">Category</label>
@@ -655,60 +586,38 @@
     </div>
   </div>
 
-  <!-- Panic -->
-  <div class="modal" id="panicModal">
-    <div class="sheet">
-      <div class="head">
-        <strong>Emergency Alert</strong>
-        <button class="btn ghost" id="panicClose" type="button">✖</button>
-      </div>
-      <div class="body">
-        <div class="list">
-          <div class="small muted">We'll notify your contacts and nearby security with your location.</div>
-          <div class="field">
-            <label class="small">Message (optional)</label>
-            <textarea id="panicMsg" rows="3" placeholder="Describe the emergency…"></textarea>
-          </div>
-          <div class="small muted">Location: <span id="panicLocHint">Fetching…</span></div>
-          <div class="row" style="gap:8px; justify-content:flex-end; margin-top:8px">
-            <button class="btn ghost" id="panicCancel" type="button">Back</button>
-            <button class="btn primary" id="panicSend" type="button">Send Alert</button>
-          </div>
-          <div id="panicStatus" class="small muted" style="margin-top:6px"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <button class="floating-panic" id="panicBtn" type="button">🚨</button>
-
   <!-- Splash -->
-  <div id="splash" style="position:fixed;inset:0;background:#2563EB;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
+  <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
     <div style="font-size:28px;font-weight:800;margin-top:12px">ZippUp</div>
     <div style="opacity:.9;margin-top:4px">On‑demand services, fast.</div>
   </div>
 
-  <!-- Fail-safe splash remover -->
   <script>
-  (function(){function hide(){try{var s=document.getElementById('splash');if(s){s.style.opacity='0';setTimeout(function(){s&&s.remove();},200);}var home=document.getElementById('page-home');if(home&&!home.classList.contains('active'))home.classList.add('active');document.querySelectorAll('.modal').forEach(function(m){m.classList.remove('open');});}catch(e){}}if(document.readyState!=='loading'){setTimeout(hide,0);}else{document.addEventListener('DOMContentLoaded',hide,{once:true});}window.addEventListener('load',hide,{once:true});setTimeout(hide,1500);} )();
-  </script>
+    const BASE_API = 'https://zippup-backend-v3.onrender.com';
+    const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
 
-  <!-- App -->
-  <script>
-    // Firebase
-    const firebaseConfig = { apiKey:"AIzaSyApgmcfu5qGFn9tw872dQ2KkdDz_GPmL70", authDomain:"zippup-535ca.firebaseapp.com", projectId:"zippup-535ca", appId:"1:382212325227:web:c04d91386817c7cff7d62e" };
-    try{ if(!firebase.apps.length) firebase.initializeApp(firebaseConfig); }catch(e){}
+    // Firebase init (auth only)
+    const firebaseConfig = {
+      apiKey: "AIzaSyApgmcfu5qGFn9tw872dQ2KkdDz_GPmL70",
+      authDomain: "zippup-535ca.firebaseapp.com",
+      projectId: "zippup-535ca",
+      appId: "1:382212325227:web:c04d91386817c7cff7d62e",
+      messagingSenderId: "382212325227",
+      measurementId: "G-YKJEVL8M6V"
+    };
+    if (!window.firebase?.apps?.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
     // State
     let user = { name:'Guest', email:'guest@example.com', wallet: 0 };
     let coords = null, homeMap=null, vehicleMarkers=[];
-    let requestId=null, instantTimer=null, instantLeft=90, trackPoll=null, providerMarker=null, userMarker=null, trackMap=null;
-
-    let cart = loadCart();
+    let cart = loadCart(); // { vendorId, vendorName, vendorPayment:[], items:[] }
     function loadCart(){ try{ return JSON.parse(localStorage.getItem('food_cart')||'{"vendorId":null,"vendorName":null,"vendorPayment":[],"items":[]}'); }catch{ return { vendorId:null, vendorName:null, vendorPayment:[], items:[] } } }
     function saveCart(){ localStorage.setItem('food_cart', JSON.stringify(cart)); }
-    function resetCart(){ cart={ vendorId:null, vendorName:null, vendorPayment:[], items:[] }; saveCart(); updateBellBadge(); }
+    function resetCart(){ cart={ vendorId:null, vendorName:null, vendorPayment:[], items:[] }; saveCart(); }
 
+    // Helpers
     const $ = s => document.querySelector(s);
     const $$ = s => Array.from(document.querySelectorAll(s));
     function money(n){ return `$${(+n||0).toFixed(2)}`; }
@@ -722,7 +631,6 @@
         $$('.page').forEach(p=>p.classList.remove('active'));
         $('#page-'+page).classList.add('active');
         if (page==='marketplace') { renderMarketplace(); }
-        if (page==='orders') { renderBookings(); renderOrders(); }
         if (page==='wallet') { openWallet(); }
       };
     });
@@ -731,23 +639,22 @@
     $('#profileBtn').onclick = (e)=>{ e.stopPropagation(); const m=$('#profileMenu'); m.style.display = (m.style.display==='block'?'none':'block'); };
     document.addEventListener('click', ()=>{ const m=$('#profileMenu'); if (m) m.style.display='none'; });
     $('#menuProfile').onclick = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="profile"]').click(); };
-    $('#menuOrders').onclick  = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="orders"]').click(); };
+    $('#menuOrders').onclick  = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="orders"]')?.click(); renderOrders(); };
     $('#menuWallet').onclick  = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="wallet"]')?.click(); };
     $('#menuTopup').onclick   = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="digital"]')?.click(); };
-    $('#menuSupport').onclick = ()=>{ $('#profileMenu').style.display='none'; alert('Support: support@zippup.app'); };
-    $('#menuLogout').onclick  = async ()=>{ $('#profileMenu').style.display='none'; try{ await auth.signOut(); alert('Signed out'); }catch{} };
+    $('#menuLogout').onclick  = async ()=>{ $('#profileMenu').style.display='none'; try{ await auth.signOut(); }catch{} alert('Signed out'); };
 
     // Services & Emergency
     const SERVICES = [
-      { id:'transport', name:'Transport', icon:'🚗', desc:'Ride & moving' },
-      { id:'food',      name:'Food',      icon:'🍔', desc:'Restaurants & groceries' },
-      { id:'tech',      name:'Tech',      icon:'🔧', desc:'Phone/computer repair' },
-      { id:'home',      name:'Home',      icon:'🏠', desc:'Cleaning & maintenance' },
-      { id:'construction', name:'Construction', icon:'🏗️', desc:'Builders & electricians' },
-      { id:'auto',      name:'Automobile', icon:'🛠️', desc:'Mechanics, tires, roadside' },
-      { id:'digital',   name:'Digital Services', icon:'💳', desc:'Airtime, data, bills, digital products' },
-      { id:'marketplace', name:'Marketplace', icon:'🛍️', desc:'Buy & Sell (contact only)' },
-      { id:'others',    name:'Others',    icon:'🎯', desc:'Events, tutors, more' },
+      { id:'transport', name:'Transport', icon:'🚗', desc:'Ride & moving', instant:true,  scheduled:true },
+      { id:'food',      name:'Food',      icon:'🍔', desc:'Restaurants & groceries', instant:true,  scheduled:true },
+      { id:'tech',      name:'Tech',      icon:'🔧', desc:'Phone/computer repair', instant:true,  scheduled:true },
+      { id:'home',      name:'Home',      icon:'🏠', desc:'Cleaning & maintenance', instant:true,  scheduled:true },
+      { id:'construction', name:'Construction', icon:'🏗️', desc:'Builders & electricians', instant:false, scheduled:true },
+      { id:'auto',      name:'Automobile', icon:'🛠️', desc:'Mechanics, tires, roadside', instant:true,  scheduled:true },
+      { id:'digital',   name:'Digital Services', icon:'💳', desc:'Airtime, data, bills, digital products', instant:false, scheduled:false },
+      { id:'marketplace', name:'Marketplace', icon:'🛍️', desc:'Buy & Sell (contact only)', instant:false, scheduled:false },
+      { id:'others',    name:'Others',    icon:'🎯', desc:'Events, tutors, more', instant:false, scheduled:true },
     ];
     const EMERGENCY = [
       { id:'ambulance', name:'Ambulance', icon:'🚑' },
@@ -758,7 +665,7 @@
     ];
 
     function renderServices(){
-      const grid = $('#servicesGrid'); if(!grid) return; grid.innerHTML='';
+      const grid = $('#servicesGrid'); grid.innerHTML='';
       SERVICES.forEach(s=>{
         const el=document.createElement('div'); el.className='card service';
         el.innerHTML = `<div class="row"><div style="font-size:28px">${s.icon}</div><h4>${s.name}</h4></div><div class="small muted" style="margin-top:6px">${s.desc}</div>`;
@@ -767,52 +674,35 @@
       });
     }
     function renderEmergency(){
-      const grid = $('#emergencyGrid'); if(!grid) return; grid.innerHTML='';
+      const grid = $('#emergencyGrid'); grid.innerHTML='';
       EMERGENCY.forEach(e=>{
         const el=document.createElement('div'); el.className='card service';
         el.innerHTML = `<div class="row"><div style="font-size:28px">${e.icon}</div><h4>${e.name}</h4></div>`;
-        el.onclick = ()=> openEmergency(e.id, e.name);
+        el.onclick = ()=> { if (e.id==='roadside') openRoadside(); else alert(`${e.name} coming soon`); };
         grid.appendChild(el);
       });
     }
 
+    // Category open with provider search row toggled
     function openCategory(catId, label){
       if (catId==='digital'){ $('.nav [data-page="digital"]').click(); return; }
       if (catId==='marketplace'){ $('.nav [data-page="marketplace"]').click(); return; }
       if (catId==='food'){ $('#foodOptionsModal').classList.add('open'); return; }
-      if (catId==='others'){ openOthers(); return; }
-      if (catId==='transport'){ $('#transportOptionsModal').classList.add('open'); return; }
 
-      $('#provSearchRow').style.display = ['home','tech','construction','auto'].includes(catId) ? '' : 'none';
+      const showProvSearch = ['home','tech','construction','auto','automobile'].includes(catId);
+      $('#provSearchRow').style.display = showProvSearch ? '' : 'none';
       $('#providersTitle').textContent = label + ' — Providers';
       renderProviders(dummyProviders(catId));
       $('#providersModal').classList.add('open');
     }
-
-    $('#transportOptionsClose').onclick = ()=> $('#transportOptionsModal').classList.remove('open');
-    $('#transportOptionsModal').addEventListener('click',(e)=>{
-      const card = e.target.closest('[data-transport]'); if (!card) return;
-      const sub = card.getAttribute('data-transport'); $('#transportOptionsModal').classList.remove('open');
-      $('#providersTitle').textContent = (sub==='ride'?'Ride / Taxi':'Truck / Backie') + ' — Drivers nearby';
-      renderProviders(nearbyDrivers(sub));
-      $('#provSearchRow').style.display='';
-      $('#providersModal').classList.add('open');
-    });
-
-    function nearbyDrivers(sub){
-      return [
-        { id:'d1', publicName:'Sam K.', jobTitle:(sub==='ride'?'Taxi':'Truck'), verified:true, distance:'0.6km', eta:'5-7m', fee:'$6-9', available:true, icon:'🚗' },
-        { id:'d2', publicName:'Lara B.', jobTitle:(sub==='ride'?'Taxi':'Truck'), verified:true, distance:'1.1km', eta:'7-10m', fee:'$7-10', available:true, icon:'🚗' }
-      ];
-    }
     function dummyProviders(cat){
       return [
-        { id:'pr1', publicName:'Handy Pro', jobTitle:cat, verified:true, distance:'0.8km', eta:'6-9m', fee:'$20-30', available:true, icon:'👤' },
-        { id:'pr2', publicName:'Quick Help', jobTitle:cat, verified:false, distance:'1.2km', eta:'8-12m', fee:'$15-25', available:true, icon:'⚡' }
+        { id:'pr1', publicName:'Handy Pro', jobTitle:cat, verified:true, rating:4.8, distance:'0.8km', eta:'6-9m', fee:'$20-30', available:true, icon:'👤' },
+        { id:'pr2', publicName:'Quick Help', jobTitle:cat, verified:false, rating:4.5, distance:'1.2km', eta:'8-12m', fee:'$15-25', available:true, icon:'⚡' }
       ];
     }
     function renderProviders(list){
-      const box=$('#providersList'); if(!box) return; box.innerHTML='';
+      const box=$('#providersList'); box.innerHTML='';
       list.forEach(p=>{
         const el=document.createElement('div'); el.className='card';
         el.innerHTML = `
@@ -825,101 +715,18 @@
                 <div class="small"><strong>Est.:</strong> ${p.fee||'—'}</div>
               </div>
             </div>
-            <span class="pill" style="background:#ECFDF5;color:#065F46">${p.available ? 'available':'unavailable'}</span>
+            <span class="badge ${p.available ? 'success':''}">${p.available ? 'available':'unavailable'}</span>
           </div>
           <div class="row" style="gap:8px; margin-top:6px">
             <button class="btn primary" data-k="instant" type="button">Instant</button>
             <button class="btn ghost" data-k="schedule" type="button">Schedule</button>
           </div>`;
-        el.querySelector('[data-k="instant"]').onclick = ()=> startInstant(p);
-        el.querySelector('[data-k="schedule"]').onclick = ()=> { $('#providersModal').classList.remove('open'); $('#bookingModal').classList.add('open'); };
+        el.querySelector('[data-k="instant"]').onclick = ()=> alert('Instant request sent (demo)');
+        el.querySelector('[data-k="schedule"]').onclick = ()=> { $('#bookingModal').classList.add('open'); };
         box.appendChild(el);
       });
     }
     $('#closeProviders').onclick = ()=> $('#providersModal').classList.remove('open');
-
-    async function openEmergency(id,label){
-      $('#providersTitle').textContent = label + ' — Nearby';
-      renderProviders([
-        { publicName:`${label} Team A`, jobTitle:label, verified:true, distance:'0.8km', eta:'6m', fee:'—', available:true, icon:'🚑' },
-        { publicName:`${label} Team B`, jobTitle:label, verified:true, distance:'1.3km', eta:'9m', fee:'—', available:true, icon:'🚑' }
-      ]);
-      $('#provSearchRow').style.display='';
-      $('#providersModal').classList.add('open');
-    }
-
-    function startInstant(provider){
-      requestId = 'rq-'+Date.now();
-      instantLeft = 90; $('#countdown').textContent=String(instantLeft);
-      $('#instantHint').textContent='Waiting for provider to accept…';
-      $('#providersModal').classList.remove('open');
-      $('#instantModal').classList.add('open');
-
-      if (instantTimer) clearInterval(instantTimer);
-      instantTimer = setInterval(()=>{
-        instantLeft--; $('#countdown').textContent=String(instantLeft);
-        if (instantLeft===86){
-          $('#instantModal').classList.remove('open');
-          $('#trackModal').classList.add('open'); setTimeout(initTrackMap,50);
-          $('#trackStatus').textContent='Provider accepted. En route…';
-        }
-        if (instantLeft<=0){ clearInterval(instantTimer); $('#instantModal').classList.remove('open'); alert('No response. Try others.'); }
-      }, 1000);
-    }
-    $('#cancelInstant').onclick = ()=> { clearInterval(instantTimer); $('#instantModal').classList.remove('open'); };
-    $('#findOthers').onclick = ()=> { $('#instantModal').classList.remove('open'); $('#providersModal').classList.add('open'); };
-
-    function initTrackMap(){
-      try{
-        trackMap = L.map('track-map',{ zoomControl:true }).setView([coords?.lat||0, coords?.lng||0], coords?15:2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OSM' }).addTo(trackMap);
-        if (coords) userMarker = L.marker([coords.lat, coords.lng],{title:'You'}).addTo(trackMap);
-        let prov = coords ? [coords.lat+(Math.random()-0.5)/500, coords.lng+(Math.random()-0.5)/500] : [0.001,0.001];
-        providerMarker = L.marker(prov,{title:'Driver'}).addTo(trackMap);
-        let t=0;
-        trackPoll = setInterval(()=>{
-          t+=1;
-          const p = providerMarker.getLatLng();
-          const nx = L.latLng(p.lat + (coords? (coords.lat-p.lat)/40 : 0), p.lng + (coords? (coords.lng-p.lng)/40 : 0));
-          providerMarker.setLatLng(nx);
-          $('#trackStatus').textContent = `Provider en route • ETA ${Math.max(1,Math.ceil((40-t)/3))} min`;
-          if (coords && nx.distanceTo(userMarker.getLatLng())<20){
-            clearInterval(trackPoll);
-            $('#trackStatus').textContent='Driver arrived';
-          }
-        }, 1000);
-      }catch{}
-    }
-    $('#trackCancelBtn').onclick = ()=> { if (trackPoll) clearInterval(trackPoll); $('#trackModal').classList.remove('open'); };
-    $('#closeTrack').onclick = ()=> { if (trackPoll) clearInterval(trackPoll); $('#trackModal').classList.remove('open'); };
-
-    // Booking
-    $('#closeBooking').onclick = ()=> $('#bookingModal').classList.remove('open');
-    $('#bkUseCurrent').onclick = async ()=>{
-      try {
-        if (!coords) await initLocation();
-        if (coords) { const nm = await reverseGeocode(coords.lat, coords.lng); $('#bkAddress').value = nm || ''; }
-      } catch {}
-    };
-    $('#bookingForm').onsubmit = (e)=>{ e.preventDefault(); $('#bookingModal').classList.remove('open'); alert('Booking requested'); };
-
-    // Others
-    function openOthers(){ renderOthers(''); $('#othersModal').classList.add('open'); }
-    function renderOthers(q){
-      const all = [
-        { name:'Event Planner' }, { name:'Tutor (Math)' }, { name:'Photographer' },
-        { name:'Laundry Pickup' }, { name:'Errands Runner' }
-      ];
-      const f=(q||'').toLowerCase();
-      $('#othersList').innerHTML = all.filter(x=>x.name.toLowerCase().includes(f)).map(x=>`
-        <div class="card"><div class="row" style="justify-content:space-between">
-          <div><strong>${x.name}</strong></div>
-          <button class="btn primary" type="button" onclick="alert('Request sent')">Request</button>
-        </div></div>`).join('') || '<div class="small muted">No matches</div>';
-    }
-    $('#othersClose').onclick = ()=> $('#othersModal').classList.remove('open');
-    $('#othersGo').onclick = ()=> renderOthers($('#othersSearch').value.trim());
-    $('#othersVoice').onclick = ()=> voiceToInput($('#othersSearch'), ()=> $('#othersGo').click());
 
     // Food
     const VENDORS = [
@@ -928,17 +735,25 @@
       { id:'v3', name:'Green Grocer', kind:'grocery',  payment:['cash'] }
     ];
     const MENUS = {
-      v1: [ { id:'m1', title:'Cheeseburger', price:8.5, img:'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=800&auto=format&fit=crop' },
-            { id:'m2', title:'Fries', price:3.0, img:'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?q=80&w=800&auto=format&fit=crop' } ],
-      v2: [ { id:'m4', title:'Pepperoni Pizza', price:12.0, img:'https://images.unsplash.com/photo-1548365328-9f547fb09530?q=80&w=800&auto=format&fit=crop' } ],
-      v3: [ { id:'m6', title:'Bananas (1kg)', price:2.5, img:'https://images.unsplash.com/photo-1571772805064-2073979f0d4a?q=80&w=800&auto=format&fit=crop' } ]
+      v1: [
+        { id:'m1', title:'Cheeseburger', price:8.5, img:'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=800&auto=format&fit=crop' },
+        { id:'m2', title:'Fries',        price:3.0, img:'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?q=80&w=800&auto=format&fit=crop' },
+      ],
+      v2: [
+        { id:'m4', title:'Pepperoni Pizza', price:12.0, img:'https://images.unsplash.com/photo-1548365328-9f547fb09530?q=80&w=800&auto=format&fit=crop' },
+      ],
+      v3: [
+        { id:'m6', title:'Bananas (1kg)', price:2.5, img:'https://images.unsplash.com/photo-1571772805064-2073979f0d4a?q=80&w=800&auto=format&fit=crop' },
+      ]
     };
     $('#closeFoodOptions').onclick = ()=> $('#foodOptionsModal').classList.remove('open');
     $('#foodFastBtn').onclick = ()=> { $('#foodOptionsModal').classList.remove('open'); openFoodVendors('fastfood'); };
     $('#foodGroceryBtn').onclick = ()=> { $('#foodOptionsModal').classList.remove('open'); openFoodVendors('grocery'); };
     $('#foodSearchBtn').onclick = ()=> { const q=($('#foodSearch').value||'').toLowerCase(); $('#foodOptionsModal').classList.remove('open'); openFoodVendorsSearch(q); };
 
-    function openFoodVendors(kind){ renderVendorsList(VENDORS.filter(v=>v.kind===kind)); }
+    function openFoodVendors(kind){
+      renderVendorsList(VENDORS.filter(v=>v.kind===kind));
+    }
     function openFoodVendorsSearch(q){
       const vendorIds = Object.keys(MENUS).filter(vid => (MENUS[vid]||[]).some(m=>m.title.toLowerCase().includes(q)));
       const list = VENDORS.filter(v=> v.name.toLowerCase().includes(q) || vendorIds.includes(v.id));
@@ -985,19 +800,15 @@
       syncFoodTotals();
       $('#foodMenuModal').classList.add('open');
     }
-    $('#foodMenuBack').onclick = ()=> { $('#foodMenuModal').classList.remove('open'); $('#foodVendorsModal').classList.add('open'); };
     $('#closeFoodMenu').onclick = ()=> $('#foodMenuModal').classList.remove('open');
     function syncFoodTotals(){
       const total=cart.items.reduce((a,b)=>a+b.price*b.qty,0);
       $('#foodCartTotal').textContent=total.toFixed(2);
     }
     $('#foodCheckoutBtn').onclick = ()=>{ renderCart(); $('#cartModal').classList.add('open'); };
-    $('#clearCartBtn').onclick = ()=>{ resetCart(); syncFoodTotals(); };
-
-    // Cart
     $('#closeCart').onclick = ()=> $('#cartModal').classList.remove('open');
-    $('#cartClear').onclick = ()=>{ resetCart(); renderCart(); };
     $('#checkoutBtn').onclick = ()=> openCheckout();
+
     function renderCart(){
       const list=$('#cartList'); const totalEl=$('#cartTotal'); list.innerHTML='';
       if(!cart.items.length){ list.innerHTML='<div class="small muted">Your cart is empty.</div>'; totalEl.textContent='0.00'; return; }
@@ -1017,6 +828,7 @@
         list.appendChild(row);
       });
       totalEl.textContent=total.toFixed(2);
+
       list.onclick = (e)=>{
         const btn=e.target.closest('[data-k]'); if(!btn) return;
         const id=btn.closest('.card')?.dataset?.id; const k=btn.getAttribute('data-k');
@@ -1029,7 +841,6 @@
       };
     }
 
-    // Checkout
     function openCheckout(){
       if (!cart.items.length) { alert('Your cart is empty.'); return; }
       const wrap=$('#chkItemsList'); wrap.innerHTML='';
@@ -1054,11 +865,16 @@
       $('#vendorPayHint').textContent = `Vendor accepts: ${cart.vendorPayment.join(', ') || '—'}`;
       $('#checkoutModal').classList.add('open');
     }
-    $('#chkBack').onclick = ()=> { $('#checkoutModal').classList.remove('open'); $('#cartModal').classList.add('open'); };
     $('#closeCheckout').onclick = ()=> $('#checkoutModal').classList.remove('open');
+
+    // Place order (demo)
     $('#placeOrderBtn').onclick = ()=>{
+      const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
       if (!$('#chkTerms').checked) return alert('Please accept the Terms');
       if (!cart.items.length) return alert('Cart is empty');
+      if (cart.vendorPayment.length && !cart.vendorPayment.includes(method)) {
+        return alert(`This vendor does not accept ${method.toUpperCase()} payment. Allowed: ${cart.vendorPayment.join(', ')}`);
+      }
       const orderId='ord-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
       $('#checkoutModal').classList.remove('open');
       $('#orderInfo').innerHTML = `<div class="card">
@@ -1068,9 +884,32 @@
         <div class="small muted" style="margin-top:6px">Please don't share this code with the seller until your goods are delivered and confirmed.</div>
       </div>`;
       $('#orderModal').classList.add('open');
-      resetCart();
+      resetCart(); updateBellBadge();
     };
     $('#closeOrder').onclick = ()=> $('#orderModal').classList.remove('open');
+
+    // Notifications (cart badge)
+    function updateBellBadge(){
+      const n=cart.items.reduce((a,b)=>a+(b.qty||0),0);
+      let badge = $('#notifBellBadge');
+      if (!badge){ const bell=$('#notifBtn'); badge=document.createElement('span'); badge.id='notifBellBadge'; badge.style.cssText='position:absolute; top:-4px; right:-4px; background:#DC2626; color:#fff; border-radius:999px; font-size:11px; padding:0 5px; line-height:16px; min-width:16px; text-align:center; display:none'; bell.style.position='relative'; bell.appendChild(badge); }
+      badge.style.display = n>0 ? 'inline-block' : 'none';
+      badge.textContent = n || '';
+    }
+    $('#closeNotif').onclick = ()=> $('#notifModal').classList.remove('open');
+    $('#notifBtn').onclick = ()=>{
+      const list = $('#notifList'); list.innerHTML='';
+      const n=cart.items.reduce((a,b)=>a+(b.qty||0),0);
+      if (n>0){
+        const row=document.createElement('div'); row.className='card'; row.style.cursor='pointer';
+        row.innerHTML = `<div class="row" style="justify-content:space-between"><div>🛒 You have ${n} item(s) in Food cart</div><div>›</div></div>`;
+        row.onclick = ()=>{ $('#notifModal').classList.remove('open'); renderCart(); $('#cartModal').classList.add('open'); };
+        list.appendChild(row);
+      } else {
+        list.innerHTML='<div class="small muted">No notifications.</div>';
+      }
+      $('#notifModal').classList.add('open');
+    };
 
     // Marketplace
     const MP_CATEGORIES = [
@@ -1088,8 +927,17 @@
     ];
     function getUserProducts(){ try { return JSON.parse(localStorage.getItem('zup_user_products')||'[]'); } catch { return []; } }
     function setUserProducts(arr){ localStorage.setItem('zup_user_products', JSON.stringify(arr||[])); }
+
+    function initMarketplace(){
+      const chips=$('#mpChips'); chips.innerHTML='';
+      MP_CATEGORIES.forEach(c=>{ const b=document.createElement('button'); b.className='btn ghost'; b.textContent=c.name; b.onclick=()=> renderMarketplace(c.id, $('#mpSearch').value.trim().toLowerCase()); chips.appendChild(b); });
+      renderMarketplace();
+      $('#sellProductsBtn').onclick = ()=> $('#sellModal').classList.add('open');
+      $('#mpSearchBtn').onclick = ()=> renderMarketplace(null, $('#mpSearch').value.trim().toLowerCase());
+      $('#mpVoice').onclick = ()=> voiceToInput($('#mpSearch'), ()=> renderMarketplace(null, $('#mpSearch').value.trim().toLowerCase()));
+      $('#sellSubmit').onclick = submitMarketplace;
+    }
     function renderMarketplace(category=null, query=''){
-      const chips=$('#mpChips'); if (!chips.innerHTML) MP_CATEGORIES.forEach(c=>{ const b=document.createElement('button'); b.className='btn ghost'; b.textContent=c.name; b.onclick=()=> renderMarketplace(c.id, $('#mpSearch').value.trim().toLowerCase()); chips.appendChild(b); });
       const grid=$('#mpGrid'); grid.innerHTML='';
       const list = (MP_PRODUCTS.concat(getUserProducts())).filter(p=>{
         if (category && p.cat!==category) return false;
@@ -1101,254 +949,63 @@
         const el=document.createElement('div'); el.className='card product';
         el.innerHTML=`<img src="${p.img}" alt="${p.title}"/><div><strong>${p.title}</strong></div>
           <div class="row" style="justify-content:space-between"><div class="price">${money(p.price)}</div><div class="small muted">Seller: ${p.seller||'You'}</div></div>
-          <div class="row" style="gap:8px;margin-top:6px"><button class="btn primary" type="button">💬 Chat</button></div>`;
+          <div class="row" style="gap:8px;margin-top:6px">
+            <button class="btn primary" type="button">💬 Chat</button>
+          </div>`;
         el.querySelector('button').onclick = ()=> alert('In‑app chat coming soon.');
         grid.appendChild(el);
       });
     }
-    $('#sellProductsBtn').onclick = ()=> $('#sellModal').classList.add('open');
-    $('#sellBack').onclick = ()=> $('#sellModal').classList.remove('open');
-    $('#sellClose').onclick = ()=> $('#sellModal').classList.remove('open');
-    $('#sellSubmit').onclick = async ()=>{
-      const cat=$('#sellCat').value, type=$('#sellType').value.trim(), title=$('#sellTitle').value.trim();
-      const price=parseFloat($('#sellPrice').value||'0'), stock=parseInt($('#sellStock').value||'0',10), desc=$('#sellDesc').value.trim();
-      if (!title || !price || !stock) return alert('Fill title, price, stock');
+    async function submitMarketplace(){
+      const cat=$('#sellCat').value;
+      const type=$('#sellType').value.trim();
+      const title=$('#sellTitle').value.trim();
+      const price=parseFloat($('#sellPrice').value||'0');
+      const stock=parseInt($('#sellStock').value||'0',10);
       const files=Array.from($('#sellImages').files||[]).slice(0,10);
-      const images = files.length? await Promise.all(files.map(f=>new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(f); }))):[];
-      const list=getUserProducts(); list.unshift({ id:'u'+Date.now(), cat, type, title, price, stock, desc, images, img:images[0]||'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop', seller:(user.name||'You') }); setUserProducts(list);
-      $('#sellModal').classList.remove('open'); renderMarketplace(); alert('Listing submitted');
-    };
-
-    // Manage Services
-    function getUserServices(){ try { return JSON.parse(localStorage.getItem('zup_user_services')||'[]'); } catch { return []; } }
-    function setUserServices(arr){ localStorage.setItem('zup_user_services', JSON.stringify(arr||[])); }
-    $('#msCategory').onchange = (e)=>{ $('#msTransportTypeWrap').style.display = e.target.value==='transport' ? '' : 'none'; };
-    $('#msAdd').onclick = ()=>{
-      const cat=$('#msCategory').value, type=$('#msType').value.trim(), details=$('#msDetails').value.trim(), price=Number($('#msPrice').value||0);
-      if (!type || !details || !price) return alert('Fill category, type, details, price');
-      const transportType = cat==='transport' ? $('#msTransportType').value : null;
-      const id='svc-'+Date.now();
-      const files=Array.from($('#msImages').files||[]).slice(0,4), images=[];
-      if (!files.length) save(); else {
-        let pending=files.length;
-        files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--pending===0) save(); }; fr.readAsDataURL(f); });
-      }
-      function save(){
-        const services=getUserServices();
-        services.push({ id, cat, transportType, type, details, price, images, publicName:user.name, status:'available' });
-        setUserServices(services);
-        loadServicesManage(); alert('Service added');
-      }
-    };
-    function loadServicesManage(){
-      const list=$('#msList'); list.innerHTML='';
-      const services=getUserServices();
-      if (!services.length){ list.innerHTML='<div class="small muted">No services yet.</div>'; return; }
-      services.forEach(s=>{
-        const el=document.createElement('div'); el.className='card';
-        const imgs = (s.images||[]).map(src=>`<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
-        el.innerHTML=`<div class="list">
-          <div class="row" style="justify-content:space-between;align-items:flex-start">
-            <div>
-              <div><strong>${s.type}</strong> <span class="small muted">[${s.cat}${s.transportType?('/'+s.transportType):''}]</span></div>
-              <div class="small muted">${s.details}</div>
-              <div class="small"><strong>Price:</strong> ${money(s.price)} • <strong>By:</strong> ${s.publicName}</div>
-            </div>
-          </div>
-          <div class="row" style="gap:6px;flex-wrap:wrap">${imgs||'<span class="small muted">No catalog images</span>'}</div>
-        </div>`;
-        list.appendChild(el);
-      });
+      const desc=$('#sellDesc').value.trim();
+      if (!title || !price || !stock) return alert('Fill title, price, stock');
+      const images = await (files.length? Promise.all(files.map(f=>new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(f); }))): Promise.resolve([]));
+      const list=getUserProducts();
+      list.unshift({ id:'u'+Date.now(), cat, type, title, price, stock, desc, images, img:images[0]||'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop', seller:(user.name||'You') });
+      setUserProducts(list);
+      $('#sellModal').classList.remove('open');
+      renderMarketplace();
+      alert('Listing submitted');
     }
-
-    // Manage Products (Food vendors)
-    (function manageFoodProducts(){
-      const wrap = document.getElementById('foodItemsForm');
-      const list = document.getElementById('foodItemsList');
-      function ensureRow(){
-        const row = document.createElement('div');
-        row.className='card'; row.style.margin='8px 0';
-        row.innerHTML = `
-          <div class="grid-2">
-            <div class="field"><label class="small">Sub‑category</label>
-              <select class="f-cat">
-                <option value="fastfood">Fast food</option>
-                <option value="grocery">Groceries</option>
-              </select>
-            </div>
-            <div class="field"><label class="small">Title</label><input class="f-title" placeholder="Item title"></div>
-          </div>
-          <div class="grid-2">
-            <div class="field"><label class="small">Price</label><input class="f-price" type="number" min="0" step="0.01"></div>
-            <div class="field"><label class="small">Images (up to 5)</label><input class="f-imgs" type="file" accept="image/*" multiple></div>
-          </div>
-          <div class="field"><label class="small">Description</label><textarea class="f-desc" rows="2"></textarea></div>
-          <div class="row"><label class="small"><input type="checkbox" class="f-cash" checked> Cash</label><label class="small"><input type="checkbox" class="f-card" checked> Card</label></div>
-        `;
-        wrap.appendChild(row);
-      }
-      function getSaved(){ try { return JSON.parse(localStorage.getItem('zup_food_menu')||'[]'); } catch { return []; } }
-      function setSaved(arr){ localStorage.setItem('zup_food_menu', JSON.stringify(arr||[])); }
-      function loadList(){
-        const data = getSaved(); list.innerHTML='';
-        if (!data.length) { list.innerHTML='<div class="small muted">No items yet.</div>'; return; }
-        data.forEach((it, idx)=>{
-          const card=document.createElement('div'); card.className='card';
-          const imgs=(it.images||[]).map(src=>`<img src="${src}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
-          card.innerHTML = `
-            <div class="row" style="justify-content:space-between;align-items:flex-start">
-              <div>
-                <div><strong>${it.title}</strong> <span class="small muted">[${it.cat}]</span></div>
-                <div class="small muted">${it.desc||''}</div>
-                <div class="small"><strong>Price:</strong> ${money(it.price)} • <strong>Pay:</strong> ${(it.pay||[]).join(', ')||'—'}</div>
-              </div>
-              <div class="row" style="gap:6px">
-                <button class="btn ghost" data-k="edit" data-i="${idx}">Edit</button>
-                <button class="btn ghost" data-k="del" data-i="${idx}">Delete</button>
-              </div>
-            </div>
-            <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">${imgs||'<span class="small muted">No images</span>'}</div>
-          `;
-          list.appendChild(card);
-        });
-        list.onclick = (e)=>{
-          const b=e.target.closest('[data-k]'); if(!b) return;
-          const i=Number(b.getAttribute('data-i')); const data=getSaved();
-          if (b.getAttribute('data-k')==='del'){ data.splice(i,1); setSaved(data); loadList(); }
-          if (b.getAttribute('data-k')==='edit'){
-            const it=data[i]; wrap.innerHTML=''; ensureRow();
-            const r=wrap.querySelector('.card');
-            r.querySelector('.f-cat').value=it.cat;
-            r.querySelector('.f-title').value=it.title;
-            r.querySelector('.f-price').value=it.price;
-            r.querySelector('.f-desc').value=it.desc||'';
-            r.querySelector('.f-cash').checked=(it.pay||[]).includes('cash');
-            r.querySelector('.f-card').checked=(it.pay||[]).includes('card');
-            document.getElementById('saveFoodItems').onclick = ()=> saveItems(i);
-          }
-        };
-      }
-      function readImages(input, limit){
-        const files=Array.from((input.files||[])).slice(0,limit);
-        if (!files.length) return Promise.resolve([]);
-        return new Promise(res=>{
-          const imgs=[]; let left=files.length;
-          files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ imgs.push(fr.result); if(--left===0) res(imgs); }; fr.readAsDataURL(f); });
-        });
-      }
-      async function saveItems(replaceIdx){
-        const cards = Array.from(document.querySelectorAll('#foodItemsForm .card'));
-        const items=[];
-        for (const c of cards){
-          const cat=c.querySelector('.f-cat').value;
-          const title=c.querySelector('.f-title').value.trim();
-          const price=parseFloat(c.querySelector('.f-price').value||'0');
-          const desc=c.querySelector('.f-desc').value.trim();
-          const imgs=await readImages(c.querySelector('.f-imgs'), 5);
-          const pay=[]; if (c.querySelector('.f-cash').checked) pay.push('cash'); if (c.querySelector('.f-card').checked) pay.push('card');
-          if (title && price>0) items.push({ cat, title, price, desc, images:imgs, pay });
-        }
-        if (!items.length) return alert('Add at least one valid item');
-        const saved=getSaved();
-        if (typeof replaceIdx==='number'){ saved[replaceIdx]=items[0]; } else { saved.unshift(...items); }
-        setSaved(saved); document.getElementById('foodItemsForm').innerHTML=''; ensureRow(); loadList(); alert('Saved');
-        document.getElementById('saveFoodItems').onclick = ()=> saveItems(undefined);
-      }
-      document.getElementById('addFoodRow').addEventListener('click', ensureRow);
-      document.getElementById('saveFoodItems').addEventListener('click', ()=> saveItems(undefined));
-      ensureRow(); loadList();
-    })();
 
     // Profile buttons (navigation)
-    $('#manageServicesBtn').onclick   = ()=>{ $('.nav [data-page="orders"]').click(); $('#page-manage-services').classList.add('active'); };
-    $('#manageProductsBtn').onclick   = ()=>{ $('.nav [data-page="orders"]').click(); $('#page-manage-products').classList.add('active'); };
-    $('#emergencyContactsBtn').onclick= ()=>{ $('.nav [data-page="orders"]').click(); $('#page-emergency-contacts').classList.add('active'); loadContactsForm(); };
-    $('#providerVerifyBtn').onclick   = ()=>{ $('.nav [data-page="orders"]').click(); $('#page-verify-provider').classList.add('active'); };
-    $('#vpSubmit').onclick = ()=>{ $('#vpStatus').textContent='Submitted. Awaiting admin review.'; };
-    $('#vpBack').onclick = ()=> { $('.nav [data-page="profile"]').click(); };
+    $('#manageServicesBtn').onclick   = ()=>{ $('.nav [data-page="services"]')?.click(); $('#page-manage-services').classList.add('active'); };
+    $('#manageProductsBtn').onclick   = ()=>{ $('.nav [data-page="services"]')?.click(); $('#page-manage-products').classList.add('active'); };
+    $('#emergencyContactsBtn').onclick= ()=>{ $('.nav [data-page="services"]')?.click(); $('#page-emergency-contacts').classList.add('active'); };
+    $('#providerVerifyBtn').onclick   = ()=>{ $('.nav [data-page="services"]')?.click(); $('#page-verify-provider').classList.add('active'); };
 
-    // Emergency contacts
-    function loadContactsForm(){
-      const wrap=$('#ecForm'); wrap.innerHTML='';
-      const saved=loadContacts();
-      for (let i=0;i<5;i++){
-        const row=document.createElement('div'); row.className='grid-2';
-        row.innerHTML=`<div class="field"><label class="small">Name ${i+1}</label><input id="ecName${i}" value="${saved[i]?.name||''}"/></div>
-                       <div class="field"><label class="small">Phone ${i+1}</label><input id="ecPhone${i}" value="${saved[i]?.phone||''}"/></div>`;
-        wrap.appendChild(row);
-      }
+    // Wallet
+    function openWallet(){
+      $('#walletBalance').textContent = money(user.wallet||0);
+      const tx = JSON.parse(localStorage.getItem('zup_wallet_tx')||'[]');
+      $('#walletTx').innerHTML = tx.map(t=>`<div class="card"><div class="row" style="justify-content:space-between"><div>${t.note||t.type}</div><div style="font-weight:700">${t.type==='debit'?'-':''}${money(t.amount)}</div></div></div>`).join('') || '<div class="small muted">No transactions</div>';
     }
-    function loadContacts(){ try { return JSON.parse(localStorage.getItem('zup_contacts')||'[]'); } catch { return []; } }
-    function saveContacts(){
-      const arr=[]; for(let i=0;i<5;i++){ const name=$('#ecName'+i).value.trim(), phone=$('#ecPhone'+i).value.trim(); if (name||phone) arr.push({name,phone}); }
-      localStorage.setItem('zup_contacts', JSON.stringify(arr)); alert('Contacts saved');
-    }
-    $('#ecSave').onclick = saveContacts;
-
-    // Notifications
-    function updateBellBadge(){
-      const n=cart.items.reduce((a,b)=>a+(b.qty||0),0);
-      let badge = document.getElementById('notifBellBadge');
-      if (!badge){ const bell=document.getElementById('notifBtn'); badge=document.createElement('span'); badge.id='notifBellBadge'; badge.style.cssText='position:absolute; top:-4px; right:-4px; background:#DC2626; color:#fff; border-radius:999px; font-size:11px; padding:0 5px; line-height:16px; min-width:16px; text-align:center; display:none'; bell.style.position='relative'; bell.appendChild(badge); }
-      badge.style.display = n>0 ? 'inline-block' : 'none';
-      badge.textContent = n || '';
-    }
-    document.getElementById('closeNotif').onclick = ()=> document.getElementById('notifModal').classList.remove('open');
-    document.getElementById('notifBtn').onclick = ()=>{
-      const list = document.getElementById('notifList'); list.innerHTML='';
-      const n=cart.items.reduce((a,b)=>a+(b.qty||0),0);
-      if (n>0){
-        const row=document.createElement('div'); row.className='card'; row.style.cursor='pointer';
-        row.innerHTML = `<div class="row" style="justify-content:space-between"><div>🛒 You have ${n} item(s) in Food cart</div><div>›</div></div>`;
-        row.onclick = ()=>{ document.getElementById('notifModal').classList.remove('open'); renderCart(); document.getElementById('cartModal').classList.add('open'); };
-        list.appendChild(row);
-      } else {
-        list.innerHTML='<div class="small muted">No notifications.</div>';
-      }
-      document.getElementById('notifModal').classList.add('open');
+    $('#walletAdd').onclick = ()=> alert('Top‑up coming soon');
+    $('#walletCashOut').onclick = ()=> alert('Cash out coming soon');
+    $('#walletSend').onclick = ()=>{
+      const to = prompt('Send to (username/email)'); if (!to) return;
+      const amt = parseFloat(prompt('Amount')||'0'); if (!amt || amt<=0) return;
+      const tx = JSON.parse(localStorage.getItem('zup_wallet_tx')||'[]');
+      tx.unshift({ id:'tx'+Date.now(), type:'debit', amount:amt, note:`Send to ${to}` });
+      localStorage.setItem('zup_wallet_tx', JSON.stringify(tx));
+      alert('Transfer recorded (demo).'); openWallet();
     };
+    $('#walletCards').onclick = ()=> alert('VISA •••• 4242');
 
-    // Voice
-    function voiceToInput(el, cb){
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) { alert('Voice not supported'); return; }
-      const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
-      rec.onresult = (e)=>{ el.value = e.results[0][0].transcript||''; cb&&cb(); };
-      rec.start();
-    }
-    document.getElementById('voiceBtn').onclick = ()=> voiceToInput(document.getElementById('search'));
-    document.getElementById('mpVoice').onclick  = ()=> voiceToInput(document.getElementById('mpSearch'), ()=> document.getElementById('mpSearchBtn').click());
-
-    // Search dispatch
-    document.getElementById('searchBtn').onclick = ()=>{
-      const q=(document.getElementById('search').value||'').toLowerCase();
-      if (!q) return;
-      if (/(transport|ride|taxi|truck|backie)/.test(q)) return openCategory('transport','Transport');
-      if (/(food|pizza|burger|fries|grocery|groceries)/.test(q)) return openCategory('food','Food');
-      if (/(ambulance|medical)/.test(q)) return openEmergency('ambulance','Ambulance');
-      if (/(fire)/.test(q)) return openEmergency('fire','Fire Service');
-      if (/(towing|tow)/.test(q)) return openEmergency('towing','Towing');
-      if (/(security|police)/.test(q)) return openEmergency('security','Security');
-      if (/(market)/.test(q)) return $('.nav [data-page="marketplace"]').click();
-      if (/(other|tutor|event|photographer)/.test(q)) return openOthers();
-      openCategory('home','Home');
-    };
-
-    // Location + map
-    async function reverseGeocode(lat,lng){
-      try {
-        const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
-        const d = await r.json(); return (d.locality || d.city || 'Unknown') + ', ' + (d.countryName || '');
-      } catch { return null; }
-    }
+    // Geolocation + live vehicles
     async function initLocation(){
       try {
-        const pos = await new Promise((res, rej)=>navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy:true, timeout:9000 }));
+        const pos = await new Promise((res, rej)=>navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy:true, timeout:8000 }));
         coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        const name = await reverseGeocode(coords.lat, coords.lng);
-        document.getElementById('userLocUnder').textContent = name || `Lat ${coords.lat.toFixed(4)}, Lng ${coords.lng.toFixed(4)}`;
+        $('#userLocUnder').textContent = `Lat ${coords.lat.toFixed(4)}, Lng ${coords.lng.toFixed(4)}`;
       } catch {
-        document.getElementById('userLocUnder').textContent = 'Location unavailable';
+        $('#userLocUnder').textContent = 'Location unavailable';
       }
     }
     function initHomeMap(){
@@ -1372,19 +1029,116 @@
       } catch {}
     }
 
-    // Panic
-    function updatePanicLoc(){ document.getElementById('panicLocHint').textContent = coords ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : 'Unknown'; }
-    document.getElementById('panicBtn').onclick = ()=> { updatePanicLoc(); document.getElementById('panicStatus').textContent=''; document.getElementById('panicMsg').value=''; document.getElementById('panicModal').classList.add('open'); };
-    document.getElementById('panicClose').onclick = ()=> document.getElementById('panicModal').classList.remove('open');
-    document.getElementById('panicCancel').onclick = ()=> document.getElementById('panicModal').classList.remove('open');
-    document.getElementById('panicSend').onclick = ()=>{ document.getElementById('panicStatus').textContent='Alert sent.'; setTimeout(()=> document.getElementById('panicModal').classList.remove('open'), 700); };
+    // Voice helper
+    function voiceToInput(inputEl, onResult){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert('Voice not supported'); return; }
+      const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult = (e)=>{ const text=e.results[0][0].transcript||''; inputEl.value=text; onResult&&onResult(text); };
+      rec.start();
+    }
+    $('#voiceBtn').onclick = ()=> voiceToInput($('#search'), ()=>{/*run search*/});
+    $('#mpVoice').onclick  = ()=> voiceToInput($('#mpSearch'), ()=>$('#mpSearchBtn').click());
+
+    // Profile edit
+    function updateProfileUI(){
+      $('#profName').textContent=(user?.name||'Guest');
+      $('#profEmail').textContent=(user?.email||'guest@example.com');
+      const saved=localStorage.getItem('zup_profile_photo');
+      if (saved) { const av=$('#user-avatar'); av.style.backgroundImage=`url("${saved}")`; av.style.backgroundSize='cover'; av.style.backgroundPosition='center'; av.textContent=''; }
+    }
+    $('#editProfileBtn').onclick = ()=>{
+      let m=document.getElementById('profileEditModal');
+      if (!m) {
+        m=document.createElement('div'); m.id='profileEditModal'; m.className='modal open';
+        m.innerHTML=`
+          <div class="sheet">
+            <div class="head"><strong>Edit Profile</strong><button class="btn ghost" id="peClose" type="button">✖</button></div>
+            <div class="body">
+              <div class="list">
+                <div class="field"><label class="small">Public name</label><input id="peName" value="${(user?.name||'')}"/></div>
+                <div class="field"><label class="small">Photo</label><input id="pePhoto" type="file" accept="image/*"/></div>
+                <button class="btn primary" id="peSave" type="button">Save</button>
+              </div>
+            </div>
+          </div>`;
+        document.body.appendChild(m);
+        m.addEventListener('click',(e)=>{ if(e.target===m) m.classList.remove('open'); });
+        document.getElementById('peClose').onclick=()=> m.classList.remove('open');
+        document.getElementById('peSave').onclick=()=>{
+          const name=document.getElementById('peName').value.trim(); if (name) user.name=name;
+          const f=document.getElementById('pePhoto').files?.[0];
+          if (f) { const fr=new FileReader(); fr.onload=()=>{ localStorage.setItem('zup_profile_photo', fr.result); updateProfileUI(); m.classList.remove('open'); }; fr.readAsDataURL(f); }
+          else { updateProfileUI(); m.classList.remove('open'); }
+        };
+      } else m.classList.add('open');
+    };
+
+    // Booking form close
+    $('#closeBooking').onclick = ()=> $('#bookingModal').classList.remove('open');
+
+    // Roadside
+    function openRoadside(){
+      renderRoadsideList('');
+      $('#roadsideModal').classList.add('open');
+    }
+    function renderRoadsideList(q){
+      const all = [
+        { name:'Tyre change • Team A', eta:'5 min' },
+        { name:'Battery jumpstart • Team B', eta:'7 min' },
+        { name:'Fuel delivery • Team C', eta:'10 min' },
+        { name:'Tow truck • Wingate', eta:'12 min' }
+      ];
+      const f=(q||'').toLowerCase();
+      $('#roadList').innerHTML = all.filter(x=>x.name.toLowerCase().includes(f)).map(x=>`
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <div><strong>${x.name}</strong><div class="small muted">ETA ${x.eta}</div></div>
+            <button class="btn primary" type="button" onclick="alert('Request sent')">Request</button>
+          </div>
+        </div>`).join('') || '<div class="small muted">No matches</div>';
+    }
+    document.getElementById('roadClose').onclick = ()=> document.getElementById('roadsideModal').classList.remove('open');
+    document.getElementById('roadGo').onclick = ()=> renderRoadsideList(document.getElementById('roadSearch').value.trim());
+    document.getElementById('roadVoice').onclick = ()=> voiceToInput(document.getElementById('roadSearch'), txt=>renderRoadsideList(txt));
+
+    // Providers modal filter (for categories with search + mic)
+    (function providersSearch(){
+      const row = document.getElementById('provSearchRow');
+      const list = document.getElementById('providersList');
+      function filter(){ const q=(document.getElementById('provSearch').value||'').toLowerCase(); list?.querySelectorAll('.card').forEach(c=>{ c.style.display = c.textContent.toLowerCase().includes(q)?'':'none'; }); }
+      function voice(el, cb){
+        const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return alert('Voice not supported');
+        const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+        rec.onresult=e=>{ el.value=e.results[0][0].transcript||''; cb(el.value); }; rec.start();
+      }
+      document.getElementById('provSearch')?.addEventListener('input', filter);
+      document.getElementById('provSearchBtn')?.addEventListener('click', filter);
+      document.getElementById('provVoice')?.addEventListener('click', ()=>voice(document.getElementById('provSearch'), filter));
+      // show row when opening categories with search
+      const oldOpen = window.openCategory;
+      window.openCategory = function(catId, label){
+        const show = ['home','tech','construction','auto','automobile'].includes(String(catId||'').toLowerCase());
+        row.style.display = show ? '' : 'none';
+        return oldOpen ? oldOpen.apply(this, arguments) : undefined;
+      };
+    })();
+
+    // Marketplace wiring
+    function voiceToInput(el, cb){ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return alert('Voice not supported'); const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1; rec.onresult=e=>{ el.value=e.results[0][0].transcript||''; cb&&cb(); }; rec.start(); }
 
     // Init
     document.addEventListener('DOMContentLoaded', async ()=>{
-      renderServices(); renderEmergency(); renderMarketplace();
+      // nav default
+      $('.nav [data-page="home"]').click();
+      // services
+      renderServices(); renderEmergency();
+      // marketplace
+      initMarketplace();
+      // location + map
       await initLocation(); initHomeMap();
-      updateBellBadge();
-      setTimeout(()=>{ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } }, 300);
+      // splash off
+      setTimeout(()=>{ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } }, 250);
     });
   </script>
 </body>
