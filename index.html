@@ -113,6 +113,10 @@ header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-
 header .row { align-items:center; }
 header .row > .greet { flex:1; min-width:0; }
 #notifBtn { margin-right:6px; }
+    /* Header alignment */
+header .row { align-items: center; }
+header .row > .greet { flex: 1; min-width: 0; }
+#notifBtn { margin-right: 6px; } /* bell just before Account */
   </style>
 </head>
 <body>
@@ -144,6 +148,9 @@ header .row > .greet { flex:1; min-width:0; }
 </header>
 
   <!-- Pages -->
+  <section class="section" id="homeMapSection">
+  <div id="homeMap" style="height:160px;border-radius:12px;border:1px solid var(--border)"></div>
+</section>
   <main id="page-home" class="page active">
     <section class="search">
       <div class="box">
@@ -409,6 +416,43 @@ Add “Others” s
     </section>
   </main>
 
+<main id="page-fastfood" class="page">
+  <section class="section">
+    <div class="backbar"><button class="back" type="button" onclick="document.querySelector('.nav button[data-page=home]')?.click()">←</button><strong>Fast food</strong></div>
+    <div class="row" style="gap:8px;margin-bottom:10px">
+      <input id="ffSearch" placeholder="Search vendors or menu…" style="flex:1"/>
+      <button class="btn ghost" id="ffVoice" type="button">🎤</button>
+      <button class="btn primary" id="ffGo" type="button">Search</button>
+    </div>
+    <div id="ffList" class="list"></div>
+  </section>
+</main>
+
+<main id="page-grocery" class="page">
+  <section class="section">
+    <div class="backbar"><button class="back" type="button" onclick="document.querySelector('.nav button[data-page=home]')?.click()">←</button><strong>Groceries</strong></div>
+    <div class="row" style="gap:8px;margin-bottom:10px">
+      <input id="grSearch" placeholder="Search vendors or items…" style="flex:1"/>
+      <button class="btn ghost" id="grVoice" type="button">🎤</button>
+      <button class="btn primary" id="grGo" type="button">Search</button>
+    </div>
+    <div id="grList" class="list"></div>
+  </section>
+</main>
+  
+<main id="page-digital" class="page">
+  <section class="section">
+    <div class="backbar"><button class="back" type="button" onclick="document.querySelector('.nav button[data-page=home]')?.click()">←</button><strong>Digital Services</strong></div>
+    <div class="grid" style="margin-top:8px">
+      <div class="card service">📱 Buy Airtime</div>
+      <div class="card service">📶 Buy Data</div>
+      <div class="card service">🧾 Pay Bills</div>
+      <div class="card service">🛒 Digital Products</div>
+    </div>
+    <div class="small muted" style="margin-top:8px">Coming soon</div>
+  </section>
+</main>
+  
   <!-- Bottom Nav -->
   <nav class="nav">
     <button data-page="home" class="active" type="button">🏠 Home</button>
@@ -432,6 +476,11 @@ Add “Others” s
 </div>
   
   <!-- Providers -->
+  <div class="row" id="provSearchRow" style="gap:8px;margin-bottom:10px;display:none">
+  <input id="provSearch" placeholder="Search providers or specialties…" style="flex:1"/>
+  <button class="btn ghost" id="provVoice" type="button">🎤</button>
+  <button class="btn primary" id="provSearchBtn" type="button">Search</button>
+</div>
   <div class="modal" id="providersModal">
     <div class="sheet">
       <div class="head">
@@ -2295,6 +2344,108 @@ Add “Others” s
     rec.onresult = e=>{ input.value = e.results[0][0].transcript||''; render(input.value); };
     rec.start();
   };
+})();
+</script>
+  <script>
+(function fixBellBeforeAccount(){
+  const right = document.querySelector('header .row > .row');
+  const bell = document.getElementById('notifBtn');
+  const acct = document.getElementById('profileBtn');
+  if (right && bell && acct && bell.nextElementSibling !== acct) right.insertBefore(bell, acct);
+})();
+</script>
+  <script>
+(function homeMapInit(){
+  if (!document.getElementById('homeMap')) return;
+  try {
+    const m = L.map('homeMap',{ zoomControl:false }).setView([0,0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(m);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(p=>{
+        const {latitude,longitude}=p.coords; m.setView([latitude,longitude], 15);
+        L.marker([latitude,longitude]).addTo(m);
+      });
+    }
+  } catch {}
+})();
+</script>
+  <script>
+(function digitalBtn(){
+  const grid = document.getElementById('servicesGrid');
+  if (!grid || grid.querySelector('[data-service="digital"]')) return;
+  const card = document.createElement('div');
+  card.className='card service'; card.dataset.service='digital';
+  card.innerHTML='<div class="row"><div style="font-size:28px">💳</div><h4>Digital Services</h4></div><div class="small muted" style="margin-top:6px">Airtime, data, bills, digital products</div>';
+  grid.appendChild(card);
+  grid.addEventListener('click', (e)=>{
+    const c=e.target.closest('.service'); if(!c) return;
+    if (c.dataset.service==='digital'){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById('page-digital')?.classList.add('active'); }
+  }, { once:true });
+})();
+</script>
+  <script>
+(function providersSearch(){
+  const row = document.getElementById('provSearchRow');
+  if (!row) return;
+  const list = document.getElementById('providersList');
+  function voiceToInput(inputEl, onResult){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return alert('Voice not supported');
+    const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+    rec.onresult=e=>{ const t=e.results[0][0].transcript||''; inputEl.value=t; onResult&&onResult(t); }; rec.start();
+  }
+  function filter(){ const q=(document.getElementById('provSearch').value||'').toLowerCase(); list?.querySelectorAll('.card').forEach(c=>{ c.style.display = c.textContent.toLowerCase().includes(q)?'':'none'; }); }
+  document.getElementById('provSearch')?.addEventListener('input', filter);
+  document.getElementById('provSearchBtn')?.addEventListener('click', filter);
+  document.getElementById('provVoice')?.addEventListener('click', ()=>voiceToInput(document.getElementById('provSearch'), filter));
+
+  // Show search row only for specified categories
+  const origOpenCategory = window.openCategory;
+  window.openCategory = function(catId, label){
+    if (['home','tech','construction','auto','automobile'].includes((catId||'').toLowerCase())) row.style.display='';
+    else row.style.display='none';
+    return origOpenCategory ? origOpenCategory.apply(this, arguments) : undefined;
+  };
+})();
+</script>
+  <script>
+(function foodLanding(){
+  function show(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id)?.classList.add('active'); }
+  // Buttons inside your Food options modal
+  document.getElementById('foodFastBtn')?.addEventListener('click', ()=>{ document.getElementById('foodOptionsModal')?.classList.remove('open'); show('page-fastfood'); renderFF(''); });
+  document.getElementById('foodGroceryBtn')?.addEventListener('click', ()=>{ document.getElementById('foodOptionsModal')?.classList.remove('open'); show('page-grocery'); renderGR(''); });
+
+  function renderFF(q){
+    const list=document.getElementById('ffList'); const f=(q||'').toLowerCase();
+    const menu=window.MENUS||{}; const vs=(window.VENDORS||[]).filter(v=>v.kind==='fastfood');
+    list.innerHTML = vs.filter(v=> v.name.toLowerCase().includes(f) || (menu[v.id]||[]).some(m=>m.title.toLowerCase().includes(f))).map(v=>`
+      <div class="card"><div class="row" style="justify-content:space-between">
+        <div><strong>${v.name}</strong><div class="small muted">Payments: ${v.payment.join(', ')}</div></div>
+        <button class="btn primary" type="button" onclick="alert('Open ${v.name} menu')">Open</button>
+      </div></div>`).join('') || '<div class="small muted">No vendors</div>';
+  }
+  function renderGR(q){
+    const list=document.getElementById('grList'); const f=(q||'').toLowerCase();
+    const menu=window.MENUS||{}; const vs=(window.VENDORS||[]).filter(v=>v.kind==='grocery');
+    list.innerHTML = vs.filter(v=> v.name.toLowerCase().includes(f) || (menu[v.id]||[]).some(m=>m.title.toLowerCase().includes(f))).map(v=>`
+      <div class="card"><div class="row" style="justify-content:space-between">
+        <div><strong>${v.name}</strong><div class="small muted">Payments: ${v.payment.join(', ')}</div></div>
+        <button class="btn primary" type="button" onclick="alert('Open ${v.name} items')">Open</button>
+      </div></div>`).join('') || '<div class="small muted">No vendors</div>';
+  }
+  // Search + mic
+  function voice(el, cb){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return alert('Voice not supported');
+    const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+    rec.onresult=e=>{ el.value=e.results[0][0].transcript||''; cb(el.value); }; rec.start();
+  }
+  document.getElementById('ffGo')?.addEventListener('click', ()=>renderFF(document.getElementById('ffSearch').value.trim()));
+  document.getElementById('ffSearch')?.addEventListener('input', e=>renderFF(e.target.value));
+  document.getElementById('ffVoice')?.addEventListener('click', ()=>voice(document.getElementById('ffSearch'), renderFF));
+
+  document.getElementById('grGo')?.addEventListener('click', ()=>renderGR(document.getElementById('grSearch').value.trim()));
+  document.getElementById('grSearch')?.addEventListener('input', e=>renderGR(e.target.value));
+  document.getElementById('grVoice')?.addEventListener('click', ()=>voice(document.getElementById('grSearch'), renderGR));
 })();
 </script>
 </body>
