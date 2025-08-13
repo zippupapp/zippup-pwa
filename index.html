@@ -2172,5 +2172,27 @@ header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-
   }
 })();
 </script>
+  <script>
+(function killSplash(){
+  function hide() {
+    try {
+      const s = document.getElementById('splash');
+      if (s) { s.style.opacity = '0'; setTimeout(()=> s && s.remove(), 200); }
+      const home = document.getElementById('page-home');
+      if (home && !home.classList.contains('active')) home.classList.add('active');
+      // close any overlay that might block the UI
+      document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
+    } catch {}
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(hide, 0);
+  } else {
+    document.addEventListener('DOMContentLoaded', hide, { once:true });
+  }
+  window.addEventListener('load', hide, { once:true });
+  window.addEventListener('error', hide, true);
+  setTimeout(hide, 1200);
+})();
+</script>
 </body>
 </html>
