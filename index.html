@@ -94,24 +94,30 @@
     header .row { align-items:center; }
     header .row > .left { flex:1; min-width:0; }
     #notifBtn { margin-right:6px; }
+
+    /* Full-screen major modals */
+    #checkoutModal .sheet, #sellModal .sheet, #trackModal .sheet { height: calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; }
+    #checkoutModal .sheet .body, #sellModal .sheet .body, #trackModal .sheet .body { flex:1; overflow:auto; }
+
+    /* Back bars in inner pages (optional) */
+    .backbar { position:sticky; top:0; background:#fff; border-bottom:1px solid var(--border); z-index:5; display:flex; align-items:center; gap:8px; padding:8px 4px 8px 0; }
   </style>
 </head>
 <body>
   <!-- Header -->
   <header>
     <div class="row">
-      <div class="left">
-        <!-- greeting removed by request -->
-      </div>
+      <div class="left"></div>
       <div class="row">
         <button class="btn ghost" id="notifBtn" type="button" title="Notifications">🔔</button>
         <div style="position:relative">
           <button class="btn ghost" id="profileBtn" type="button">👤 Account</button>
-          <div id="profileMenu" style="position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:200px; z-index:300; padding:6px">
+          <div id="profileMenu" style="position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:220px; z-index:300; padding:6px">
             <button class="btn ghost" id="menuProfile" type="button">👤 Profile</button>
             <button class="btn ghost" id="menuOrders" type="button">📦 Manage Orders</button>
             <button class="btn ghost" id="menuWallet" type="button">💰 Wallet</button>
-            <button class="btn ghost" id="menuTopup" type="button">⚡ Top‑up</button>
+            <button class="btn ghost" id="menuTopup" type="button">⚡ Top‑up (Digital)</button>
+            <button class="btn ghost" id="menuSupport" type="button">🆘 Contact Support</button>
             <button class="btn ghost" id="menuLogout" type="button">🚪 Logout</button>
           </div>
         </div>
@@ -121,7 +127,7 @@
 
   <!-- Home -->
   <main id="page-home" class="page active">
-    <!-- Location under header -->
+    <!-- Address under header -->
     <section class="section">
       <div class="small">📍 <span id="userLocUnder">Detecting location…</span></div>
     </section>
@@ -194,15 +200,15 @@
           <div><strong>Availability</strong><div class="small muted">Go Offline / Available</div></div>
           <label style="position:relative;display:inline-block;width:48px;height:28px">
             <input id="availToggle" type="checkbox" style="display:none"/>
-            <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#d1d5db;border-radius:999px"></span>
-            <span style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:#fff;border-radius:999px;transition:.2s" id="availKnob"></span>
+            <span id="availTrack" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#d1d5db;border-radius:999px;transition:.2s"></span>
+            <span id="availKnob" style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:#fff;border-radius:999px;transition:.2s"></span>
           </label>
         </div>
       </div>
 
       <div class="list" style="margin-top:12px">
         <button class="btn ghost" id="manageServicesBtn" type="button">Manage Services</button>
-        <button class="btn ghost" id="manageProductsBtn" type="button">Manage Products</button>
+        <button class="btn ghost" id="manageProductsBtn" type="button">Manage Product (Food Vendors Only)</button>
         <button class="btn ghost" id="emergencyContactsBtn" type="button">Emergency Contacts</button>
         <button class="btn ghost" id="providerVerifyBtn" type="button">Become Verified Provider</button>
       </div>
@@ -261,7 +267,7 @@
   <!-- Manage Services -->
   <main id="page-manage-services" class="page">
     <section class="section">
-      <div class="title">Manage Services</div>
+      <div class="backbar"><button class="btn ghost" id="msBack" type="button">← Back</button><strong>Manage Services</strong></div>
       <div class="card">
         <div class="list">
           <div class="grid-2">
@@ -277,7 +283,14 @@
                 <option value="others">Others</option>
               </select>
             </div>
-            <div class="field">
+            <div class="field" id="msTransportSubWrap" style="display:none">
+              <label class="small">Transport type</label>
+              <select id="msTransportSub">
+                <option value="taxi">Ride / Taxi</option>
+                <option value="truck">Truck / Backie</option>
+              </select>
+            </div>
+            <div class="field" id="msTypeWrap">
               <label class="small">Service type</label>
               <input id="msType" placeholder="e.g., Driver, Plumber"/>
             </div>
@@ -307,7 +320,7 @@
   <!-- Manage Products (Food vendors) -->
   <main id="page-manage-products" class="page">
     <section class="section">
-      <div class="title">Manage Product (Food Vendors Only)</div>
+      <div class="backbar"><button class="btn ghost" id="mpBack" type="button">← Back</button><strong>Manage Product (Food Vendors Only)</strong></div>
       <div class="card">
         <div class="small muted" style="margin-bottom:8px">Upload multiple items per batch; up to 5 images per item; set payment options.</div>
         <div id="foodItemsForm"></div>
@@ -321,7 +334,7 @@
   <!-- Emergency Contacts -->
   <main id="page-emergency-contacts" class="page">
     <section class="section">
-      <div class="title">Emergency Contacts</div>
+      <div class="backbar"><button class="btn ghost" id="ecBack" type="button">← Back</button><strong>Emergency Contacts</strong></div>
       <div class="card">
         <div class="small muted">Add up to 5 contacts (name and phone).</div>
         <div id="ecForm" class="list" style="margin-top:10px"></div>
@@ -333,10 +346,11 @@
   <!-- Verify Provider -->
   <main id="page-verify-provider" class="page">
     <section class="section">
-      <div class="title">Become Verified Provider</div>
+      <div class="backbar"><button class="btn ghost" id="vpBack" type="button">← Back</button><strong>Become Verified Provider</strong></div>
       <div class="card">
         <div class="list">
           <div class="field"><label class="small">Full name</label><input id="vpName" placeholder="Your name"/></div>
+          <div class="field"><label class="small">Address</label><input id="vpAddress" placeholder="Your address"/></div>
           <div class="field"><label class="small">Service category</label><input id="vpCategory" placeholder="e.g., Driver, Plumber"/></div>
           <div class="field"><label class="small">ID number</label><input id="vpId" placeholder="Your ID"/></div>
           <div class="field"><label class="small">ID/Passport docs</label><input id="vpIdDocs" type="file" accept="image/*,application/pdf" multiple/></div>
@@ -351,7 +365,7 @@
   <!-- Bottom Nav -->
   <nav class="nav">
     <button data-page="home" class="active" type="button">🏠 Home</button>
-    <button data-page="services" type="button">🔧 Services</button>
+    <button data-page="orders" type="button">📋 My Bookings</button>
     <button data-page="marketplace" type="button">🛍️ Marketplace</button>
     <button data-page="profile" type="button">👤 Profile</button>
   </nav>
@@ -401,6 +415,48 @@
     </div>
   </div>
 
+  <!-- Transport Options -->
+  <div class="modal" id="transportOptionsModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Transport</strong>
+        <button class="btn ghost" id="closeTransportOptions" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="row" style="gap:8px">
+          <button class="btn primary" id="optTaxi" type="button">🚖 Ride / Taxi</button>
+          <button class="btn ghost" id="optTruck" type="button">🚚 Truck / Backie</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transport Providers -->
+  <div class="modal" id="transportProvidersModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="transportTitle">Nearby Drivers</strong>
+        <button class="btn ghost" id="closeTransportProviders" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div id="transportList" class="list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tracking (instant ride) -->
+  <div class="modal" id="trackModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="trackTitle">Driver on the way</strong>
+        <button class="btn ghost" id="trackCancel" type="button">Cancel</button>
+      </div>
+      <div class="body">
+        <div id="trackMap" style="height:100%; border:1px solid var(--border); border-radius:12px"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Food Options -->
   <div class="modal" id="foodOptionsModal">
     <div class="sheet">
@@ -423,10 +479,11 @@
     </div>
   </div>
 
-  <!-- Food Vendors (search + close, no call/WhatsApp) -->
+  <!-- Food Vendors -->
   <div class="modal" id="foodVendorsModal">
     <div class="sheet">
       <div class="head">
+        <button class="btn ghost" id="backToFoodOptions" type="button">← Back</button>
         <strong id="foodVendorsTitle">Food Vendors</strong>
         <button class="btn ghost" id="closeFoodVendors" type="button">✖</button>
       </div>
@@ -441,10 +498,11 @@
     </div>
   </div>
 
-  <!-- Food Menu (close works) -->
+  <!-- Food Menu -->
   <div class="modal" id="foodMenuModal">
     <div class="sheet">
       <div class="head">
+        <button class="btn ghost" id="backToVendors" type="button">← Back</button>
         <strong id="foodMenuTitle">Menu</strong>
         <button class="btn ghost" id="closeFoodMenu" type="button">✖</button>
       </div>
@@ -452,7 +510,10 @@
         <div id="foodMenuList" class="list"></div>
         <div class="row" style="justify-content:space-between;margin-top:10px">
           <div class="price">Total: $<span id="foodCartTotal">0.00</span></div>
-          <button class="btn primary" id="foodCheckoutBtn" type="button">Checkout</button>
+          <div class="row" style="gap:6px">
+            <button class="btn ghost" id="clearFoodCart" type="button">Clear</button>
+            <button class="btn primary" id="foodCheckoutBtn" type="button">Checkout</button>
+          </div>
         </div>
       </div>
     </div>
@@ -479,6 +540,7 @@
   <div class="modal" id="checkoutModal">
     <div class="sheet">
       <div class="head">
+        <button class="btn ghost" id="backToCart" type="button">← Back</button>
         <strong>Checkout</strong>
         <button class="btn ghost" id="closeCheckout" type="button">✖</button>
       </div>
@@ -522,7 +584,7 @@
     </div>
   </div>
 
-  <!-- Emergency categories -->
+  <!-- Roadside -->
   <div class="modal" id="roadsideModal">
     <div class="sheet">
       <div class="head">
@@ -556,7 +618,7 @@
   <!-- Sell Product (Marketplace) -->
   <div class="modal" id="sellModal">
     <div class="sheet">
-      <div class="head"><strong>Sell a product</strong><button class="btn ghost" type="button" onclick="document.getElementById('sellModal').classList.remove('open')">✖</button></div>
+      <div class="head"><button class="btn ghost" id="sellBack" type="button">← Back</button><strong>Sell a product</strong><button class="btn ghost" type="button" onclick="document.getElementById('sellModal').classList.remove('open')">✖</button></div>
       <div class="body">
         <div class="grid-2">
           <div class="field"><label class="small">Category</label>
@@ -582,6 +644,25 @@
         </div>
         <div class="field"><label class="small">Description</label><textarea id="sellDesc" rows="3"></textarea></div>
         <button class="btn primary" id="sellSubmit" type="button">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panic -->
+  <button class="floating-panic" id="panicBtn" title="Emergency">🚨</button>
+  <div class="modal" id="panicModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Emergency Alert</strong>
+        <button class="btn ghost" id="panicClose" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="small muted" style="margin-bottom:8px">We’ll notify your contacts and nearby security with your location.</div>
+        <div class="field"><label class="small">Message (optional)</label><textarea id="panicMsg" rows="3" placeholder="Describe the emergency…"></textarea></div>
+        <div class="row" style="justify-content:flex-end; gap:8px">
+          <button class="btn ghost" id="panicCancel" type="button">Close</button>
+          <button class="btn primary" id="panicSend" type="button">Send Alert</button>
+        </div>
       </div>
     </div>
   </div>
@@ -612,6 +693,7 @@
     // State
     let user = { name:'Guest', email:'guest@example.com', wallet: 0 };
     let coords = null, homeMap=null, vehicleMarkers=[];
+    let trackMap=null, trackInterval=null;
     let cart = loadCart(); // { vendorId, vendorName, vendorPayment:[], items:[] }
     function loadCart(){ try{ return JSON.parse(localStorage.getItem('food_cart')||'{"vendorId":null,"vendorName":null,"vendorPayment":[],"items":[]}'); }catch{ return { vendorId:null, vendorName:null, vendorPayment:[], items:[] } } }
     function saveCart(){ localStorage.setItem('food_cart', JSON.stringify(cart)); }
@@ -621,15 +703,23 @@
     const $ = s => document.querySelector(s);
     const $$ = s => Array.from(document.querySelectorAll(s));
     function money(n){ return `$${(+n||0).toFixed(2)}`; }
+    function showPage(id){
+      $$('.page').forEach(p=>p.classList.remove('active'));
+      const el=$('#page-'+id); if (el) el.classList.add('active');
+      $$('.nav button').forEach(b=>b.classList.toggle('active', b.getAttribute('data-page')===id));
+    }
+
+    // Sounds
+    const sndRequest = new Audio('data:audio/mp3;base64,//uQZAAAAAAAA...'); // short beep placeholder
+    const sndAccept  = new Audio('data:audio/mp3;base64,//uQZAAAAAAAA...');
+    const sndArrive  = new Audio('data:audio/mp3;base64,//uQZAAAAAAAA...');
+    function playSound(what){ try{ ({request:sndRequest,accept:sndAccept,arrive:sndArrive}[what])?.play(); }catch{} }
 
     // Nav
     $$('.nav button').forEach(b=>{
       b.onclick = ()=>{
-        $$('.nav button').forEach(x=>x.classList.remove('active'));
-        b.classList.add('active');
         const page=b.getAttribute('data-page');
-        $$('.page').forEach(p=>p.classList.remove('active'));
-        $('#page-'+page).classList.add('active');
+        showPage(page);
         if (page==='marketplace') { renderMarketplace(); }
         if (page==='wallet') { openWallet(); }
       };
@@ -638,23 +728,24 @@
     // Header menu
     $('#profileBtn').onclick = (e)=>{ e.stopPropagation(); const m=$('#profileMenu'); m.style.display = (m.style.display==='block'?'none':'block'); };
     document.addEventListener('click', ()=>{ const m=$('#profileMenu'); if (m) m.style.display='none'; });
-    $('#menuProfile').onclick = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="profile"]').click(); };
-    $('#menuOrders').onclick  = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="orders"]')?.click(); renderOrders(); };
-    $('#menuWallet').onclick  = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="wallet"]')?.click(); };
-    $('#menuTopup').onclick   = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="digital"]')?.click(); };
+    $('#menuProfile').onclick = ()=>{ $('#profileMenu').style.display='none'; showPage('profile'); };
+    $('#menuOrders').onclick  = ()=>{ $('#profileMenu').style.display='none'; showPage('orders'); renderOrders(); };
+    $('#menuWallet').onclick  = ()=>{ $('#profileMenu').style.display='none'; showPage('wallet'); };
+    $('#menuTopup').onclick   = ()=>{ $('#profileMenu').style.display='none'; showPage('digital'); };
+    $('#menuSupport').onclick = ()=>{ alert('Support: hello@zippup.app'); };
     $('#menuLogout').onclick  = async ()=>{ $('#profileMenu').style.display='none'; try{ await auth.signOut(); }catch{} alert('Signed out'); };
 
     // Services & Emergency
     const SERVICES = [
-      { id:'transport', name:'Transport', icon:'🚗', desc:'Ride & moving', instant:true,  scheduled:true },
-      { id:'food',      name:'Food',      icon:'🍔', desc:'Restaurants & groceries', instant:true,  scheduled:true },
-      { id:'tech',      name:'Tech',      icon:'🔧', desc:'Phone/computer repair', instant:true,  scheduled:true },
-      { id:'home',      name:'Home',      icon:'🏠', desc:'Cleaning & maintenance', instant:true,  scheduled:true },
-      { id:'construction', name:'Construction', icon:'🏗️', desc:'Builders & electricians', instant:false, scheduled:true },
-      { id:'auto',      name:'Automobile', icon:'🛠️', desc:'Mechanics, tires, roadside', instant:true,  scheduled:true },
-      { id:'digital',   name:'Digital Services', icon:'💳', desc:'Airtime, data, bills, digital products', instant:false, scheduled:false },
-      { id:'marketplace', name:'Marketplace', icon:'🛍️', desc:'Buy & Sell (contact only)', instant:false, scheduled:false },
-      { id:'others',    name:'Others',    icon:'🎯', desc:'Events, tutors, more', instant:false, scheduled:true },
+      { id:'transport',   name:'Transport',         icon:'🚗', desc:'Ride & moving' },
+      { id:'food',        name:'Food',              icon:'🍔', desc:'Restaurants & groceries' },
+      { id:'tech',        name:'Tech',              icon:'🔧', desc:'Phone/computer repair' },
+      { id:'home',        name:'Home',              icon:'🏠', desc:'Cleaning & maintenance' },
+      { id:'construction',name:'Construction',      icon:'🏗️', desc:'Builders & electricians' },
+      { id:'auto',        name:'Automobile',        icon:'🛠️', desc:'Mechanics, tires, roadside' },
+      { id:'digital',     name:'Digital Services',  icon:'💳', desc:'Airtime, data, bills, digital products' },
+      { id:'marketplace', name:'Marketplace',       icon:'🛍️', desc:'Buy & Sell (contact only)' },
+      { id:'others',      name:'Others',            icon:'🎯', desc:'Events, tutors, more' },
     ];
     const EMERGENCY = [
       { id:'ambulance', name:'Ambulance', icon:'🚑' },
@@ -678,23 +769,27 @@
       EMERGENCY.forEach(e=>{
         const el=document.createElement('div'); el.className='card service';
         el.innerHTML = `<div class="row"><div style="font-size:28px">${e.icon}</div><h4>${e.name}</h4></div>`;
-        el.onclick = ()=> { if (e.id==='roadside') openRoadside(); else alert(`${e.name} coming soon`); };
+        el.onclick = ()=> {
+          if (e.id==='roadside') openRoadside();
+          else openEmergencyProviders(e.id, e.name);
+        };
         grid.appendChild(el);
       });
     }
 
-    // Category open with provider search row toggled
     function openCategory(catId, label){
-      if (catId==='digital'){ $('.nav [data-page="digital"]').click(); return; }
-      if (catId==='marketplace'){ $('.nav [data-page="marketplace"]').click(); return; }
+      if (catId==='digital'){ showPage('digital'); return; }
+      if (catId==='marketplace'){ showPage('marketplace'); return; }
       if (catId==='food'){ $('#foodOptionsModal').classList.add('open'); return; }
+      if (catId==='transport'){ $('#transportOptionsModal').classList.add('open'); return; }
 
-      const showProvSearch = ['home','tech','construction','auto','automobile'].includes(catId);
+      const showProvSearch = ['home','tech','construction','auto','automobile','others'].includes(catId);
       $('#provSearchRow').style.display = showProvSearch ? '' : 'none';
       $('#providersTitle').textContent = label + ' — Providers';
       renderProviders(dummyProviders(catId));
       $('#providersModal').classList.add('open');
     }
+
     function dummyProviders(cat){
       return [
         { id:'pr1', publicName:'Handy Pro', jobTitle:cat, verified:true, rating:4.8, distance:'0.8km', eta:'6-9m', fee:'$20-30', available:true, icon:'👤' },
@@ -728,7 +823,88 @@
     }
     $('#closeProviders').onclick = ()=> $('#providersModal').classList.remove('open');
 
-    // Food
+    // Emergency providers (other than roadside)
+    function openEmergencyProviders(id, label){
+      $('#provSearchRow').style.display=''; // allow filter
+      $('#providersTitle').textContent = label + ' — Nearby';
+      const list = [
+        { id:'e1', publicName:`${label} Team A`, jobTitle:label, verified:true, rating:4.9, distance:'0.6km', eta:'4-7m', fee:'—', available:true, icon:'🛟' },
+        { id:'e2', publicName:`${label} Team B`, jobTitle:label, verified:true, rating:4.6, distance:'1.1km', eta:'8-12m', fee:'—', available:true, icon:'🛟' }
+      ];
+      renderProviders(list);
+      // override instant to simulate dispatch
+      $$('#providersList .card').forEach((c, i)=>{
+        c.querySelector('[data-k="instant"]').onclick = ()=>{
+          alert(`${label} request sent`);
+        };
+        c.querySelector('[data-k="schedule"]').onclick = ()=> $('#bookingModal').classList.add('open');
+      });
+      $('#providersModal').classList.add('open');
+    }
+
+    // Transport flow
+    $('#closeTransportOptions').onclick = ()=> $('#transportOptionsModal').classList.remove('open');
+    $('#optTaxi').onclick  = ()=> openTransportProviders('taxi', 'Ride / Taxi');
+    $('#optTruck').onclick = ()=> openTransportProviders('truck', 'Truck / Backie');
+    $('#closeTransportProviders').onclick = ()=> $('#transportProvidersModal').classList.remove('open');
+
+    function openTransportProviders(kind, label){
+      $('#transportOptionsModal').classList.remove('open');
+      $('#transportTitle').textContent = `${label} — Nearby`;
+      const list = [
+        { id:'d1', name:`${label} • Alex`, eta:'3-5m', distance:'0.5km', fare:'$6-9' },
+        { id:'d2', name:`${label} • Sam`,  eta:'5-7m', distance:'0.9km', fare:'$7-10' },
+      ];
+      const box=$('#transportList'); box.innerHTML='';
+      list.forEach(d=>{
+        const el=document.createElement('div'); el.className='card';
+        el.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center">
+          <div><strong>${d.name}</strong><div class="small muted">${d.distance} • ETA ${d.eta}</div></div>
+          <div class="row" style="gap:6px">
+            <button class="btn primary" data-k="instant">Instant</button>
+            <button class="btn ghost" data-k="schedule">Schedule</button>
+          </div>
+        </div>`;
+        el.querySelector('[data-k="instant"]').onclick = ()=> startTracking(d);
+        el.querySelector('[data-k="schedule"]').onclick = ()=> $('#bookingModal').classList.add('open');
+        box.appendChild(el);
+      });
+      $('#transportProvidersModal').classList.add('open');
+    }
+
+    function startTracking(driver){
+      $('#transportProvidersModal').classList.remove('open');
+      $('#trackTitle').textContent = `${driver.name} — arriving ${driver.eta}`;
+      $('#trackModal').classList.add('open');
+      setTimeout(()=> initTrackMap(), 10);
+      playSound('accept');
+    }
+    function initTrackMap(){
+      try {
+        if (!coords) return;
+        trackMap = L.map('trackMap',{ zoomControl:true }).setView([coords.lat, coords.lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(trackMap);
+        const you = L.circleMarker([coords.lat, coords.lng],{radius:7,color:'#10B981',fillColor:'#10B981',fillOpacity:.9}).addTo(trackMap).bindPopup('You');
+        let drvLat = coords.lat + 0.01, drvLng = coords.lng + 0.01;
+        const drv = L.circleMarker([drvLat, drvLng],{radius:7,color:'#2563EB',fillColor:'#2563EB',fillOpacity:.9}).addTo(trackMap).bindPopup('Driver');
+        trackInterval = setInterval(()=>{
+          drvLat = drvLat + (coords.lat - drvLat)/20;
+          drvLng = drvLng + (coords.lng - drvLng)/20;
+          drv.setLatLng([drvLat, drvLng]);
+          const dLat = drvLat - coords.lat, dLng = drvLng - coords.lng;
+          const dist = Math.sqrt(dLat*dLat + dLng*dLng) * 111_000; // meters approx
+          if (dist < 30) { playSound('arrive'); clearInterval(trackInterval); alert('Driver has arrived'); }
+        }, 1500);
+      } catch {}
+    }
+    function cancelTracking(){
+      try{ if (trackInterval) clearInterval(trackInterval); }catch{}
+      $('#trackModal').classList.remove('open');
+      showPage('home');
+    }
+    $('#trackCancel').onclick = cancelTracking;
+
+    // Food data
     const VENDORS = [
       { id:'v1', name:'Burger Place', kind:'fastfood', payment:['card','cash'] },
       { id:'v2', name:'Pizza Town',   kind:'fastfood', payment:['card'] },
@@ -746,20 +922,24 @@
         { id:'m6', title:'Bananas (1kg)', price:2.5, img:'https://images.unsplash.com/photo-1571772805064-2073979f0d4a?q=80&w=800&auto=format&fit=crop' },
       ]
     };
+
+    // Food handlers
     $('#closeFoodOptions').onclick = ()=> $('#foodOptionsModal').classList.remove('open');
     $('#foodFastBtn').onclick = ()=> { $('#foodOptionsModal').classList.remove('open'); openFoodVendors('fastfood'); };
     $('#foodGroceryBtn').onclick = ()=> { $('#foodOptionsModal').classList.remove('open'); openFoodVendors('grocery'); };
     $('#foodSearchBtn').onclick = ()=> { const q=($('#foodSearch').value||'').toLowerCase(); $('#foodOptionsModal').classList.remove('open'); openFoodVendorsSearch(q); };
+    $('#backToFoodOptions').onclick = ()=> { $('#foodVendorsModal').classList.remove('open'); $('#foodOptionsModal').classList.add('open'); };
+    $('#backToVendors').onclick = ()=> { $('#foodMenuModal').classList.remove('open'); $('#foodVendorsModal').classList.add('open'); };
 
     function openFoodVendors(kind){
-      renderVendorsList(VENDORS.filter(v=>v.kind===kind));
+      renderVendorsList(VENDORS.filter(v=>v.kind===kind), kind);
     }
     function openFoodVendorsSearch(q){
       const vendorIds = Object.keys(MENUS).filter(vid => (MENUS[vid]||[]).some(m=>m.title.toLowerCase().includes(q)));
       const list = VENDORS.filter(v=> v.name.toLowerCase().includes(q) || vendorIds.includes(v.id));
-      renderVendorsList(list);
+      renderVendorsList(list, 'search');
     }
-    function renderVendorsList(list){
+    function renderVendorsList(list, mode){
       const box=$('#foodVendorsList'); box.innerHTML='';
       list.forEach(v=>{
         const el=document.createElement('div'); el.className='card';
@@ -785,7 +965,7 @@
       $('#foodMenuTitle').textContent = `${vendor.name} — Menu`;
       const list=$('#foodMenuList'); list.innerHTML='';
       (MENUS[vendor.id]||[]).forEach(m=>{
-        const row=document.createElement('div'); row.className='card';
+        const row=document.createElement('div'); row.className='card'; row.dataset.id=m.id;
         row.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-start">
           <div class="row"><img src="${m.img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/><div style="margin-left:8px"><strong>${m.title}</strong><div class="small muted">${money(m.price)}</div></div></div>
           <div class="row" style="gap:6px"><button class="btn primary" data-k="add">＋ Add</button></div>
@@ -801,6 +981,7 @@
       $('#foodMenuModal').classList.add('open');
     }
     $('#closeFoodMenu').onclick = ()=> $('#foodMenuModal').classList.remove('open');
+    $('#clearFoodCart').onclick = ()=> { resetCart(); syncFoodTotals(); };
     function syncFoodTotals(){
       const total=cart.items.reduce((a,b)=>a+b.price*b.qty,0);
       $('#foodCartTotal').textContent=total.toFixed(2);
@@ -865,6 +1046,7 @@
       $('#vendorPayHint').textContent = `Vendor accepts: ${cart.vendorPayment.join(', ') || '—'}`;
       $('#checkoutModal').classList.add('open');
     }
+    $('#backToCart').onclick = ()=>{ $('#checkoutModal').classList.remove('open'); $('#cartModal').classList.add('open'); };
     $('#closeCheckout').onclick = ()=> $('#checkoutModal').classList.remove('open');
 
     // Place order (demo)
@@ -881,7 +1063,7 @@
         <div><strong>Order ID:</strong> ${orderId}</div>
         <div style="margin-top:6px"><strong>Status:</strong> <span>pending</span></div>
         <div style="margin-top:6px"><strong>Delivery code:</strong> <span style="font-family:monospace">${code}</span></div>
-        <div class="small muted" style="margin-top:6px">Please don't share this code with the seller until your goods are delivered and confirmed.</div>
+        <div class="small muted" style="margin-top:6px">Please don’t share this code with the seller until your goods are delivered and confirmed. You can always view it under Manage Orders.</div>
       </div>`;
       $('#orderModal').classList.add('open');
       resetCart(); updateBellBadge();
@@ -936,6 +1118,7 @@
       $('#mpSearchBtn').onclick = ()=> renderMarketplace(null, $('#mpSearch').value.trim().toLowerCase());
       $('#mpVoice').onclick = ()=> voiceToInput($('#mpSearch'), ()=> renderMarketplace(null, $('#mpSearch').value.trim().toLowerCase()));
       $('#sellSubmit').onclick = submitMarketplace;
+      $('#sellBack').onclick = ()=> $('#sellModal').classList.remove('open');
     }
     function renderMarketplace(category=null, query=''){
       const grid=$('#mpGrid'); grid.innerHTML='';
@@ -975,10 +1158,93 @@
     }
 
     // Profile buttons (navigation)
-    $('#manageServicesBtn').onclick   = ()=>{ $('.nav [data-page="services"]')?.click(); $('#page-manage-services').classList.add('active'); };
-    $('#manageProductsBtn').onclick   = ()=>{ $('.nav [data-page="services"]')?.click(); $('#page-manage-products').classList.add('active'); };
-    $('#emergencyContactsBtn').onclick= ()=>{ $('.nav [data-page="services"]')?.click(); $('#page-emergency-contacts').classList.add('active'); };
-    $('#providerVerifyBtn').onclick   = ()=>{ $('.nav [data-page="services"]')?.click(); $('#page-verify-provider').classList.add('active'); };
+    $('#manageServicesBtn').onclick   = ()=>{ showPage('profile'); $('#page-manage-services').classList.add('active'); };
+    $('#manageProductsBtn').onclick   = ()=>{ showPage('profile'); $('#page-manage-products').classList.add('active'); ensureFoodRow(); renderFoodItemsList(); };
+    $('#emergencyContactsBtn').onclick= ()=>{ showPage('profile'); $('#page-emergency-contacts').classList.add('active'); renderEmergencyContacts(); };
+    $('#providerVerifyBtn').onclick   = ()=>{ showPage('profile'); $('#page-verify-provider').classList.add('active'); };
+
+    // Back in inner pages
+    $('#msBack').onclick = ()=> showPage('profile');
+    $('#mpBack').onclick = ()=> showPage('profile');
+    $('#ecBack').onclick = ()=> showPage('profile');
+    $('#vpBack').onclick = ()=> showPage('profile');
+
+    // Availability toggle
+    const avail = $('#availToggle'), knob=$('#availKnob'), track=$('#availTrack');
+    function syncAvail(){ if (avail.checked){ track.style.background='#34D399'; knob.style.transform='translateX(20px)'; } else { track.style.background='#d1d5db'; knob.style.transform='translateX(0)'; } }
+    avail.onchange = syncAvail; syncAvail();
+
+    // Emergency Contacts
+    function getContacts(){ try { return JSON.parse(localStorage.getItem('zup_contacts')||'[]'); } catch { return []; } }
+    function setContacts(c){ localStorage.setItem('zup_contacts', JSON.stringify(c||[])); }
+    function renderEmergencyContacts(){
+      const wrap=$('#ecForm'); wrap.innerHTML='';
+      const data=getContacts(); const max=5;
+      for (let i=0;i<Math.max(3,data.length||0);i++){
+        const row=document.createElement('div'); row.className='grid-2';
+        row.innerHTML=`<div class="field"><label class="small">Name</label><input data-k="name" value="${data[i]?.name||''}"/></div>
+                       <div class="field"><label class="small">Phone</label><input data-k="phone" value="${data[i]?.phone||''}"/></div>`;
+        wrap.appendChild(row);
+      }
+    }
+    $('#ecSave').onclick = ()=>{
+      const rows=$$('#ecForm .grid-2'); const out=[];
+      rows.forEach(r=>{ const name=r.querySelector('[data-k="name"]').value.trim(); const phone=r.querySelector('[data-k="phone"]').value.trim(); if (name||phone) out.push({name,phone}); });
+      setContacts(out.slice(0,5));
+      alert('Contacts saved');
+    };
+
+    // Manage Products (Food)
+    function getFoodItems(){ try { return JSON.parse(localStorage.getItem('zup_food_items')||'[]'); } catch { return []; } }
+    function setFoodItems(x){ localStorage.setItem('zup_food_items', JSON.stringify(x||[])); }
+    function foodRowTemplate(){
+      const id='fr'+Math.random().toString(36).slice(2);
+      const div=document.createElement('div'); div.className='card'; div.dataset.row=id;
+      div.innerHTML=`
+        <div class="grid-2">
+          <div class="field"><label class="small">Subcategory</label>
+            <select data-k="kind"><option value="fastfood">Fast food</option><option value="grocery">Grocery</option></select>
+          </div>
+          <div class="field"><label class="small">Title</label><input data-k="title" placeholder="Item title"/></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label class="small">Price</label><input data-k="price" type="number" min="0" step="0.01"/></div>
+          <div class="field"><label class="small">Images (up to 5)</label><input data-k="images" type="file" accept="image/*" multiple/></div>
+        </div>
+        <div class="field"><label class="small">Description</label><textarea data-k="desc" rows="2"></textarea></div>
+        <div class="row" style="gap:8px">
+          <label><input type="checkbox" data-k="pm-card" checked/> Card</label>
+          <label><input type="checkbox" data-k="pm-cash" /> Cash</label>
+          <button class="btn ghost" data-k="rm" type="button" style="margin-left:auto">Remove</button>
+        </div>`;
+      div.querySelector('[data-k="rm"]').onclick = ()=> div.remove();
+      return div;
+    }
+    function ensureFoodRow(){ if (!$('#foodItemsForm').children.length) $('#foodItemsForm').appendChild(foodRowTemplate()); }
+    $('#addFoodRow').onclick = ()=> $('#foodItemsForm').appendChild(foodRowTemplate());
+    $('#saveFoodItems').onclick = async ()=>{
+      const rows = Array.from($('#foodItemsForm').children||[]);
+      if (!rows.length) return alert('Add at least one item');
+      const out=[];
+      for (const r of rows){
+        const kind=r.querySelector('[data-k="kind"]').value;
+        const title=r.querySelector('[data-k="title"]').value.trim();
+        const price=parseFloat(r.querySelector('[data-k="price"]').value||'0');
+        const desc=r.querySelector('[data-k="desc"]').value.trim();
+        const files=Array.from(r.querySelector('[data-k="images"]').files||[]).slice(0,5);
+        const images = await (files.length? Promise.all(files.map(f=>new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(f); }))): Promise.resolve([]));
+        const pm=[]; if (r.querySelector('[data-k="pm-card"]').checked) pm.push('card'); if (r.querySelector('[data-k="pm-cash"]').checked) pm.push('cash');
+        if (!title || !price) continue;
+        out.push({ id:'fi'+Date.now()+Math.random(), kind, title, price, desc, images, payment:pm });
+      }
+      const cur=getFoodItems(); setFoodItems(out.concat(cur));
+      renderFoodItemsList();
+      alert('Items saved');
+    };
+    function renderFoodItemsList(){
+      const box=$('#foodItemsList'); const items=getFoodItems();
+      box.innerHTML = items.map(it=>`<div class="card"><div class="row" style="justify-content:space-between"><div><strong>${it.title}</strong> <span class="small muted">${it.kind}</span><div class="small muted">${money(it.price)}</div></div><div class="small muted">${(it.payment||[]).join(', ')}</div></div></div>`).join('') || '<div class="small muted">No items yet</div>';
+    }
 
     // Wallet
     function openWallet(){
@@ -998,84 +1264,9 @@
     };
     $('#walletCards').onclick = ()=> alert('VISA •••• 4242');
 
-    // Geolocation + live vehicles
-    async function initLocation(){
-      try {
-        const pos = await new Promise((res, rej)=>navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy:true, timeout:8000 }));
-        coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        $('#userLocUnder').textContent = `Lat ${coords.lat.toFixed(4)}, Lng ${coords.lng.toFixed(4)}`;
-      } catch {
-        $('#userLocUnder').textContent = 'Location unavailable';
-      }
-    }
-    function initHomeMap(){
-      try {
-        homeMap = L.map('homeMap',{ zoomControl:false }).setView([coords?.lat||0, coords?.lng||0], coords?15:2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(homeMap);
-        if (coords) {
-          for (let i=0;i<6;i++){
-            const lat = coords.lat + (Math.random()-0.5)/100;
-            const lng = coords.lng + (Math.random()-0.5)/100;
-            const m = L.circleMarker([lat,lng],{radius:6,color:'#2563EB',fillColor:'#2563EB',fillOpacity:.9});
-            m.addTo(homeMap); vehicleMarkers.push(m);
-          }
-          setInterval(()=>{
-            vehicleMarkers.forEach(m=>{
-              const p = m.getLatLng();
-              m.setLatLng([p.lat + (Math.random()-0.5)/1000, p.lng + (Math.random()-0.5)/1000]);
-            });
-          }, 1500);
-        }
-      } catch {}
-    }
-
-    // Voice helper
-    function voiceToInput(inputEl, onResult){
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) { alert('Voice not supported'); return; }
-      const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
-      rec.onresult = (e)=>{ const text=e.results[0][0].transcript||''; inputEl.value=text; onResult&&onResult(text); };
-      rec.start();
-    }
-    $('#voiceBtn').onclick = ()=> voiceToInput($('#search'), ()=>{/*run search*/});
-    $('#mpVoice').onclick  = ()=> voiceToInput($('#mpSearch'), ()=>$('#mpSearchBtn').click());
-
-    // Profile edit
-    function updateProfileUI(){
-      $('#profName').textContent=(user?.name||'Guest');
-      $('#profEmail').textContent=(user?.email||'guest@example.com');
-      const saved=localStorage.getItem('zup_profile_photo');
-      if (saved) { const av=$('#user-avatar'); av.style.backgroundImage=`url("${saved}")`; av.style.backgroundSize='cover'; av.style.backgroundPosition='center'; av.textContent=''; }
-    }
-    $('#editProfileBtn').onclick = ()=>{
-      let m=document.getElementById('profileEditModal');
-      if (!m) {
-        m=document.createElement('div'); m.id='profileEditModal'; m.className='modal open';
-        m.innerHTML=`
-          <div class="sheet">
-            <div class="head"><strong>Edit Profile</strong><button class="btn ghost" id="peClose" type="button">✖</button></div>
-            <div class="body">
-              <div class="list">
-                <div class="field"><label class="small">Public name</label><input id="peName" value="${(user?.name||'')}"/></div>
-                <div class="field"><label class="small">Photo</label><input id="pePhoto" type="file" accept="image/*"/></div>
-                <button class="btn primary" id="peSave" type="button">Save</button>
-              </div>
-            </div>
-          </div>`;
-        document.body.appendChild(m);
-        m.addEventListener('click',(e)=>{ if(e.target===m) m.classList.remove('open'); });
-        document.getElementById('peClose').onclick=()=> m.classList.remove('open');
-        document.getElementById('peSave').onclick=()=>{
-          const name=document.getElementById('peName').value.trim(); if (name) user.name=name;
-          const f=document.getElementById('pePhoto').files?.[0];
-          if (f) { const fr=new FileReader(); fr.onload=()=>{ localStorage.setItem('zup_profile_photo', fr.result); updateProfileUI(); m.classList.remove('open'); }; fr.readAsDataURL(f); }
-          else { updateProfileUI(); m.classList.remove('open'); }
-        };
-      } else m.classList.add('open');
-    };
-
     // Booking form close
     $('#closeBooking').onclick = ()=> $('#bookingModal').classList.remove('open');
+    $('#bookingForm').onsubmit = (e)=>{ e.preventDefault(); alert('Booking request sent'); $('#bookingModal').classList.remove('open'); };
 
     // Roadside
     function openRoadside(){
@@ -1115,31 +1306,129 @@
       document.getElementById('provSearch')?.addEventListener('input', filter);
       document.getElementById('provSearchBtn')?.addEventListener('click', filter);
       document.getElementById('provVoice')?.addEventListener('click', ()=>voice(document.getElementById('provSearch'), filter));
-      // show row when opening categories with search
-      const oldOpen = window.openCategory;
-      window.openCategory = function(catId, label){
-        const show = ['home','tech','construction','auto','automobile'].includes(String(catId||'').toLowerCase());
-        row.style.display = show ? '' : 'none';
-        return oldOpen ? oldOpen.apply(this, arguments) : undefined;
-      };
     })();
 
-    // Marketplace wiring
-    function voiceToInput(el, cb){ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return alert('Voice not supported'); const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1; rec.onresult=e=>{ el.value=e.results[0][0].transcript||''; cb&&cb(); }; rec.start(); }
+    // Voice helper (global and marketplace)
+    function voiceToInput(inputEl, onResult){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert('Voice not supported'); return; }
+      const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult = (e)=>{ const text=e.results[0][0].transcript||''; inputEl.value=text; onResult&&onResult(text); };
+      rec.start();
+    }
+    $('#voiceBtn').onclick = ()=> voiceToInput($('#search'), (txt)=>{ const q=(txt||$('#search').value||'').toLowerCase(); if (q.includes('taxi') || q.includes('ride')) $('#transportOptionsModal').classList.add('open'); else if(q.includes('food')) $('#foodOptionsModal').classList.add('open'); else alert('Search coming soon'); });
+    $('#mpVoice').onclick  = ()=> voiceToInput($('#mpSearch'), ()=>$('#mpSearchBtn').click());
+
+    // Profile edit
+    function updateProfileUI(){
+      $('#profName').textContent=(user?.name||'Guest');
+      $('#profEmail').textContent=(user?.email||'guest@example.com');
+      const saved=localStorage.getItem('zup_profile_photo');
+      if (saved) { const av=$('#user-avatar'); av.style.backgroundImage=`url("${saved}")`; av.style.backgroundSize='cover'; av.style.backgroundPosition='center'; av.textContent=''; }
+    }
+    $('#editProfileBtn').onclick = ()=>{
+      let m=document.getElementById('profileEditModal');
+      if (!m) {
+        m=document.createElement('div'); m.id='profileEditModal'; m.className='modal open';
+        m.innerHTML=`
+          <div class="sheet">
+            <div class="head"><strong>Edit Profile</strong><button class="btn ghost" id="peClose" type="button">✖</button></div>
+            <div class="body">
+              <div class="list">
+                <div class="field"><label class="small">Public name</label><input id="peName" value="${(user?.name||'')}"/></div>
+                <div class="field"><label class="small">Photo</label><input id="pePhoto" type="file" accept="image/*"/></div>
+                <button class="btn primary" id="peSave" type="button">Save</button>
+              </div>
+            </div>
+          </div>`;
+        document.body.appendChild(m);
+        m.addEventListener('click',(e)=>{ if(e.target===m) m.classList.remove('open'); });
+        document.getElementById('peClose').onclick=()=> m.classList.remove('open');
+        document.getElementById('peSave').onclick=()=>{
+          const name=document.getElementById('peName').value.trim(); if (name) user.name=name;
+          const f=document.getElementById('pePhoto').files?.[0];
+          if (f) { const fr=new FileReader(); fr.onload=()=>{ localStorage.setItem('zup_profile_photo', fr.result); updateProfileUI(); m.classList.remove('open'); }; fr.readAsDataURL(f); }
+          else { updateProfileUI(); m.classList.remove('open'); }
+        };
+      } else m.classList.add('open');
+    };
+
+    // Panic
+    $('#panicBtn').onclick = ()=> $('#panicModal').classList.add('open');
+    $('#panicClose').onclick = ()=> $('#panicModal').classList.remove('open');
+    $('#panicCancel').onclick = ()=> $('#panicModal').classList.remove('open');
+    $('#panicSend').onclick = async ()=>{
+      const msg=$('#panicMsg').value.trim();
+      alert('Emergency alert sent');
+      $('#panicModal').classList.remove('open');
+    };
+
+    // Geolocation + reverse geocode + home vehicles
+    async function initLocation(){
+      try {
+        const pos = await new Promise((res, rej)=>navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy:true, timeout:8000 }));
+        coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}`);
+          const j = await r.json();
+          const addr = j?.display_name || `Lat ${coords.lat.toFixed(4)}, Lng ${coords.lng.toFixed(4)}`;
+          $('#userLocUnder').textContent = addr;
+        } catch {
+          $('#userLocUnder').textContent = `Lat ${coords.lat.toFixed(4)}, Lng ${coords.lng.toFixed(4)}`;
+        }
+      } catch {
+        $('#userLocUnder').textContent = 'Location unavailable';
+      }
+    }
+    function initHomeMap(){
+      try {
+        homeMap = L.map('homeMap',{ zoomControl:false }).setView([coords?.lat||0, coords?.lng||0], coords?15:2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(homeMap);
+        if (coords) {
+          for (let i=0;i<6;i++){
+            const lat = coords.lat + (Math.random()-0.5)/100;
+            const lng = coords.lng + (Math.random()-0.5)/100;
+            const m = L.circleMarker([lat,lng],{radius:6,color:'#2563EB',fillColor:'#2563EB',fillOpacity:.9});
+            m.addTo(homeMap); vehicleMarkers.push(m);
+          }
+          setInterval(()=>{
+            vehicleMarkers.forEach(m=>{
+              const p = m.getLatLng();
+              m.setLatLng([p.lat + (Math.random()-0.5)/1000, p.lng + (Math.random()-0.5)/1000]);
+            });
+          }, 1500);
+        }
+      } catch {}
+    }
+
+    // Providers search filter wiring
+    (function providersFilter(){
+      const row = $('#provSearchRow'), list = $('#providersList');
+      function filter(){ const q=($('#provSearch').value||'').toLowerCase(); list?.querySelectorAll('.card').forEach(c=>{ c.style.display = c.textContent.toLowerCase().includes(q)?'':'none'; }); }
+      $('#provSearch')?.addEventListener('input', filter);
+      $('#provSearchBtn')?.addEventListener('click', filter);
+      $('#provVoice')?.addEventListener('click', ()=>voiceToInput($('#provSearch'), filter));
+    })();
+
+    // Food checkout back
+    $('#backToCart').onclick = ()=>{ $('#checkoutModal').classList.remove('open'); $('#cartModal').classList.add('open'); };
+
+    // Wire category modal close
+    $('#closeProviders').onclick = ()=> $('#providersModal').classList.remove('open');
 
     // Init
     document.addEventListener('DOMContentLoaded', async ()=>{
-      // nav default
-      $('.nav [data-page="home"]').click();
-      // services
+      showPage('home');
       renderServices(); renderEmergency();
-      // marketplace
       initMarketplace();
-      // location + map
       await initLocation(); initHomeMap();
-      // splash off
+      updateProfileUI(); updateBellBadge();
+      ensureFoodRow(); renderFoodItemsList();
       setTimeout(()=>{ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } }, 250);
     });
+
+    // Booking helpers
+    $('#bkUseCurrent').onclick = ()=>{ if (coords) $('#bkAddress').value = $('#userLocUnder').textContent || `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`; };
   </script>
 </body>
 </html>
