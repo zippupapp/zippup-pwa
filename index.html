@@ -104,29 +104,16 @@
     /* Notifications modal */
     #notifModal .sheet { max-width:560px }
 
-    /* Product cards (marketplace) */
-    .product img { width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--border) }
+    /* Product cards (uniform) */
+    .product img { width:100%; height:160px; object-fit:cover; border-radius:10px; border:1px solid var(--border) }
+
     /* Keep greet/location fully visible under notches */
-header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
-.page { top: calc(var(--header-h) + env(safe-area-inset-top, 0px)); }
-    /* Header alignment and safe‑area */
-header {
-  height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
-  padding-top: env(safe-area-inset-top, 0px);
-  align-items: flex-end;
-}
-header .row:last-child { gap: 8px; }
-#notifBtn { margin-right: 4px; }
-.page {
-  top: calc(var(--header-h) + env(safe-area-inset-top, 0px));
-}
+    header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
+    .page { top: calc(var(--header-h) + env(safe-area-inset-top, 0px)); }
 
-/* Product cards unified heights */
-.product img { height: 160px; object-fit: cover; }
-
-/* Back bar style (for in‑page back) */
-.backbar { position: sticky; top: 0; background:#fff; z-index:5; padding:8px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px }
-.backbar .backbtn { background:#F3F4F6; border:0; border-radius:10px; padding:8px 10px; cursor:pointer }
+    /* Backbar */
+    .backbar { position:sticky; top:0; background:#fff; z-index:5; padding:8px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px }
+    .backbar .backbtn { background:#F3F4F6; border:0; border-radius:10px; padding:8px 10px; cursor:pointer }
   </style>
 </head>
 <body>
@@ -168,18 +155,20 @@ header .row:last-child { gap: 8px; }
       </div>
     </section>
 
+    <!-- Quick groups -->
+    <section class="section">
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <button class="btn primary" id="btnEmergencyServices" type="button">🚨 Emergency Services</button>
+        <button class="btn ghost" id="btnDigitalServices" type="button">💳 Digital Services</button>
+      </div>
+    </section>
+
     <section class="section">
       <div class="title">Emergency</div>
       <div class="grid" id="emergencyGrid"></div>
     </section>
 
     <section class="section">
-      <section class="section">
-  <div class="row" style="gap:8px; flex-wrap:wrap">
-    <button class="btn primary" id="btnEmergencyServices" type="button">🚨 Emergency Services</button>
-    <button class="btn ghost" id="btnDigitalServices" type="button">💳 Digital Services</button>
-  </div>
-</section
       <div class="title">All Services</div>
       <div class="grid" id="servicesGrid"></div>
     </section>
@@ -191,6 +180,7 @@ header .row:last-child { gap: 8px; }
   </main>
 
   <main id="page-services" class="page">
+    <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>Services</strong></div>
     <section class="section">
       <div class="title">Services</div>
       <div class="grid" id="servicesAllGrid"></div>
@@ -198,13 +188,17 @@ header .row:last-child { gap: 8px; }
   </main>
 
   <main id="page-bookings" class="page">
+    <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>My Bookings</strong></div>
     <section class="section">
-      <div class="title">My Bookings</div>
       <div id="bookingsList"></div>
     </section>
   </main>
 
   <main id="page-marketplace" class="page">
+    <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>Marketplace</strong></div>
+    <section class="section">
+      <button class="btn primary" id="sellBtn" type="button">🛍️ Sell products</button>
+    </section>
     <section class="search">
       <div class="box">
         <input id="mpSearch" placeholder="Search products…"/>
@@ -222,8 +216,8 @@ header .row:last-child { gap: 8px; }
   </main>
 
   <main id="page-profile" class="page">
+    <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>Profile</strong></div>
     <section class="section">
-      <div class="title">Profile</div>
       <div class="card">
         <div class="row" style="justify-content:space-between; align-items:center">
           <div class="row">
@@ -258,8 +252,8 @@ header .row:last-child { gap: 8px; }
   </main>
 
   <main id="page-orders" class="page">
+    <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>Manage Orders</strong></div>
     <section class="section">
-      <div class="title">Manage Orders</div>
       <div class="card">
         <div class="list">
           <div class="small muted">Buyer view</div>
@@ -276,26 +270,44 @@ header .row:last-child { gap: 8px; }
   </main>
 
   <main id="page-wallet" class="page">
+    <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>Wallet</strong></div>
     <section class="section">
-      <div class="title">Wallet</div>
-      <div class="card">Balance: <strong>$245.80</strong></div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div>Balance: <strong id="walletBalance">$245.80</strong></div>
+          <div class="row" style="gap:8px">
+            <button class="btn primary" id="walletAdd" type="button">Add funds</button>
+            <button class="btn ghost" id="walletCashOut" type="button">Cash out</button>
+            <button class="btn ghost" id="walletSend" type="button">Send to user</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <strong>Transactions</strong>
+        <div id="walletTx" class="list" style="margin-top:8px"></div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <strong>Saved cards</strong>
+        <div id="walletCards" class="list" style="margin-top:8px"></div>
+      </div>
     </section>
   </main>
 
   <main id="page-topup" class="page">
+    <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>Top‑up (Coming soon)</strong></div>
     <section class="section">
-      <div class="title">Top‑up (Digital)</div>
       <div class="grid">
         <div class="card service" data-topup="airtime"><div class="row"><div style="font-size:24px">📞</div><h4>Buy Airtime</h4></div></div>
         <div class="card service" data-topup="data"><div class="row"><div style="font-size:24px">📶</div><h4>Data Bundles</h4></div></div>
         <div class="card service" data-topup="bills"><div class="row"><div style="font-size:24px">💡</div><h4>Pay Bills</h4></div></div>
       </div>
+      <div class="small muted" style="margin-top:8px">In‑app purchases API coming soon.</div>
     </section>
   </main>
 
   <main id="page-manage-services" class="page">
+    <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>Manage Services</strong></div>
     <section class="section">
-      <div class="title">Manage Services</div>
       <div class="card">
         <div class="list">
           <div class="grid-2">
@@ -338,82 +350,40 @@ header .row:last-child { gap: 8px; }
     </section>
   </main>
 
-<main id="page-manage-food" class="page">
-  <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>Manage Food Menu</strong></div>
-  <section class="section">
-    <div class="card">
-      <div class="list" id="fmForm">
-        <div class="grid-2">
-          <div class="field">
-            <label class="small">Food category</label>
-            <select id="fmKind">
-              <option value="fastfood">Fast food</option>
-              <option value="grocery">Groceries</option>
-            </select>
-          </div>
-          <div class="field">
-            <label class="small">Payment options</label>
-            <div class="row"><label><input type="checkbox" id="fmPayCard" checked/> Card</label><label><input type="checkbox" id="fmPayCash" checked/> Cash</label></div>
-          </div>
-        </div>
-        <div id="fmItems" class="list"></div>
-        <div class="row" style="gap:8px">
-          <button class="btn ghost" id="fmAddItem" type="button">+ Add item</button>
-          <button class="btn primary" id="fmSaveAll" type="button">Save Menu</button>
-        </div>
-        <div class="hint">Unlimited items; up to 5 images per item.</div>
-      </div>
-    </div>
-    <div class="list" style="margin-top:12px" id="fmList"></div>
-  </section>
-</main>
-  
-  <main id="page-manage-products" class="page">
+  <!-- Manage Food Menu -->
+  <main id="page-manage-food" class="page">
+    <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>Manage Food Menu</strong></div>
     <section class="section">
-      <div class="title">Manage Products</div>
       <div class="card">
-        <div class="list">
+        <div class="list" id="fmForm">
           <div class="grid-2">
             <div class="field">
-              <label class="small">Category</label>
-              <select id="mpCatSelect">
-                <option value="electronics">Electronics</option>
-                <option value="fashion">Fashion</option>
-                <option value="home">Home & Garden</option>
-                <option value="sports">Sports</option>
-                <option value="automobile">Automobile</option>
-                <option value="spares">Spare Parts</option>
-                <option value="others">Others</option>
+              <label class="small">Food category</label>
+              <select id="fmKind">
+                <option value="fastfood">Fast food</option>
+                <option value="grocery">Groceries</option>
               </select>
             </div>
             <div class="field">
-              <label class="small">Product name</label>
-              <input id="mpName" placeholder="e.g., iPhone 13"/>
+              <label class="small">Payment options</label>
+              <div class="row"><label><input type="checkbox" id="fmPayCard" checked/> Card</label><label><input type="checkbox" id="fmPayCash" checked/> Cash</label></div>
             </div>
           </div>
-          <div class="field">
-            <label class="small">Description</label>
-            <textarea id="mpDesc" rows="3" placeholder="Describe the product…"></textarea>
+          <div id="fmItems" class="list"></div>
+          <div class="row" style="gap:8px">
+            <button class="btn ghost" id="fmAddItem" type="button">+ Add item</button>
+            <button class="btn primary" id="fmSaveAll" type="button">Save Menu</button>
           </div>
-          <div class="grid-2">
-            <div class="field"><label class="small">Price</label><input id="mpPrice" type="number" min="0" step="0.01"/></div>
-            <div class="field"><label class="small">Stock</label><input id="mpStock" type="number" min="0" step="1"/></div>
-          </div>
-          <div class="field">
-            <label class="small">Images (up to 10)</label>
-            <input id="mpImages" type="file" accept="image/*" multiple/>
-            <div class="hint">Optional</div>
-          </div>
-          <button class="btn primary" id="mpAdd" type="button">+ Add Product</button>
+          <div class="hint">Unlimited items; up to 5 images per item.</div>
         </div>
       </div>
-      <div class="list" style="margin-top:12px" id="mpManageList"></div>
+      <div class="list" style="margin-top:12px" id="fmList"></div>
     </section>
   </main>
 
   <main id="page-emergency-contacts" class="page">
+    <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>Emergency Contacts</strong></div>
     <section class="section">
-      <div class="title">Emergency Contacts</div>
       <div class="card">
         <div class="small muted">Add up to 5 contacts (name and phone).</div>
         <div id="ecForm" class="list" style="margin-top:10px"></div>
@@ -423,8 +393,8 @@ header .row:last-child { gap: 8px; }
   </main>
 
   <main id="page-verify-provider" class="page">
+    <div class="backbar"><button class="backbtn" data-back>← Back</button><strong>Become Verified Provider</strong></div>
     <section class="section">
-      <div class="title">Become Verified Provider</div>
       <div class="card">
         <div class="list">
           <div class="field"><label class="small">Full name</label><input id="vpName" placeholder="Your name"/></div>
@@ -455,6 +425,12 @@ header .row:last-child { gap: 8px; }
         <button class="btn ghost" id="closeProviders" type="button">✖</button>
       </div>
       <div class="body">
+        <div class="search" id="providersSearchWrap" style="display:none">
+          <div class="box">
+            <input id="providersSearch" placeholder="Filter provider type or name…"/>
+            <button class="btn primary" id="providersSearchBtn" type="button">Search</button>
+          </div>
+        </div>
         <div class="list" id="providersList"></div>
       </div>
     </div>
@@ -526,7 +502,10 @@ header .row:last-child { gap: 8px; }
     <div class="sheet">
       <div class="head">
         <strong id="instantTitle">Contacting provider…</strong>
-        <button class="btn ghost" id="cancelInstant" type="button">Cancel</button>
+        <div class="row" style="gap:6px">
+          <button class="btn ghost" id="cancelInstant" type="button">Cancel</button>
+          <button class="btn ghost" id="instantClose" type="button">✖</button>
+        </div>
       </div>
       <div class="body">
         <div class="card">
@@ -584,27 +563,7 @@ header .row:last-child { gap: 8px; }
     </div>
   </div>
 
-<div class="modal" id="payMethodModal">
-  <div class="sheet">
-    <div class="head">
-      <strong>Select Payment Method</strong>
-      <button class="btn ghost" id="pmClose" type="button">✖</button>
-    </div>
-    <div class="body">
-      <div class="list">
-        <label class="row"><input type="radio" name="pm" value="card" checked/> <span>Card / Wallet</span></label>
-        <label class="row"><input type="radio" name="pm" value="cash"/> <span>Cash</span></label>
-        <div class="small muted">Transport: card/cash charged after trip ends. Other services: hourly after 7 min from arrival.</div>
-        <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px">
-          <button class="btn ghost" id="pmCancel" type="button">Cancel</button>
-          <button class="btn primary" id="pmConfirm" type="button">Continue</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-  
-  <!-- Food Options (new) -->
+  <!-- Food Options -->
   <div class="modal" id="foodOptionsModal">
     <div class="sheet">
       <div class="head">
@@ -763,7 +722,7 @@ header .row:last-child { gap: 8px; }
       </div>
       <div class="body">
         <div class="list">
-          <div class="small muted">We’ll notify your contacts and nearby providers with your location.</div>
+          <div class="small muted">We’ll notify your contacts and nearby security with your location.</div>
           <div class="field">
             <label class="small">Message (optional)</label>
             <textarea id="panicMsg" rows="3" placeholder="Describe the emergency…"></textarea>
@@ -820,6 +779,61 @@ header .row:last-child { gap: 8px; }
       </div>
       <div class="body">
         <div id="notifList" class="list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pay Method Modal -->
+  <div class="modal" id="payMethodModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Select Payment Method</strong>
+        <button class="btn ghost" id="pmClose" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="list">
+          <label class="row"><input type="radio" name="pm" value="card" checked/> <span>Card / Wallet</span></label>
+          <label class="row"><input type="radio" name="pm" value="cash"/> <span>Cash</span></label>
+          <div class="small muted">Transport: charged after trip ends. Other services: hourly after 7 min from arrival.</div>
+          <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px">
+            <button class="btn ghost" id="pmCancel" type="button">Cancel</button>
+            <button class="btn primary" id="pmConfirm" type="button">Continue</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sell Products (marketplace uploader) -->
+  <div class="modal" id="sellModal">
+    <div class="sheet">
+      <div class="head"><strong>Sell Products</strong><button class="btn ghost" id="sellClose" type="button">✖</button></div>
+      <div class="body">
+        <div class="list">
+          <div class="grid-2">
+            <div class="field"><label class="small">Category</label>
+              <select id="sellCat">
+                <option value="electronics">Electronics</option>
+                <option value="fashion">Fashion</option>
+                <option value="home">Home & Garden</option>
+                <option value="sports">Sports</option>
+                <option value="automobile">Automobile</option>
+                <option value="spares">Spare Parts</option>
+                <option value="others">Others</option>
+              </select>
+            </div>
+            <div class="field"><label class="small">Type</label><input id="sellType" placeholder="e.g., Phone, Shoes"/></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label class="small">Title</label><input id="sellTitle"/></div>
+            <div class="field"><label class="small">Price</label><input id="sellPrice" type="number" min="0" step="0.01"/></div>
+          </div>
+          <div class="field"><label class="small">Stock</label><input id="sellStock" type="number" min="0" step="1"/></div>
+          <div class="field"><label class="small">Description</label><textarea id="sellDesc" rows="3"></textarea></div>
+          <div class="field"><label class="small">Images (up to 10)</label><input id="sellImages" type="file" accept="image/*" multiple/></div>
+          <div class="row" style="gap:8px"><button class="btn primary" id="sellSave" type="button">Save</button></div>
+          <div class="hint">Edit or renew listings later.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -971,8 +985,13 @@ header .row:last-child { gap: 8px; }
       $('termsClose').onclick = ()=> $('termsModal').style.display='none';
       $('termsModal').addEventListener('click',(e)=>{ if(e.target===$('termsModal')) $('termsModal').style.display='none'; });
 
-      // Splash
+      // Splash (normal)
       window.addEventListener('load', ()=> setTimeout(()=>{ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } }, 250));
+
+      // Sell products
+      $('sellBtn').onclick = ()=> $('sellModal').classList.add('open');
+      $('sellClose').onclick = ()=> $('sellModal').classList.remove('open');
+      $('sellSave').onclick = saveMarketplaceListing;
     });
 
     // Location
@@ -1009,7 +1028,7 @@ header .row:last-child { gap: 8px; }
       { id:'roadside',  name:'Roadside', icon:'🔧' },
     ];
 
-    // Marketplace public products (contact-only)
+    // Marketplace categories and sample products
     const MP_CATEGORIES = [
       { id:'electronics', name:'Electronics' },
       { id:'fashion',     name:'Fashion' },
@@ -1019,17 +1038,14 @@ header .row:last-child { gap: 8px; }
       { id:'spares',      name:'Spare Parts' },
       { id:'others',      name:'Others' },
     ];
-    <section class="section">
-  <button class="btn primary" id="sellBtn" type="button">🛍️ Sell products</button>
-</section>
     let MP_PRODUCTS = [
-      { id:'p100', title:'Smartphone X', cat:'electronics', price:499, stock:12, img:'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop', seller:'Tony', phone:'+1234567890', whatsapp:'+1234567890' },
-      { id:'p101', title:'Wireless Earbuds', cat:'electronics', price:59,  stock:34, img:'https://images.unsplash.com/photo-1585386959984-a41552231658?q=80&w=800&auto=format&fit=crop', seller:'Mary', phone:'+234810000001', whatsapp:'+234810000001' },
-      { id:'p200', title:'Running Shoes', cat:'fashion', price:79,  stock:18, img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop', seller:'Kelvin', phone:'+233540000002', whatsapp:'+233540000002' },
-      { id:'p201', title:'Denim Jacket', cat:'fashion', price:69,  stock:9,  img:'https://images.unsplash.com/photo-1542060748-10c28b62716b?q=80&w=800&auto=format&fit=crop', seller:'Anita', phone:'+254710000003', whatsapp:'+254710000003' }
+      { id:'p100', title:'Smartphone X', cat:'electronics', price:499, stock:12, img:'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop', seller:'Tony', phone:'+1234567890', whatsapp:'+1234567890', ts:Date.now() },
+      { id:'p101', title:'Wireless Earbuds', cat:'electronics', price:59,  stock:34, img:'https://images.unsplash.com/photo-1585386959984-a41552231658?q=80&w=800&auto=format&fit=crop', seller:'Mary', phone:'+234810000001', whatsapp:'+234810000001', ts:Date.now()-1 },
+      { id:'p200', title:'Running Shoes', cat:'fashion', price:79,  stock:18, img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop', seller:'Kelvin', phone:'+233540000002', whatsapp:'+233540000002', ts:Date.now()-2 },
+      { id:'p201', title:'Denim Jacket', cat:'fashion', price:69,  stock:9,  img:'https://images.unsplash.com/photo-1542060748-10c28b62716b?q=80&w=800&auto=format&fit=crop', seller:'Anita', phone:'+254710000003', whatsapp:'+254710000003', ts:Date.now()-3 }
     ];
 
-    // Food/Grocery sample vendors and menus
+    // Food vendors and menus
     const VENDORS = [
       { id:'v1', name:'Burger Place', kind:'fastfood', payment:['card','cash'], phone:'+12345001', whatsapp:'+12345001' },
       { id:'v2', name:'Pizza Town',  kind:'fastfood', payment:['card'], phone:'+12345002', whatsapp:'+12345002' },
@@ -1100,6 +1116,7 @@ header .row:last-child { gap: 8px; }
         ], opt=>{
           $('categoryOptionsModal').classList.remove('open');
           $('providersTitle').textContent = opt.name + ' — Providers';
+          ensureProvidersSearch(true);
           fetchProviders('transport', opt.id).then(renderProviders);
           $('providersModal').classList.add('open');
         });
@@ -1110,6 +1127,7 @@ header .row:last-child { gap: 8px; }
         return;
       }
       $('providersTitle').textContent = label + ' — Providers';
+      ensureProvidersSearch(true);
       fetchProviders(catId).then(renderProviders);
       $('providersModal').classList.add('open');
     }
@@ -1127,7 +1145,7 @@ header .row:last-child { gap: 8px; }
     }
     $('closeProviders').onclick = ()=>$('providersModal').classList.remove('open');
 
-    // Providers (demo/fallback)
+    // Providers
     async function fetchProviders(category, sub=null){
       try{
         const q = new URLSearchParams({ category, sub: sub||'', lat: coords?.lat||'', lng: coords?.lng||'' });
@@ -1207,14 +1225,31 @@ header .row:last-child { gap: 8px; }
         $('tiStart').onclick = ()=> startInstantTransport(provider);
       } else startInstant(provider);
     }
+
+    // Pay method prompt
+    async function choosePayment(){
+      const modal=$('payMethodModal');
+      if (!modal) return 'card';
+      modal.classList.add('open');
+      return new Promise(res=>{
+        const get=()=>[...document.querySelectorAll('input[name="pm"]')].find(r=>r.checked)?.value||'card';
+        $('pmClose').onclick=()=>{ modal.classList.remove('open'); res(null); };
+        $('pmCancel').onclick=()=>{ modal.classList.remove('open'); res(null); };
+        $('pmConfirm').onclick=()=>{ const v=get(); modal.classList.remove('open'); res(v); };
+      });
+    }
+
     async function startInstantTransport(provider){
+      const choice = await choosePayment(); if (!choice) return;
+      window.currentPaymentMethod = choice;
+
       const pickup=(tiPickup.value||'').trim(), destination=(tiDestination.value||'').trim();
       if (!pickup||!destination) return alert('Pickup and Destination are required');
       const stops = Array.from(document.querySelectorAll('.tiStopInput')).map(i=>i.value.trim()).filter(Boolean).slice(0,5);
       startInstantCountdownInit();
       try{
         const r=await fetch(`${BASE_API}/api/requests`,{ method:'POST', headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({ type:'instant', category:'transport', providerId:provider.id, userPublicName:user.name, pickup, destination, stops, location:coords?{latitude:coords.lat,longitude:coords.lng}:null })});
+          body:JSON.stringify({ type:'instant', category:'transport', providerId:provider.id, userPublicName:user.name, pickup, destination, stops, payment:choice, location:coords?{latitude:coords.lat,longitude:coords.lng}:null })});
         const d=await r.json().catch(()=>({})); requestId=d.requestId||('demo-'+Date.now());
       }catch{ requestId='demo-'+Date.now(); }
       tiModal.classList.remove('open');
@@ -1222,10 +1257,13 @@ header .row:last-child { gap: 8px; }
       startInstantCountdown('transport');
     }
     async function startInstant(provider){
+      const choice = await choosePayment(); if (!choice) return;
+      window.currentPaymentMethod = choice;
+
       startInstantCountdownInit();
       try{
         const r=await fetch(`${BASE_API}/api/requests`,{ method:'POST', headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({ type:'instant', category:lastCategory||'general', providerId:provider.id, userPublicName:user.name, location:coords?{latitude:coords.lat,longitude:coords.lng}:null })});
+          body:JSON.stringify({ type:'instant', category:lastCategory||'general', providerId:provider.id, userPublicName:user.name, payment:choice, location:coords?{latitude:coords.lat,longitude:coords.lng}:null })});
         const d=await r.json().catch(()=>({})); requestId=d.requestId||('demo-'+Date.now());
       }catch{ requestId='demo-'+Date.now(); }
       openTrackingPending();
@@ -1238,6 +1276,7 @@ header .row:last-child { gap: 8px; }
       catch{ return (instantLeft<78)?'accepted':'pending'; }
     }
     function startInstantCountdown(category){
+      $('instantClose').onclick = ()=>{ $('instantModal').classList.remove('open'); };
       $('cancelInstant').onclick = (e)=>{ e.preventDefault(); openCancelReasons(); };
       $('findOthers').onclick = ()=>{ $('instantModal').classList.remove('open'); $('providersModal').classList.add('open'); };
       instantTimer=setInterval(async ()=>{
@@ -1290,7 +1329,8 @@ header .row:last-child { gap: 8px; }
         const picked = document.querySelector('input[name="cr"]:checked')?.value || 'Other';
         const reason = picked === 'Other' ? (other.value.trim()||'Other') : picked;
         try { if (requestId) await fetch(`${BASE_API}/api/requests/${encodeURIComponent(requestId)}?reason=${encodeURIComponent(reason)}`, { method:'DELETE' }); } catch {}
-        if (trackPoll) clearInterval(trackPoll); requestId=null;
+        if (trackPoll) clearInterval(trackPoll); requestId=null; stopInstant();
+        try{ if (providerMarker){ providerMarker.remove(); providerMarker=null; } }catch{}
         $('cancelReasonsModal').classList.remove('open');
         $('instantModal').classList.remove('open');
         $('trackModal').classList.remove('open');
@@ -1316,6 +1356,7 @@ header .row:last-child { gap: 8px; }
         openCategoryOptions('Transport Options',[{id:'moving',name:'Truck / Backie',icon:'🚚'}],o=>{
           $('categoryOptionsModal').classList.remove('open');
           $('providersTitle').textContent = o.name + ' — Providers';
+          ensureProvidersSearch(true);
           fetchProviders('transport','moving').then(renderProviders);
           $('providersModal').classList.add('open');
         });
@@ -1328,18 +1369,52 @@ header .row:last-child { gap: 8px; }
       if (/(towing|tow)/.test(q)) return openEmergency('towing','Towing');
       if (/(security|police)/.test(q)) return openEmergency('security','Security');
       $('providersTitle').textContent = q + ' — Providers';
+      ensureProvidersSearch(true);
       fetchProviders('search', q).then(renderProviders);
       $('providersModal').classList.add('open');
     }
 
     async function openEmergency(emId, label){
       $('providersTitle').textContent = label + ' — Nearest';
+      const showSearch = !['ambulance','fire','towing','security','transport'].includes(emId);
+      ensureProvidersSearch(showSearch);
       const list = await fetchProviders('emergency', emId);
       renderProviders(list);
       $('providersModal').classList.add('open');
     }
 
-    // Marketplace (contact-only)
+    // Items modal
+    function openItemsModal(kind){
+      $('itemsTitle').textContent = 'Find ' + (kind==='roadside'?'Roadside Help':'Service');
+      const chipsMap = {
+        roadside:['flat tire','jumpstart','fuel','lockout','tow'],
+        home:['electrician','plumber','cleaning','gardening','painting','carpentry','ac repair'],
+        tech:['phone repair','computer','tv repair','software','cctv','network'],
+        auto:['mechanic','tires','battery','car wash','towing'],
+        construction:['builder','welder','bricklayer','laborer','mason','roofer','scaffolding'],
+        others:['events','tutor','legal','photography','translator','driver hire'],
+      };
+      const wrap=$('itemChips'); wrap.innerHTML='';
+      (chipsMap[kind]||chipsMap.others).forEach(text=>{
+        const b=document.createElement('button'); b.className='btn ghost'; b.type='button'; b.textContent=text;
+        b.onclick=()=>{ $('itemSearch').value=text; $('itemGo').click(); };
+        wrap.appendChild(b);
+      });
+      $('itemsModal').classList.add('open');
+      $('closeItems').onclick=()=>$('itemsModal').classList.remove('open');
+      $('itemVoice').onclick = ()=> voiceToInput($('itemSearch'), ()=>$('itemGo').click());
+      $('itemGo').onclick = async ()=>{
+        const q = ($('itemSearch').value||'').trim().toLowerCase();
+        $('itemsModal').classList.remove('open');
+        $('providersTitle').textContent = (q||'Results') + ' — Providers';
+        ensureProvidersSearch(true);
+        const list = await fetchProviders(kind, q||kind);
+        renderProviders(list);
+        $('providersModal').classList.add('open');
+      };
+    }
+
+    // Marketplace
     $('mpVoice').onclick = ()=> voiceToInput($('mpSearch'), ()=> runMarketplaceSearch());
     $('mpSearchBtn').onclick = runMarketplaceSearch;
     function initMarketplace(){
@@ -1352,127 +1427,133 @@ header .row:last-child { gap: 8px; }
       renderMarketplace();
     }
     function runMarketplaceSearch(){ renderMarketplace(null, $('mpSearch').value.trim().toLowerCase()); }
+    function getUserListings(){ try { return JSON.parse(localStorage.getItem('zup_market_listings')||'[]'); } catch { return []; } }
+    function setUserListings(arr){ localStorage.setItem('zup_market_listings', JSON.stringify(arr||[])); }
     function renderMarketplace(category=null, query=''){
       const grid=$('mpGrid'); grid.innerHTML='';
-      let list = MP_PRODUCTS.slice().concat(getUserProducts().map(p=>({ ...p, seller:user.name, phone:p.phone||'+', whatsapp:p.whatsapp||'+' })));
+      let userListings=getUserListings();
+      let list = MP_PRODUCTS.concat(userListings).sort((a,b)=>(b.ts||0)-(a.ts||0));
       if (category) list = list.filter(p=>p.cat===category);
-      if (query) list = list.filter(p=>p.title.toLowerCase().includes(query)||p.cat.includes(query));
+      if (query) list = list.filter(p=>(p.title||'').toLowerCase().includes(query)||(p.cat||'').includes(query));
       if (!list.length){ grid.innerHTML='<div class="small muted">No products found.</div>'; return; }
       list.forEach(p=>{
         const el=document.createElement('div'); el.className='card product';
         el.innerHTML=`<img src="${p.img}" alt="${p.title}"/><div><strong>${p.title}</strong></div>
-          <div class="row" style="justify-content:space-between"><div class="price">$${Number(p.price).toFixed(2)}</div><div class="small muted">Seller: ${p.seller||'—'}</div></div>
+          <div class="row" style="justify-content:space-between"><div class="price">$${Number(p.price).toFixed(2)}</div><div class="small muted">${p.seller?('Seller: '+p.seller):''}</div></div>
           <div class="row" style="gap:8px;margin-top:6px">
-            <button class="btn primary" type="button">💬 Chat</button>
-            <button class="btn ghost" type="button">📞 Call</button>
-            <button class="btn ghost" type="button">🟢 WhatsApp</button>
+            ${p.user?'<button class="btn ghost" data-k="edit">Edit</button><button class="btn ghost" data-k="renew">Renew</button>':'<button class="btn primary" data-k="chat">💬 Chat</button><button class="btn ghost" data-k="call">📞</button><button class="btn ghost" data-k="wa">🟢</button>'}
           </div>`;
-        const [chatBtn, callBtn, waBtn] = el.querySelectorAll('button');
-        chatBtn.onclick = ()=> alert('In‑app chat coming soon.');
-        callBtn.onclick = ()=> location.href = `tel:${encodeURIComponent(p.phone||'')}`;
-        waBtn.onclick   = ()=> location.href = `https://wa.me/${encodeURIComponent((p.whatsapp||'').replace(/\D/g,''))}`;
+        const btns=el.querySelectorAll('button');
+        if (p.user){
+          btns[0].onclick = ()=> editListing(p.id);
+          btns[1].onclick = ()=> renewListing(p.id);
+        } else {
+          btns[0].onclick = ()=> alert('In‑app chat coming soon.');
+          btns[1].onclick = ()=> location.href = `tel:${encodeURIComponent(p.phone||'')}`;
+          btns[2].onclick   = ()=> location.href = `https://wa.me/${encodeURIComponent((p.whatsapp||'').replace(/\D/g,''))}`;
+        }
         grid.appendChild(el);
       });
     }
-
-    // Manage Products (user)
-    function getUserProducts(){ try { return JSON.parse(localStorage.getItem('zup_user_products')||'[]'); } catch { return []; } }
-    function setUserProducts(arr){ localStorage.setItem('zup_user_products', JSON.stringify(arr||[])); }
-    $('mpAdd').onclick = ()=>{
-      const cat=$('mpCatSelect').value, name=$('mpName').value.trim(), desc=$('mpDesc').value.trim(), price=Number($('mpPrice').value||0), stock=Number($('mpStock').value||0);
-      if (!name || !price || !stock) return alert('Fill name, price, stock');
-      const files=Array.from(($('mpImages').files||[])).slice(0,10);
-      const images=[]; if (!files.length){ save(); } else {
+    function saveMarketplaceListing(){
+      const cat=$('sellCat').value, type=($('sellType').value||'').trim(), title=($('sellTitle').value||'').trim(), price=Number($('sellPrice').value||0), stock=Number($('sellStock').value||0), desc=$('sellDesc').value||'';
+      if (!title || !price) return alert('Title and price required');
+      const files=Array.from(($('sellImages').files||[])).slice(0,10);
+      const images=[]; if (!files.length){ commit(); } else {
         let left=files.length;
-        files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--left===0) save(); }; fr.readAsDataURL(f); });
+        files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--left===0) commit(); }; fr.readAsDataURL(f); });
       }
-      function save(){
-        const ups=getUserProducts();
-        const id='u'+Date.now();
+      function commit(){
+        const me = auth.currentUser?.email || 'me';
+        const arr=getUserListings();
+        const id='ml'+Date.now();
         const img=images[0] || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop';
-        ups.push({ id, title:name, cat, price, stock, img, images, desc, user:true });
-        setUserProducts(ups);
-        loadProductsManage();
-        alert('Product added');
+        arr.push({ id, title, cat, type, price, stock, desc, img, images, user:true, seller:me, ts:Date.now() });
+        setUserListings(arr);
+        $('sellModal').classList.remove('open');
+        renderMarketplace();
+        alert('Listing saved');
       }
+    }
+    function editListing(id){
+      const arr=getUserListings(); const item=arr.find(x=>x.id===id); if(!item) return;
+      $('sellModal').classList.add('open');
+      $('sellCat').value=item.cat||'others';
+      $('sellType').value=item.type||'';
+      $('sellTitle').value=item.title||'';
+      $('sellPrice').value=item.price||0;
+      $('sellStock').value=item.stock||0;
+      $('sellDesc').value=item.desc||'';
+      $('sellImages').value='';
+      $('sellSave').onclick = ()=>{
+        item.cat=$('sellCat').value; item.type=$('sellType').value.trim(); item.title=$('sellTitle').value.trim(); item.price=Number($('sellPrice').value||0); item.stock=Number($('sellStock').value||0); item.desc=$('sellDesc').value||'';
+        const files=Array.from(($('sellImages').files||[])).slice(0,10);
+        if (files.length){
+          let left=files.length, images=[];
+          files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--left===0){ item.images=images; item.img=images[0]||item.img; finalize(); } }; fr.readAsDataURL(f); });
+        } else finalize();
+        function finalize(){ setUserListings(arr); $('sellModal').classList.remove('open'); renderMarketplace(); alert('Listing updated'); }
+      };
+    }
+    function renewListing(id){
+      const arr=getUserListings(); const item=arr.find(x=>x.id===id); if(!item) return;
+      item.ts=Date.now(); setUserListings(arr); renderMarketplace(); alert('Listing renewed');
+    }
+
+    // Manage Products renamed to Food Menu (vendors)
+    $('manageFoodMenuBtn').onclick = ()=>{ showPage('manage-food'); renderFoodMenuManage(); };
+    function getFoodMenu(){ try { return JSON.parse(localStorage.getItem('zup_food_menu')||'[]'); } catch { return []; } }
+    function setFoodMenu(arr){ localStorage.setItem('zup_food_menu', JSON.stringify(arr||[])); }
+    $('fmAddItem').onclick = ()=> addFoodItemRow();
+    $('fmSaveAll').onclick = async ()=>{
+      const entries = Array.from(document.querySelectorAll('#fmItems .card')).map(row=> new Promise(res=>{
+        const title=row.querySelector('[data-f="title"]').value.trim();
+        const price=Number(row.querySelector('[data-f="price"]').value||0);
+        const desc =row.querySelector('[data-f="desc"]').value||'';
+        const files=Array.from((row.querySelector('[data-f="images"]').files||[])).slice(0,5);
+        if (!title || !price){ res(null); return; }
+        if (!files.length){ res({ title, price, desc, images:[] }); }
+        else {
+          let left=files.length, images=[];
+          files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--left===0) res({ title, price, desc, images }); }; fr.readAsDataURL(f); });
+        }
+      }));
+      const items=(await Promise.all(entries)).filter(Boolean).map((x,i)=>({ id:'fm'+(Date.now()+i), ...x, kind: $('fmKind').value, payment: getPayOpts() }));
+      const all=getFoodMenu().concat(items); setFoodMenu(all);
+      $('fmItems').innerHTML=''; renderFoodMenuManage(); alert('Menu saved');
     };
-    function loadProductsManage(){
-      const box=$('mpManageList'); box.innerHTML='';
-      const ups=getUserProducts();
-      if (!ups.length){ box.innerHTML='<div class="small muted">No products yet.</div>'; return; }
-      ups.forEach(p=>{
-        const imgs=(p.images||[]).map(src=>`<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+    function getPayOpts(){ const p=[]; if ($('fmPayCard')?.checked) p.push('card'); if ($('fmPayCash')?.checked) p.push('cash'); return p; }
+    function addFoodItemRow(pref){
+      const wrap=$('fmItems');
+      const row=document.createElement('div'); row.className='card';
+      row.innerHTML = `
+        <div class="grid-2">
+          <div class="field"><label class="small">Title</label><input data-f="title" value="${pref?.title||''}"/></div>
+          <div class="field"><label class="small">Price</label><input data-f="price" type="number" min="0" step="0.01" value="${pref?.price||''}"/></div>
+        </div>
+        <div class="field"><label class="small">Description</label><textarea data-f="desc" rows="2">${pref?.desc||''}</textarea></div>
+        <div class="field"><label class="small">Images (up to 5)</label><input data-f="images" type="file" accept="image/*" multiple/></div>
+        <div class="row" style="gap:8px;justify-content:flex-end"><button class="btn ghost" data-k="remove" type="button">Remove</button></div>`;
+      row.querySelector('[data-k="remove"]').onclick = ()=> row.remove();
+      wrap.appendChild(row);
+    }
+    function renderFoodMenuManage(){
+      const box=$('fmList'); if (!box) return; box.innerHTML='';
+      const list=getFoodMenu();
+      if (!list.length){ box.innerHTML='<div class="small muted">No food items yet.</div>'; return; }
+      list.forEach(it=>{
         const el=document.createElement('div'); el.className='card';
-        el.innerHTML=`<div class="list">
-          <div class="row" style="justify-content:space-between;align-items:flex-start">
-            <div>
-              <div><strong>${p.title}</strong> <span class="small muted">[${p.cat}]</span></div>
-              <div class="small muted">${p.desc||''}</div>
-              <div class="small"><strong>Price:</strong> $${Number(p.price).toFixed(2)} • <strong>Stock:</strong> ${p.stock}</div>
-            </div>
-            <div class="row" style="gap:6px"><button class="btn ghost" data-k="del" data-id="${p.id}">Delete</button></div>
-          </div>
-          <div class="row" style="gap:6px;flex-wrap:wrap">${imgs||'<span class="small muted">No images</span>'}</div>
-        </div>`;
+        const imgs=(it.images||[]).map(src=>`<img src="${src}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+        el.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div><div><strong>${it.title}</strong> <span class="small muted">[${it.kind}]</span></div><div class="small muted">${it.desc||''}</div><div class="small">Price: $${Number(it.price).toFixed(2)} • Pay: ${(it.payment||[]).join(', ')||'—'}</div></div>
+          <div class="row"><button class="btn ghost" data-k="edit">Edit</button><button class="btn ghost" data-k="del">Delete</button></div>
+        </div>
+        <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">${imgs||'<span class="small muted">No images</span>'}</div>`;
+        const [editBtn, delBtn]=el.querySelectorAll('button');
+        editBtn.onclick=()=> addFoodItemRow(it);
+        delBtn.onclick=()=>{ const rest=getFoodMenu().filter(x=>x!==it); setFoodMenu(rest); renderFoodMenuManage(); };
         box.appendChild(el);
       });
-      box.querySelectorAll('button[data-k="del"]').forEach(b=> b.onclick=()=>{ const id=b.dataset.id; const arr=getUserProducts().filter(x=>x.id!==id); setUserProducts(arr); loadProductsManage(); });
-    }
-
-    // Manage Services (user)
-    function getUserServices(){ try { return JSON.parse(localStorage.getItem('zup_user_services')||'[]'); } catch { return []; } }
-    function setUserServices(arr){ localStorage.setItem('zup_user_services', JSON.stringify(arr||[])); }
-    $('msAdd').onclick = ()=>{
-      const cat=$('msCategory').value, type=$('msType').value.trim(), details=$('msDetails').value.trim(), price=Number($('msPrice').value||0);
-      if (!type || !details || !price) return alert('Fill category, type, details, price');
-      const id='svc-'+Date.now();
-      const files=Array.from(($('msImages').files||[])).slice(0,4), images=[];
-      if (!files.length) save(); else {
-        let pending=files.length;
-        files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--pending===0) save(); }; fr.readAsDataURL(f); });
-      }
-      function save(){
-        const services=getUserServices();
-        services.push({ id, cat, type, details, price, images, publicName:user.name, status:'available' });
-        setUserServices(services);
-        loadServicesManage(); alert('Service added');
-      }
-    };
-    function loadServicesManage(){
-      const list=$('msList'); list.innerHTML='';
-      const services=getUserServices();
-      if (!services.length){ list.innerHTML='<div class="small muted">No services yet.</div>'; return; }
-      services.forEach(s=>{
-        const el=document.createElement('div'); el.className='card';
-        const imgs = (s.images||[]).map(src=>`<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
-        el.innerHTML=`<div class="list">
-          <div class="row" style="justify-content:space-between;align-items:flex-start">
-            <div>
-              <div><strong>${s.type}</strong> <span class="small muted">[${s.cat}]</span></div>
-              <div class="small muted">${s.details}</div>
-              <div class="small"><strong>Price:</strong> $${Number(s.price).toFixed(2)} • <strong>By:</strong> ${s.publicName}</div>
-            </div>
-            <div class="row" style="gap:6px">
-              <button class="btn ghost" data-k="track" data-id="${s.id}">Track</button>
-              <button class="btn ghost" data-k="cancel" data-id="${s.id}">Cancel</button>
-            </div>
-          </div>
-          <div class="row" style="gap:6px;flex-wrap:wrap">${imgs||'<span class="small muted">No catalog images</span>'}</div>
-        </div>`;
-        list.appendChild(el);
-      });
-      list.querySelectorAll('button[data-k="track"]').forEach(b=> b.onclick=()=> openTrackingPending());
-      list.querySelectorAll('button[data-k="cancel"]').forEach(b=> b.onclick=()=> openCancelReasons());
-    }
-
-    function wireProfilePages(){
-      $('manageServicesBtn').onclick   = ()=>{ showPage('manage-services'); loadServicesManage(); };
-      $('manageProductsBtn').onclick   = ()=>{ showPage('manage-products'); loadProductsManage(); };
-      $('emergencyContactsBtn').onclick= ()=>{ showPage('emergency-contacts'); loadContactsForm(); };
-      $('providerVerifyBtn').onclick   = ()=>{ showPage('verify-provider'); };
-      $('vpSubmit').onclick = ()=>{ $('vpStatus').textContent='Submitted. Awaiting admin review.'; };
-      $('confirmClose').onclick = ()=> $('confirmDeliveryModal').classList.remove('open');
-      $('lastOrderClose').onclick = ()=> $('lastOrderModal').classList.remove('open');
     }
 
     // Emergency contacts
@@ -1517,7 +1598,7 @@ header .row:last-child { gap: 8px; }
     }
     function openFoodVendorsSearch(q){
       const inVendors = VENDORS.filter(v=>v.name.toLowerCase().includes(q));
-      const inMenusVendorIds = Object.keys(MENUS).filter(vid => (MENUS[vid]||[]).some(m=>m.title.toLowerCase().includes(q)));
+      const inMenusVendorIds = Object.keys(MENUS).filter(vid => (MENUS[vid]||'').some?.(m=>m.title.toLowerCase().includes(q)) || (MENUS[vid]||[]).some(m=>m.title.toLowerCase().includes(q)));
       const keep = new Set(inVendors.map(v=>v.id).concat(inMenusVendorIds));
       renderVendorsList(VENDORS.filter(v=>keep.has(v.id)));
     }
@@ -1526,7 +1607,7 @@ header .row:last-child { gap: 8px; }
     }
     function renderVendorsList(list){
       const box=$('foodVendorsList'); box.innerHTML='';
-      list.forEach(v=>{
+      (list && list.length ? list : VENDORS).forEach(v=>{
         const el=document.createElement('div'); el.className='card';
         el.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-start">
           <div><div><strong>${v.name}</strong></div><div class="small muted">${v.kind==='fastfood'?'Fast food':'Grocery'} • Payments: ${v.payment.join(', ')}</div></div>
@@ -1765,7 +1846,7 @@ header .row:last-child { gap: 8px; }
           <div style="width:100%;max-width:420px;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 8px 24px rgba(17,24,39,.08);padding:16px;background:#fff">
             <div class="list">
               <div style="text-align:center;margin-bottom:10px">
-                <div style="font-weight:800;font-size:18px">ZippUp, speed up ur hustle my Gee</div>
+                <div style="font-weight:800;font-size:18px">ZippUp: Hustle faster!</div>
                 <div style="font-size:13px;color:#475569;margin-top:4px">One stop to your OnDemand services.</div>
               </div>
               <div class="field"><label class="small">Email</label><input id="lgEmail" type="email"/></div>
@@ -1836,316 +1917,268 @@ header .row:last-child { gap: 8px; }
         if (coords) { const name = await reverseGeocode(coords.lat, coords.lng); $('bkAddress').value = name || ''; }
       } catch {}
     };
-  </script>
-  <script>
-(function cancelFix(){
-  const $=id=>document.getElementById(id);
-  function closeAll(){ ['cancelReasonsModal','instantModal','trackModal','providersModal'].forEach(id=>$(id)?.classList.remove('open')); }
-  function doCancel(reason){
-    try{ if (window.requestId && window.BASE_API) fetch(`${BASE_API}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`,{method:'DELETE'});}catch{}
-    try{ if (window.stopInstant) window.stopInstant(); }catch{}
-    try{ if (window.trackPoll){ clearInterval(window.trackPoll); window.trackPoll=null; } }catch{}
-    window.requestId=null; closeAll();
-    try{ if (typeof showPage==='function') showPage('services'); }catch{}
-    alert('Request cancelled');
-  }
-  const ensureReasons=()=>{
-    const m=$('cancelReasonsModal'); if (!m) return;
-    const list=$('crList'); if (!list) return;
-    if (!list.children.length){
-      ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{ const row=document.createElement('label'); row.className='row'; row.innerHTML=`<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`; list.appendChild(row); });
-      const other=document.createElement('input'); other.id='crOther'; other.placeholder='If Other, describe…'; other.style.cssText='width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px'; list.appendChild(other);
-    }
-    $('crClose')&&($('crClose').onclick=()=>m.classList.remove('open'));
-    $('crBack') &&($('crBack').onclick =()=>m.classList.remove('open'));
-    $('crConfirm')&&($('crConfirm').onclick=()=>{ const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other'; const other=$('crOther')?.value?.trim(); doCancel(picked==='Other'?(other||'Other'):picked); });
-  };
-  const openReasons=()=>{ const m=$('cancelReasonsModal'); if (m){ ensureReasons(); m.classList.add('open'); } else doCancel('User cancelled'); };
-  const ci=$('cancelInstant'); if (ci) ci.onclick=(e)=>{ e.preventDefault(); openReasons(); };
-  const tcb=$('trackCancelBtn'); if (tcb) tcb.onclick=(e)=>{ e.preventDefault(); openReasons(); };
-})();
-</script>
-  <script>
-(function backbars(){
-  document.querySelectorAll('.page').forEach(p=>{
-    if (p.id==='page-home' || p.querySelector('.backbar')) return;
-    const bar=document.createElement('div'); bar.className='backbar';
-    bar.innerHTML='<button class="backbtn" type="button">← Back</button><strong style="margin-left:8px">'+(p.querySelector('.title')?.textContent||p.id.replace('page-',''))+'</strong>';
-    p.insertBefore(bar, p.firstChild);
-    bar.querySelector('.backbtn').onclick=()=> (history.length>1?history.back():document.querySelector('.nav button[data-page="home"]')?.click());
-  });
-})();
-</script>
-  <script>
-(function ZippUpEnhancements(){
-  const $=id=>document.getElementById(id);
 
-  // A) Backbars: add back to all pages missing it
-  (function addBackbars(){
-    document.querySelectorAll('.page').forEach(p=>{
-      if (p.id==='page-home') return;
-      if (!p.querySelector('.backbar')) {
-        const bar=document.createElement('div');
-        bar.className='backbar';
-        bar.innerHTML='<button class="backbtn" type="button">← Back</button><strong style="margin-left:8px">'+(p.querySelector('.title')?.textContent||p.id.replace('page-',''))+'</strong>';
-        p.prepend(bar);
-        bar.querySelector('.backbtn').onclick=()=> (history.length>1?history.back():document.querySelector('.nav button[data-page="home"]')?.click());
-      }
-    });
-  })();
-
-  // B) Home quick groups
-  $('btnEmergencyServices')?.addEventListener('click', ()=>{
-    // Show emergency list via Providers modal with search
-    const title=$('providersTitle'); if (title) title.textContent='Emergency Services';
-    ensureProvidersSearch(true);
-    renderEmergency(); // already lists emergency cards on Home
-    // Optionally open a category picker
-  });
-  $('btnDigitalServices')?.addEventListener('click', ()=>{
-    // Navigate to topup (coming soon)
-    document.querySelector('.nav button[data-page="topup"]')?.click();
-  });
-
-  // C) Panic copy tweak
-  (function tweakPanicCopy(){
-    const note = document.querySelector('#panicModal .small.muted');
-    if (note) note.textContent = "We’ll notify your contacts and nearby security with your location.";
-  })();
-
-  div class="modal" id="sellModal">
-  <div class="sheet">
-    <div class="head"><strong>Sell Products</strong><button class="btn ghost" id="sellClose" type="button">✖</button></div>
-    <div class="body">
-      <div class="list">
-        <div class="grid-2">
-          <div class="field"><label class="small">Category</label>
-            <select id="sellCat">
-              <option value="electronics">Electronics</option><option value="fashion">Fashion</option>
-              <option value="home">Home & Garden</option><option value="sports">Sports</option>
-              <option value="automobile">Automobile</option><option value="spares">Spare Parts</option>
-              <option value="others">Others</option>
-            </select>
-          </div>
-          <div class="field"><label class="small">Type</label><input id="sellType" placeholder="e.g., Phone, Shoes"/></div>
-        </div>
-        <div class="grid-2">
-          <div class="field"><label class="small">Title</label><input id="sellTitle"/></div>
-          <div class="field"><label class="small">Price</label><input id="sellPrice" type="number" min="0" step="0.01"/></div>
-        </div>
-        <div class="field"><label class="small">Stock</label><input id="sellStock" type="number" min="0" step="1"/></div>
-        <div class="field"><label class="small">Description</label><textarea id="sellDesc" rows="3"></textarea></div>
-        <div class="field"><label class="small">Images (up to 10)</label><input id="sellImages" type="file" accept="image/*" multiple/></div>
-        <div class="row" style="gap:8px"><button class="btn primary" id="sellSave" type="button">Save</button></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-  // D) Providers modal: search bar enable/disable helper
-  window.ensureProvidersSearch = function(show){
-    const wrap=$('providersSearchWrap');
-    if (!wrap) return;
-    wrap.style.display = show ? 'block' : 'none';
-    $('providersSearchBtn').onclick = ()=>{
-      const q = ($('providersSearch').value||'').toLowerCase().trim();
-      if (!q) return;
-      Array.from(document.querySelectorAll('#providersList .card')).forEach(card=>{
-        const text = card.textContent.toLowerCase();
-        card.style.display = text.includes(q) ? '' : 'none';
-      });
-    };
-  };
-
-  // E) Instant cancel: stop timers, map, request, close UI immediately
-  (function robustCancel(){
-    function doCancel(reason){
-      try{ if (window.requestId && window.BASE_API){ fetch(`${BASE_API}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`,{method:'DELETE'}); } }catch{}
-      try{ if (window.stopInstant) window.stopInstant(); }catch{}
-      try{ if (window.trackPoll){ clearInterval(window.trackPoll); window.trackPoll=null; } }catch{}
-      try{ if (window.providerMarker){ window.providerMarker.remove(); window.providerMarker=null; } }catch{}
-      window.requestId=null;
-      ['cancelReasonsModal','instantModal','trackModal','providersModal'].forEach(id=>$(id)?.classList.remove('open'));
-      try{ if (typeof showPage==='function') showPage('services'); }catch{}
-      alert('Request cancelled');
-    }
-    const openReasons = ()=>{
-      const m=$('cancelReasonsModal'), list=$('crList'); if (!m||!list) return doCancel('User cancelled');
-      if (!list.children.length){
-        ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{ const row=document.createElement('label'); row.className='row'; row.innerHTML=`<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`; list.appendChild(row); });
-        const other=document.createElement('input'); other.id='crOther'; other.placeholder='If Other, describe…'; other.style.cssText='width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px'; list.appendChild(other);
-      }
-      $('crClose')&&($('crClose').onclick=()=> m.classList.remove('open'));
-      $('crBack') &&($('crBack').onclick =()=> m.classList.remove('open'));
-      $('crConfirm')&&($('crConfirm').onclick=()=>{ const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other'; const other=$('crOther')?.value?.trim(); doCancel(picked==='Other'?(other||'Other'):picked); });
-      m.classList.add('open');
-    };
-    $('cancelInstant') && ($('cancelInstant').onclick=(e)=>{ e.preventDefault(); openReasons(); });
-    $('trackCancelBtn') && ($('trackCancelBtn').onclick=(e)=>{ e.preventDefault(); openReasons(); });
-    $('instantClose') && ($('instantClose').onclick=()=> $('instantModal').classList.remove('open'));
-  })();
-
-  // F) Pre‑service payment selection
-  (function wirePayMethod(){
-    const modal=$('payMethodModal');
-    const get = ()=>[...document.querySelectorAll('input[name="pm"]')].find(r=>r.checked)?.value||'card';
-    const ask = ()=> new Promise(res=>{
-      if (!modal) return res('card');
-      modal.classList.add('open');
-      $('pmClose').onclick = ()=>{ modal.classList.remove('open'); res(null); };
-      $('pmCancel').onclick= ()=>{ modal.classList.remove('open'); res(null); };
-      $('pmConfirm').onclick= ()=>{ const v=get(); modal.classList.remove('open'); res(v); };
-    });
-    // Hook instant start functions if present
-    const origStartTransport = window.startInstantTransport;
-    const origStartInstant   = window.startInstant;
-    if (typeof origStartTransport==='function'){
-      window.startInstantTransport = async function(provider){
-        const choice = await ask(); if (!choice) return;
-        window.currentPaymentMethod = choice;
-        return origStartTransport.call(this, provider);
+    // Providers search helper
+    function ensureProvidersSearch(show){
+      const wrap=$('providersSearchWrap');
+      if (!wrap) return;
+      wrap.style.display = show ? 'block' : 'none';
+      $('providersSearchBtn').onclick = ()=>{
+        const q = ($('providersSearch').value||'').toLowerCase().trim();
+        if (!q) return;
+        Array.from(document.querySelectorAll('#providersList .card')).forEach(card=>{
+          const text = card.textContent.toLowerCase();
+          card.style.display = text.includes(q) ? '' : 'none';
+        });
       };
     }
-    if (typeof origStartInstant==='function'){
-      window.startInstant = async function(provider){
-        const choice = await ask(); if (!choice) return;
-        window.currentPaymentMethod = choice;
-        return origStartInstant.call(this, provider);
-      };
-    }
-  })();
 
-  // G) Transport vs Other Services payment notes (client‑side flags)
-  window.markTransportEnded = function(distanceKm){
-    // call backend to capture or settle; client note
-    console.log('Transport ended. Distance:', distanceKm, 'Payment method:', window.currentPaymentMethod||'card');
-    alert('Trip ended. Payment will be processed now.');
-  };
-  window.startServiceBilling = function(hourlyRate){
-    // Start billing 7 min after arrival
-    window.__svcBilling && clearInterval(window.__svcBilling);
-    const startAt = Date.now() + 7*60*1000;
-    window.__svcBilling = setInterval(()=>{
-      const now=Date.now();
-      if (now >= startAt){
-        const elapsedH = (now - startAt)/(1000*60*60);
-        const due = Math.max(0, elapsedH) * (hourlyRate||0);
-        console.log('Service running. Accumulated:', due.toFixed(2));
-      }
-    }, 15000);
-  };
-  window.stopServiceBilling = function(){
-    window.__svcBilling && clearInterval(window.__svcBilling);
-    window.__svcBilling=null;
-  };
+    // Transport end + Other services billing demo stubs
+    window.markTransportEnded = function(distanceKm){
+      console.log('Transport ended. Distance:', distanceKm, 'Payment:', window.currentPaymentMethod||'card');
+      alert('Trip ended. Payment will be processed now.');
+    };
+    window.startServiceBilling = function(hourlyRate){
+      window.__svcBilling && clearInterval(window.__svcBilling);
+      const startAt = Date.now() + 7*60*1000;
+      window.__svcBilling = setInterval(()=>{
+        const now=Date.now();
+        if (now >= startAt){
+          const elapsedH = (now - startAt)/(1000*60*60);
+          const due = Math.max(0, elapsedH) * (hourlyRate||0);
+          console.log('Service running. Accumulated:', due.toFixed(2));
+        }
+      }, 15000);
+    };
+    window.stopServiceBilling = function(){
+      window.__svcBilling && clearInterval(window.__svcBilling);
+      window.__svcBilling=null;
+    };
 
-  // H) Wallet features (history + actions + masked cards)
-  (function walletUI(){
-    const balanceEl=$('walletBalance'), txBox=$('walletTx'), cardsBox=$('walletCards');
-    if (!balanceEl||!txBox||!cardsBox) return;
-    const wallet = window.__wallet || (window.__wallet = {
+    // Wallet UI
+    const wallet = {
       balance: 245.80,
-      tx: [{ id:'t1', type:'topup', amount:50, desc:'Card top‑up', ts:Date.now()-86400000 },{ id:'t2', type:'pay', amount:-12, desc:'Food order', ts:Date.now()-3600000 }],
+      tx: [
+        { id:'t1', type:'topup', amount:50,  desc:'Card top-up', ts:Date.now()-86400000 },
+        { id:'t2', type:'pay',   amount:-12, desc:'Food order', ts:Date.now()-3600000 },
+      ],
       cards: [{ brand:'Visa', last4:'4242' }]
-    });
-    const render=()=>{
-      balanceEl.textContent = '$' + wallet.balance.toFixed(2);
-      txBox.innerHTML=''; wallet.tx.slice().sort((a,b)=>b.ts-a.ts).forEach(t=>{
+    };
+    function renderWallet(){
+      $('walletBalance').textContent = '$' + wallet.balance.toFixed(2);
+      const txBox=$('walletTx'); txBox.innerHTML='';
+      wallet.tx.slice().sort((a,b)=>b.ts-a.ts).forEach(t=>{
         const row=document.createElement('div'); row.className='card';
         row.innerHTML=`<div class="row" style="justify-content:space-between"><div>${t.desc}</div><div style="font-weight:700;${t.amount<0?'color:#DC2626':''}">${t.amount<0?'-':''}$${Math.abs(t.amount).toFixed(2)}</div></div><div class="small muted">${new Date(t.ts).toLocaleString()}</div>`;
         txBox.appendChild(row);
       });
-      cardsBox.innerHTML=''; wallet.cards.forEach(c=>{
+      const cardBox=$('walletCards'); cardBox.innerHTML='';
+      wallet.cards.forEach(c=>{
         const row=document.createElement('div'); row.className='card';
         row.innerHTML=`<div class="row" style="justify-content:space-between"><div>${c.brand} •••• ${c.last4}</div><div class="small muted">Saved</div></div>`;
-        cardsBox.appendChild(row);
+        cardBox.appendChild(row);
       });
-    };
-    render();
-    $('walletAdd')?.addEventListener('click', async ()=>{
-      alert('Top‑up via Stripe (Coming soon).');
-      // Integrate: POST to /api/payments/checkout-session with type=wallet_topup
-    });
-    $('walletCashOut')?.addEventListener('click', ()=> alert('Cash out: Coming soon'));
-    $('walletSend')?.addEventListener('click', ()=>{
-      const email = prompt('Recipient email'); const amt = Number(prompt('Amount'));
-      if (!email||!amt) return;
-      if (amt>wallet.balance) return alert('Insufficient funds');
-      wallet.balance -= amt; wallet.tx.push({ id:'t'+Date.now(), type:'send', amount:-amt, desc:`Send to ${email}`, ts:Date.now() }); render();
-      alert('Sent');
-    });
-  })();
-
-  // I) Food vendor management (multi‑item)
-  (function foodMenuManage(){
-    const btn=$('manageFoodMenuBtn'); if (!btn) return;
-    const getFoodMenu = ()=>{ try { return JSON.parse(localStorage.getItem('zup_food_menu')||'[]'); } catch { return []; } };
-    const setFoodMenu = (arr)=> localStorage.setItem('zup_food_menu', JSON.stringify(arr||[]));
-    btn.onclick = ()=>{ document.querySelector('.nav button[data-page="services"]')?.classList.remove('active'); showPage('manage-food'); renderFoodMenuManage(); };
-    $('fmAddItem')?.addEventListener('click', ()=> addItemRow());
-    $('fmSaveAll')?.addEventListener('click', async ()=>{
-      const entries = Array.from(document.querySelectorAll('#fmItems .card')).map(row=> new Promise(res=>{
-        const title=row.querySelector('[data-f="title"]').value.trim();
-        const price=Number(row.querySelector('[data-f="price"]').value||0);
-        const desc =row.querySelector('[data-f="desc"]').value||'';
-        const files=Array.from((row.querySelector('[data-f="images"]').files||[])).slice(0,5);
-        if (!title || !price){ res(null); return; }
-        if (!files.length){ res({ title, price, desc, images:[] }); }
-        else {
-          let left=files.length, images=[];
-          files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--left===0) res({ title, price, desc, images }); }; fr.readAsDataURL(f); });
-        }
-      }));
-      const items=(await Promise.all(entries)).filter(Boolean).map((x,i)=>({ id:'fm'+(Date.now()+i), ...x, kind: $('fmKind').value, payment: getPayOpts() }));
-      const all=getFoodMenu().concat(items); setFoodMenu(all);
-      $('fmItems').innerHTML=''; renderFoodMenuManage(); alert('Menu saved');
-    });
-    function getPayOpts(){ const p=[]; if ($('fmPayCard')?.checked) p.push('card'); if ($('fmPayCash')?.checked) p.push('cash'); return p; }
-    function addItemRow(pref){
-      const wrap=$('fmItems');
-      const row=document.createElement('div'); row.className='card';
-      row.innerHTML = `
-        <div class="grid-2">
-          <div class="field"><label class="small">Title</label><input data-f="title" value="${pref?.title||''}"/></div>
-          <div class="field"><label class="small">Price</label><input data-f="price" type="number" min="0" step="0.01" value="${pref?.price||''}"/></div>
-        </div>
-        <div class="field"><label class="small">Description</label><textarea data-f="desc" rows="2">${pref?.desc||''}</textarea></div>
-        <div class="field"><label class="small">Images (up to 5)</label><input data-f="images" type="file" accept="image/*" multiple/></div>
-        <div class="row" style="gap:8px;justify-content:flex-end"><button class="btn ghost" data-k="remove" type="button">Remove</button></div>`;
-      row.querySelector('[data-k="remove"]').onclick = ()=> row.remove();
-      wrap.appendChild(row);
     }
-    function renderFoodMenuManage(){
-      const box=$('fmList'); if (!box) return; box.innerHTML='';
-      const list=getFoodMenu();
-      if (!list.length){ box.innerHTML='<div class="small muted">No food items yet.</div>'; return; }
-      list.forEach(it=>{
+    renderWallet();
+    $('walletAdd').onclick = async ()=>{
+      alert('Top‑up via Stripe (Coming soon).');
+    };
+    $('walletCashOut').onclick = ()=> alert('Cash out: Coming soon');
+    $('walletSend').onclick = ()=> {
+      const email = prompt('Recipient email');
+      const amt = Number(prompt('Amount'));
+      if (!email || !amt) return;
+      if (amt > wallet.balance) return alert('Insufficient funds');
+      wallet.balance -= amt; wallet.tx.push({ id:'t'+Date.now(), type:'send', amount:-amt, desc:`Send to ${email}`, ts:Date.now() }); renderWallet();
+      alert('Sent');
+    };
+
+    // Profile pages
+    function wireProfilePages(){
+      $('manageServicesBtn').onclick   = ()=>{ showPage('manage-services'); loadServicesManage(); };
+      $('manageFoodMenuBtn').onclick   = ()=>{ showPage('manage-food'); renderFoodMenuManage(); };
+      $('emergencyContactsBtn').onclick= ()=>{ showPage('emergency-contacts'); loadContactsForm(); };
+      $('providerVerifyBtn').onclick   = ()=>{ showPage('verify-provider'); };
+      $('vpSubmit').onclick = ()=>{ $('vpStatus').textContent='Submitted. Awaiting admin review.'; };
+      $('confirmClose').onclick = ()=> $('confirmDeliveryModal').classList.remove('open');
+      $('lastOrderClose').onclick = ()=> $('lastOrderModal').classList.remove('open');
+    }
+
+    // Manage Services (user)
+    function getUserServices(){ try { return JSON.parse(localStorage.getItem('zup_user_services')||'[]'); } catch { return []; } }
+    function setUserServices(arr){ localStorage.setItem('zup_user_services', JSON.stringify(arr||[])); }
+    $('msAdd').onclick = ()=>{
+      const cat=$('msCategory').value, type=$('msType').value.trim(), details=$('msDetails').value.trim(), price=Number($('msPrice').value||0);
+      if (!type || !details || !price) return alert('Fill category, type, details, price');
+      const id='svc-'+Date.now();
+      const files=Array.from(($('msImages').files||[])).slice(0,4), images=[];
+      if (!files.length) save(); else {
+        let pending=files.length;
+        files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--pending===0) save(); }; fr.readAsDataURL(f); });
+      }
+      function save(){
+        const services=getUserServices();
+        services.push({ id, cat, type, details, price, images, publicName:user.name, status:'available' });
+        setUserServices(services);
+        loadServicesManage(); alert('Service added');
+      }
+    };
+    function loadServicesManage(){
+      const list=$('msList'); list.innerHTML='';
+      const services=getUserServices();
+      if (!services.length){ list.innerHTML='<div class="small muted">No services yet.</div>'; return; }
+      services.forEach(s=>{
         const el=document.createElement('div'); el.className='card';
-        const imgs=(it.images||[]).map(src=>`<img src="${src}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+        const imgs = (s.images||[]).map(src=>`<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+        el.innerHTML=`<div class="list">
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div>
+              <div><strong>${s.type}</strong> <span class="small muted">[${s.cat}]</span></div>
+              <div class="small muted">${s.details}</div>
+              <div class="small"><strong>Price:</strong> $${Number(s.price).toFixed(2)} • <strong>By:</strong> ${s.publicName}</div>
+            </div>
+            <div class="row" style="gap:6px">
+              <button class="btn ghost" data-k="track" data-id="${s.id}">Track</button>
+              <button class="btn ghost" data-k="cancel" data-id="${s.id}">Cancel</button>
+            </div>
+          </div>
+          <div class="row" style="gap:6px;flex-wrap:wrap">${imgs||'<span class="small muted">No catalog images</span>'}</div>
+        </div>`;
+        list.appendChild(el);
+      });
+      list.querySelectorAll('button[data-k="track"]').forEach(b=> b.onclick=()=> openTrackingPending());
+      list.querySelectorAll('button[data-k="cancel"]').forEach(b=> b.onclick=()=> openCancelReasons());
+    }
+
+    // Emergency contacts button
+    $('ecSave').onclick = saveContacts;
+
+    // Support stub
+    function wireSupport(){}
+
+    // Food flow wiring
+    function wireFoodFlow(){
+      $('closeFoodVendors').onclick = ()=> $('foodVendorsModal').classList.remove('open');
+      $('closeFoodMenu').onclick = ()=> $('foodMenuModal').classList.remove('open');
+      $('foodCheckoutBtn').onclick = ()=> openCheckout();
+    }
+    function openFoodVendorsFiltered(kind){
+      renderVendorsList((VENDORS||[]).filter(v=>v.kind===kind));
+    }
+    function openFoodVendorsSearch(q){
+      const inVendors = VENDORS.filter(v=>v.name.toLowerCase().includes(q));
+      const inMenusVendorIds = Object.keys(MENUS).filter(vid => (MENUS[vid]||[]).some(m=>m.title.toLowerCase().includes(q)));
+      const keep = new Set(inVendors.map(v=>v.id).concat(inMenusVendorIds));
+      renderVendorsList(VENDORS.filter(v=>keep.has(v.id)));
+    }
+    function openFoodVendors(){
+      renderVendorsList(VENDORS);
+    }
+    function renderVendorsList(list){
+      const box=$('foodVendorsList'); box.innerHTML='';
+      (list && list.length ? list : VENDORS).forEach(v=>{
+        const el=document.createElement('div'); el.className='card';
         el.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-start">
-          <div><div><strong>${it.title}</strong> <span class="small muted">[${it.kind}]</span></div><div class="small muted">${it.desc||''}</div><div class="small">Price: $${Number(it.price).toFixed(2)} • Pay: ${(it.payment||[]).join(', ')||'—'}</div></div>
-          <div class="row"><button class="btn ghost" data-k="edit">Edit</button><button class="btn ghost" data-k="del">Delete</button></div>
-        </div>
-        <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">${imgs||'<span class="small muted">No images</span>'}</div>`;
-        const [editBtn, delBtn]=el.querySelectorAll('button');
-        editBtn.onclick=()=> addItemRow(it);
-        delBtn.onclick=()=>{ const rest=getFoodMenu().filter(x=>x!==it); setFoodMenu(rest); renderFoodMenuManage(); };
+          <div><div><strong>${v.name}</strong></div><div class="small muted">${v.kind==='fastfood'?'Fast food':'Grocery'} • Payments: ${v.payment.join(', ')}</div></div>
+          <div class="row" style="gap:6px"><button class="btn primary" data-k="menu">View Menu</button><button class="btn ghost" data-k="call">📞</button><button class="btn ghost" data-k="wa">🟢</button></div>
+        </div>`;
+        el.querySelector('[data-k="menu"]').onclick = ()=> openFoodMenu(v);
+        el.querySelector('[data-k="call"]').onclick = ()=> location.href=`tel:${encodeURIComponent(v.phone||'')}`;
+        el.querySelector('[data-k="wa"]').onclick   = ()=> location.href=`https://wa.me/${encodeURIComponent((v.whatsapp||'').replace(/\D/g,''))}`;
         box.appendChild(el);
       });
+      $('foodVendorsTitle').textContent='Food Vendors';
+      $('foodVendorsModal').classList.add('open');
     }
-    window.renderFoodMenuManage = renderFoodMenuManage;
-  })();
 
-  // J) Auth heading copy
-  (function authCopy(){
-    const gate=document.getElementById('authGate'); if (!gate) return;
-    const title = Array.from(gate.querySelectorAll('div')).find(el=>/ZippUp/i.test(el.textContent));
-    if (title) title.innerHTML = 'ZippUp: Hustle faster!';
-  })();
+    // Backbars
+    (function backbars(){
+      document.querySelectorAll('.page').forEach(p=>{
+        if (p.id==='page-home' || p.querySelector('.backbar')) return;
+        const bar=document.createElement('div'); bar.className='backbar';
+        bar.innerHTML='<button class="backbtn" type="button">← Back</button><strong style="margin-left:8px">'+(p.querySelector('.title')?.textContent||p.id.replace('page-',''))+'</strong>';
+        p.insertBefore(bar, p.firstChild);
+        bar.querySelector('.backbtn').onclick=()=> (history.length>1?history.back():document.querySelector('.nav button[data-page="home"]')?.click());
+      });
+    })();
 
-  // K) Roadside button path: ensure opens Items modal
-  window.openItemsModal && (window.openItemsModal = window.openItemsModal); // keep existing
-})();
-</script>
+    // Emergency/Digital quick buttons
+    $('btnEmergencyServices')?.addEventListener('click', ()=>{
+      $('providersTitle').textContent='Emergency Services';
+      ensureProvidersSearch(true);
+      renderEmergency();
+    });
+    $('btnDigitalServices')?.addEventListener('click', ()=>{
+      document.querySelector('.nav button[data-page="topup"]')?.click();
+    });
+  </script>
+
+  <!-- Cancel robustness -->
+  <script>
+  (function cancelFix(){
+    const $=id=>document.getElementById(id);
+    function closeAll(){ ['cancelReasonsModal','instantModal','trackModal','providersModal'].forEach(id=>$(id)?.classList.remove('open')); }
+    function doCancel(reason){
+      try{ if (window.requestId && window.BASE_API) fetch(`${BASE_API}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`,{method:'DELETE'});}catch{}
+      try{ if (window.stopInstant) window.stopInstant(); }catch{}
+      try{ if (window.trackPoll){ clearInterval(window.trackPoll); window.trackPoll=null; } }catch{}
+      try{ if (window.providerMarker){ window.providerMarker.remove(); window.providerMarker=null; } }catch{}
+      window.requestId=null; closeAll();
+      try{ if (typeof showPage==='function') showPage('services'); }catch{}
+      alert('Request cancelled');
+    }
+    const ensureReasons=()=>{
+      const m=$('cancelReasonsModal'); if (!m) return;
+      const list=$('crList'); if (!list) return;
+      if (!list.children.length){
+        ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{ const row=document.createElement('label'); row.className='row'; row.innerHTML=`<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`; list.appendChild(row); });
+        const other=document.createElement('input'); other.id='crOther'; other.placeholder='If Other, describe…'; other.style.cssText='width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px'; list.appendChild(other);
+      }
+      $('crClose')&&($('crClose').onclick=()=>m.classList.remove('open'));
+      $('crBack') &&($('crBack').onclick =()=>m.classList.remove('open'));
+      $('crConfirm')&&($('crConfirm').onclick=()=>{ const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other'; const other=$('crOther')?.value?.trim(); doCancel(picked==='Other'?(other||'Other'):picked); });
+    };
+    const openReasons=()=>{ const m=$('cancelReasonsModal'); if (m){ ensureReasons(); m.classList.add('open'); } else doCancel('User cancelled'); };
+    const ci=$('cancelInstant'); if (ci) ci.onclick=(e)=>{ e.preventDefault(); openReasons(); };
+    const tcb=$('trackCancelBtn'); if (tcb) tcb.onclick=(e)=>{ e.preventDefault(); openReasons(); };
+    const ic=$('instantClose'); if (ic) ic.onclick=()=> $('instantModal').classList.remove('open');
+  })();
+  </script>
+
+  <!-- Backbars (ensure) -->
+  <script>
+  (function backbarsEnsure(){
+    document.querySelectorAll('.page').forEach(p=>{
+      if (p.id==='page-home' || p.querySelector('.backbar')) return;
+      const bar=document.createElement('div'); bar.className='backbar';
+      bar.innerHTML='<button class="backbtn" type="button">← Back</button><strong style="margin-left:8px">'+(p.querySelector('.title')?.textContent||p.id.replace('page-',''))+'</strong>';
+      p.insertBefore(bar, p.firstChild);
+      bar.querySelector('.backbtn').onclick=()=> (history.length>1?history.back():document.querySelector('.nav button[data-page="home"]')?.click());
+    });
+  })();
+  </script>
+
+  <!-- Fail-safe: never get stuck on splash -->
+  <script>
+  (function killSplash(){
+    function hide() {
+      try {
+        const s = document.getElementById('splash');
+        if (s) { s.style.opacity = '0'; setTimeout(()=> s && s.remove(), 200); }
+        const home = document.getElementById('page-home');
+        if (home && !home.classList.contains('active')) home.classList.add('active');
+      } catch {}
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(hide, 0);
+    } else {
+      document.addEventListener('DOMContentLoaded', hide, { once:true });
+    }
+    window.addEventListener('load', hide, { once:true });
+    window.addEventListener('error', hide);
+    window.addEventListener('unhandledrejection', hide);
+    setTimeout(hide, 1500);
+  })();
+  </script>
 </body>
 </html>
