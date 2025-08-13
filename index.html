@@ -106,52 +106,55 @@
 
     /* Product cards (marketplace) */
     .product img { width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--border) }
-    /* Keep greet/location fully visible under notches */
-header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
-.page { top: calc(var(--header-h) + env(safe-area-inset-top, 0px)); }
-    /* Header: push greet left, keep bell right before Account */
-header .row { align-items:center; }
-header .row > .greet { flex:1; min-width:0; }
-#notifBtn { margin-right:6px; }
-    /* Header alignment */
-header .row { align-items: center; }
-header .row > .greet { flex: 1; min-width: 0; }
-#notifBtn { margin-right: 6px; } /* bell just before Account */
+
+    /* Header alignment tweaks: push greet left; bell right before Account; hide loc inside header */
+    header .row { align-items:center; }
+    header .row > .greet { flex:1; min-width:0; }
+    #notifBtn { margin-right:6px; }
+    header .greet .small { display:none !important; }
   </style>
 </head>
 <body>
   <!-- Header -->
   <header>
-  <div class="row">
-    <div class="greet">
-      <strong>Hello, <span id="userName">Guest</span></strong>
-      <span class="small">📍 <span id="userLoc">Detecting location…</span></span>
-    </div>
     <div class="row">
-      <div style="position:relative">
-        <button class="btn ghost" id="cartBtn" type="button">🛒</button>
-        <span id="headerCartBadge" style="position:absolute; top:-6px; right:-6px; background:#DC2626; color:#fff; border-radius:999px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">0</span>
+      <div class="greet">
+        <strong>Hello, <span id="userName">Guest</span></strong>
+        <span class="small">📍 <span id="userLoc">Detecting location…</span></span>
       </div>
-      <button class="btn ghost" id="notifBtn" type="button" title="Notifications">🔔</button>
-      <div style="position:relative">
-        <button class="btn ghost" id="profileBtn" type="button">👤 Account</button>
-        <div id="profileMenu" style="position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:200px; z-index:300; padding:6px">
-          <button class="btn ghost" id="menuProfile" type="button">👤 Profile</button>
-          <button class="btn ghost" id="menuOrders" type="button">📦 Manage Orders</button>
-          <button class="btn ghost" id="menuWallet" type="button">💰 Wallet</button>
-          <button class="btn ghost" id="menuTopup" type="button">⚡ Top‑up</button>
-          <button class="btn ghost" id="menuLogout" type="button">🚪 Logout</button>
+      <div class="row">
+        <div style="position:relative">
+          <button class="btn ghost" id="cartBtn" type="button">🛒</button>
+          <span id="headerCartBadge" style="position:absolute; top:-6px; right:-6px; background:#DC2626; color:#fff; border-radius:999px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">0</span>
+        </div>
+        <button class="btn ghost" id="notifBtn" type="button" title="Notifications">🔔</button>
+        <div style="position:relative">
+          <button class="btn ghost" id="profileBtn" type="button">👤 Account</button>
+          <div id="profileMenu" style="position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:200px; z-index:300; padding:6px">
+            <button class="btn ghost" id="menuProfile" type="button">👤 Profile</button>
+            <button class="btn ghost" id="menuOrders" type="button">📦 Manage Orders</button>
+            <button class="btn ghost" id="menuWallet" type="button">💰 Wallet</button>
+            <button class="btn ghost" id="menuTopup" type="button">⚡ Top‑up</button>
+            <button class="btn ghost" id="menuLogout" type="button">🚪 Logout</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</header>
+  </header>
 
   <!-- Pages -->
-  <section class="section" id="homeMapSection">
-  <div id="homeMap" style="height:160px;border-radius:12px;border:1px solid var(--border)"></div>
-</section>
   <main id="page-home" class="page active">
+    <!-- Location under header -->
+    <section class="section" id="headerLocRow">
+      <div class="small">📍 <span id="userLocUnder">Detecting location…</span></div>
+    </section>
+
+    <!-- Small map under header -->
+    <section class="section" id="homeMapSection">
+      <div id="homeMap" style="height:160px;border-radius:12px;border:1px solid var(--border)"></div>
+    </section>
+
+    <!-- Global Search -->
     <section class="search">
       <div class="box">
         <input id="search" placeholder="Search transport, food, services, emergency…"/>
@@ -160,15 +163,17 @@ header .row > .greet { flex: 1; min-width: 0; }
       </div>
     </section>
 
+    <!-- Services first -->
     <section class="section">
-  <div class="title">All Services</div>
-  <div class="grid" id="servicesGrid"></div>
-</section>
+      <div class="title">All Services</div>
+      <div class="grid" id="servicesGrid"></div>
+    </section>
 
-<section class="section">
-  <div class="title">Emergency</div>
-  <div class="grid" id="emergencyGrid"></div>
-</section>
+    <!-- Emergency below -->
+    <section class="section">
+      <div class="title">Emergency</div>
+      <div class="grid" id="emergencyGrid"></div>
+    </section>
 
     <section class="section">
       <div class="title">Recent</div>
@@ -324,46 +329,17 @@ header .row > .greet { flex: 1; min-width: 0; }
     </section>
   </main>
 
+  <!-- Manage Products (Food vendors) -->
   <main id="page-manage-products" class="page">
     <section class="section">
-      <div class="title">Manage Products</div>
+      <div class="title">Manage Product (Food Vendors Only)</div>
       <div class="card">
-        <div class="list">
-          <div class="grid-2">
-            <div class="field">
-              <label class="small">Category</label>
-              <select id="mpCatSelect">
-                <option value="electronics">Electronics</option>
-                <option value="fashion">Fashion</option>
-                <option value="home">Home & Garden</option>
-                <option value="sports">Sports</option>
-                <option value="automobile">Automobile</option>
-                <option value="spares">Spare Parts</option>
-                <option value="others">Others</option>
-              </select>
-            </div>
-            <div class="field">
-              <label class="small">Product name</label>
-              <input id="mpName" placeholder="e.g., iPhone 13"/>
-            </div>
-          </div>
-          <div class="field">
-            <label class="small">Description</label>
-            <textarea id="mpDesc" rows="3" placeholder="Describe the product…"></textarea>
-          </div>
-          <div class="grid-2">
-            <div class="field"><label class="small">Price</label><input id="mpPrice" type="number" min="0" step="0.01"/></div>
-            <div class="field"><label class="small">Stock</label><input id="mpStock" type="number" min="0" step="1"/></div>
-          </div>
-          <div class="field">
-            <label class="small">Images (up to 10)</label>
-            <input id="mpImages" type="file" accept="image/*" multiple/>
-            <div class="hint">Optional</div>
-          </div>
-          <button class="btn primary" id="mpAdd" type="button">+ Add Product</button>
-        </div>
+        <div class="small muted" style="margin-bottom:8px">Upload multiple items per batch; up to 5 images per item; set payment options.</div>
+        <div id="foodItemsForm"></div>
+        <button class="btn ghost" id="addFoodRow" type="button">+ Add another item</button>
+        <button class="btn primary" id="saveFoodItems" type="button" style="margin-top:10px">Save items</button>
       </div>
-      <div class="list" style="margin-top:12px" id="mpManageList"></div>
+      <div class="list" id="foodItemsList" style="margin-top:12px"></div>
     </section>
   </main>
 
@@ -378,27 +354,6 @@ header .row > .greet { flex: 1; min-width: 0; }
     </section>
   </main>
 
-<main id="page-digital" class="page" style="display:none"></main>
-  <script>
-(function renderDigitalPage(){
-  const page = document.getElementById('page-digital'); if (!page) return;
-  page.classList.add('active'); page.classList.remove('active'); /* keep hidden until opened */
-  page.innerHTML = `
-    <section class="section">
-      <div class="backbar"><button class="back" type="button" onclick="document.querySelector('.nav button[data-page=home]')?.click()">←</button><strong>Digital Services</strong></div>
-      <div class="grid">
-        <div class="card service" data-digital="airtime">📱 Buy Airtime</div>
-        <div class="card service" data-digital="data">📶 Buy Data</div>
-        <div class="card service" data-digital="bills">🧾 Pay Bills</div>
-        <div class="card service" data-digital="products">🛒 Digital Products</div>
-      </div>
-      <div class="small muted" style="margin-top:10px">Coming soon</div>
-    </section>
-  `;
-})();
-</script>
-Add “Others” s
-  
   <main id="page-verify-provider" class="page">
     <section class="section">
       <div class="title">Become Verified Provider</div>
@@ -416,43 +371,45 @@ Add “Others” s
     </section>
   </main>
 
-<main id="page-fastfood" class="page">
-  <section class="section">
-    <div class="backbar"><button class="back" type="button" onclick="document.querySelector('.nav button[data-page=home]')?.click()">←</button><strong>Fast food</strong></div>
-    <div class="row" style="gap:8px;margin-bottom:10px">
-      <input id="ffSearch" placeholder="Search vendors or menu…" style="flex:1"/>
-      <button class="btn ghost" id="ffVoice" type="button">🎤</button>
-      <button class="btn primary" id="ffGo" type="button">Search</button>
-    </div>
-    <div id="ffList" class="list"></div>
-  </section>
-</main>
+  <!-- Fast food / Grocery landing pages -->
+  <main id="page-fastfood" class="page">
+    <section class="section">
+      <div class="backbar"><button class="back" type="button" onclick="document.querySelector('.nav button[data-page=home]')?.click()">←</button><strong>Fast food</strong></div>
+      <div class="row" style="gap:8px;margin-bottom:10px">
+        <input id="ffSearch" placeholder="Search vendors or menu…" style="flex:1"/>
+        <button class="btn ghost" id="ffVoice" type="button">🎤</button>
+        <button class="btn primary" id="ffGo" type="button">Search</button>
+      </div>
+      <div id="ffList" class="list"></div>
+    </section>
+  </main>
 
-<main id="page-grocery" class="page">
-  <section class="section">
-    <div class="backbar"><button class="back" type="button" onclick="document.querySelector('.nav button[data-page=home]')?.click()">←</button><strong>Groceries</strong></div>
-    <div class="row" style="gap:8px;margin-bottom:10px">
-      <input id="grSearch" placeholder="Search vendors or items…" style="flex:1"/>
-      <button class="btn ghost" id="grVoice" type="button">🎤</button>
-      <button class="btn primary" id="grGo" type="button">Search</button>
-    </div>
-    <div id="grList" class="list"></div>
-  </section>
-</main>
-  
-<main id="page-digital" class="page">
-  <section class="section">
-    <div class="backbar"><button class="back" type="button" onclick="document.querySelector('.nav button[data-page=home]')?.click()">←</button><strong>Digital Services</strong></div>
-    <div class="grid" style="margin-top:8px">
-      <div class="card service">📱 Buy Airtime</div>
-      <div class="card service">📶 Buy Data</div>
-      <div class="card service">🧾 Pay Bills</div>
-      <div class="card service">🛒 Digital Products</div>
-    </div>
-    <div class="small muted" style="margin-top:8px">Coming soon</div>
-  </section>
-</main>
-  
+  <main id="page-grocery" class="page">
+    <section class="section">
+      <div class="backbar"><button class="back" type="button" onclick="document.querySelector('.nav button[data-page=home]')?.click()">←</button><strong>Groceries</strong></div>
+      <div class="row" style="gap:8px;margin-bottom:10px">
+        <input id="grSearch" placeholder="Search vendors or items…" style="flex:1"/>
+        <button class="btn ghost" id="grVoice" type="button">🎤</button>
+        <button class="btn primary" id="grGo" type="button">Search</button>
+      </div>
+      <div id="grList" class="list"></div>
+    </section>
+  </main>
+
+  <!-- Digital Services -->
+  <main id="page-digital" class="page">
+    <section class="section">
+      <div class="backbar"><button class="back" type="button" onclick="document.querySelector('.nav button[data-page=home]')?.click()">←</button><strong>Digital Services</strong></div>
+      <div class="grid" style="margin-top:8px">
+        <div class="card service">📱 Buy Airtime</div>
+        <div class="card service">📶 Buy Data</div>
+        <div class="card service">🧾 Pay Bills</div>
+        <div class="card service">🛒 Digital Products</div>
+      </div>
+      <div class="small muted" style="margin-top:8px">Coming soon</div>
+    </section>
+  </main>
+
   <!-- Bottom Nav -->
   <nav class="nav">
     <button data-page="home" class="active" type="button">🏠 Home</button>
@@ -461,26 +418,22 @@ Add “Others” s
     <button data-page="marketplace" type="button">🛍️ Marketplace</button>
   </nav>
 
-<div class="modal" id="othersModal">
-  <div class="sheet">
-    <div class="head"><strong>Others</strong><button class="btn ghost" type="button" onclick="document.getElementById('othersModal').classList.remove('open')">✖</button></div>
-    <div class="body">
-      <div class="row" style="gap:8px;margin-bottom:10px">
-        <input id="othersSearch" placeholder="Search providers or tasks…" style="flex:1"/>
-        <button class="btn ghost" id="othersVoice" type="button">🎤</button>
-        <button class="btn primary" id="othersGo" type="button">Search</button>
+  <!-- Others modal -->
+  <div class="modal" id="othersModal">
+    <div class="sheet">
+      <div class="head"><strong>Others</strong><button class="btn ghost" type="button" onclick="document.getElementById('othersModal').classList.remove('open')">✖</button></div>
+      <div class="body">
+        <div class="row" style="gap:8px;margin-bottom:10px">
+          <input id="othersSearch" placeholder="Search providers or tasks…" style="flex:1"/>
+          <button class="btn ghost" id="othersVoice" type="button">🎤</button>
+          <button class="btn primary" id="othersGo" type="button">Search</button>
+        </div>
+        <div id="othersList" class="list"></div>
       </div>
-      <div id="othersList" class="list"></div>
     </div>
   </div>
-</div>
-  
+
   <!-- Providers -->
-  <div class="row" id="provSearchRow" style="gap:8px;margin-bottom:10px;display:none">
-  <input id="provSearch" placeholder="Search providers or specialties…" style="flex:1"/>
-  <button class="btn ghost" id="provVoice" type="button">🎤</button>
-  <button class="btn primary" id="provSearchBtn" type="button">Search</button>
-</div>
   <div class="modal" id="providersModal">
     <div class="sheet">
       <div class="head">
@@ -488,6 +441,11 @@ Add “Others” s
         <button class="btn ghost" id="closeProviders" type="button">✖</button>
       </div>
       <div class="body">
+        <div class="row" id="provSearchRow" style="gap:8px;margin-bottom:10px;display:none">
+          <input id="provSearch" placeholder="Search providers or specialties…" style="flex:1"/>
+          <button class="btn ghost" id="provVoice" type="button">🎤</button>
+          <button class="btn primary" id="provSearchBtn" type="button">Search</button>
+        </div>
         <div class="list" id="providersList"></div>
       </div>
     </div>
@@ -554,22 +512,23 @@ Add “Others” s
     </div>
   </div>
 
+  <!-- Roadside -->
   <div class="modal" id="roadsideModal">
-  <div class="sheet">
-    <div class="head">
-      <strong>Roadside Assistance</strong>
-      <button class="btn ghost" id="roadClose" type="button">✖</button>
-    </div>
-    <div class="body">
-      <div class="row" style="gap:8px;margin-bottom:10px">
-        <input id="roadSearch" placeholder="Search roadside help (tyres, battery, tow)..." style="flex:1"/>
-        <button class="btn ghost" id="roadVoice" type="button">🎤</button>
-        <button class="btn primary" id="roadGo" type="button">Search</button>
+    <div class="sheet">
+      <div class="head">
+        <strong>Roadside Assistance</strong>
+        <button class="btn ghost" id="roadClose" type="button">✖</button>
       </div>
-      <div id="roadList" class="list"></div>
+      <div class="body">
+        <div class="row" style="gap:8px;margin-bottom:10px">
+          <input id="roadSearch" placeholder="Search roadside help (tyres, battery, tow)..." style="flex:1"/>
+          <button class="btn ghost" id="roadVoice" type="button">🎤</button>
+          <button class="btn primary" id="roadGo" type="button">Search</button>
+        </div>
+        <div id="roadList" class="list"></div>
+      </div>
     </div>
   </div>
-</div>
 
   <!-- Instant Request -->
   <div class="modal" id="instantModal">
@@ -621,7 +580,7 @@ Add “Others” s
     </div>
   </div>
 
-  <!-- Options -->
+  <!-- Category Options -->
   <div class="modal" id="categoryOptionsModal">
     <div class="sheet">
       <div class="head">
@@ -634,7 +593,7 @@ Add “Others” s
     </div>
   </div>
 
-  <!-- Food Options (new) -->
+  <!-- Food Options -->
   <div class="modal" id="foodOptionsModal">
     <div class="sheet">
       <div class="head">
@@ -675,14 +634,20 @@ Add “Others” s
   </div>
 
   <!-- Food Vendors -->
-  <div class="body">
-  <div class="row" style="gap:8px;margin-bottom:10px">
-    <input id="fvSearch" placeholder="Search vendors or menu items…" style="flex:1"/>
-    <button class="btn ghost" id="fvVoice" type="button">🎤</button>
-    <button class="btn primary" id="fvSearchBtn" type="button">Search</button>
-  </div>
-  <div id="foodVendorsList" class="list"></div>
-</div>
+  <div class="modal" id="foodVendorsModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="foodVendorsTitle">Food Vendors</strong>
+        <button class="btn ghost" id="closeFoodVendors" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="row" style="gap:8px;margin-bottom:10px">
+          <input id="fvSearch" placeholder="Search vendors or menu items…" style="flex:1"/>
+          <button class="btn ghost" id="fvVoice" type="button">🎤</button>
+          <button class="btn primary" id="fvSearchBtn" type="button">Search</button>
+        </div>
+        <div id="foodVendorsList" class="list"></div>
+      </div>
     </div>
   </div>
 
@@ -1011,7 +976,11 @@ Add “Others” s
         coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         const name = await reverseGeocode(coords.lat, coords.lng);
         $('userLoc').textContent = name || 'Unknown';
-      } catch { $('userLoc').textContent = 'Location unavailable'; }
+        const under = document.getElementById('userLocUnder'); if (under) under.textContent = name || 'Unknown';
+      } catch {
+        $('userLoc').textContent = 'Location unavailable';
+        const under = document.getElementById('userLocUnder'); if (under) under.textContent = 'Location unavailable';
+      }
     }
     async function reverseGeocode(lat,lng){
       try {
@@ -1020,7 +989,7 @@ Add “Others” s
       } catch { return null; }
     }
 
-    // Data
+    // Data (added Digital Services card)
     const SERVICES = [
       { id:'transport', name:'Transport', icon:'🚗', desc:'Ride & moving', instant:true,  scheduled:true },
       { id:'food',      name:'Food',      icon:'🍔', desc:'Restaurants & groceries', instant:true,  scheduled:true },
@@ -1028,6 +997,7 @@ Add “Others” s
       { id:'home',      name:'Home',      icon:'🏠', desc:'Cleaning & maintenance', instant:true,  scheduled:true },
       { id:'construction', name:'Construction', icon:'🏗️', desc:'Builders & electricians', instant:false, scheduled:true },
       { id:'auto',      name:'Automobile', icon:'🛠️', desc:'Mechanics, tires, roadside', instant:true,  scheduled:true },
+      { id:'digital',   name:'Digital Services', icon:'💳', desc:'Airtime, data, bills, digital products', instant:false, scheduled:false },
       { id:'others',    name:'Others',    icon:'🎯', desc:'Events, tutors, more', instant:false, scheduled:true },
     ];
     const EMERGENCY = [
@@ -1116,9 +1086,14 @@ Add “Others” s
         <div class="card" style="margin-top:8px"><div class="row" style="justify-content:space-between"><div>🚗 Ride to Airport</div><span class="badge success">completed</span></div><div class="small muted" style="margin-top:6px">2h ago</div></div>`;
     }
 
-    // Category open
+    // Category open (added digital routing)
     function openCategory(catId, label){
       lastCategory = catId;
+      if (catId==='digital') {
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        document.getElementById('page-digital')?.classList.add('active');
+        return;
+      }
       if (catId==='transport') {
         openCategoryOptions('Transport Options', [
           { id:'ride',   name:'Ride / Taxi', icon:'🚗' },
@@ -1131,10 +1106,8 @@ Add “Others” s
         });
         return;
       }
-      if (catId==='food') {
-        openFoodOptions();
-        return;
-      }
+      if (catId==='food') { openFoodOptions(); return; }
+      if (catId==='others') { document.getElementById('othersModal').classList.add('open'); return; }
       $('providersTitle').textContent = label + ' — Providers';
       fetchProviders(catId).then(renderProviders);
       $('providersModal').classList.add('open');
@@ -1401,49 +1374,108 @@ Add “Others” s
       });
     }
 
-    // Manage Products (user)
-    function getUserProducts(){ try { return JSON.parse(localStorage.getItem('zup_user_products')||'[]'); } catch { return []; } }
-    function setUserProducts(arr){ localStorage.setItem('zup_user_products', JSON.stringify(arr||[])); }
-    $('mpAdd').onclick = ()=>{
-      const cat=$('mpCatSelect').value, name=$('mpName').value.trim(), desc=$('mpDesc').value.trim(), price=Number($('mpPrice').value||0), stock=Number($('mpStock').value||0);
-      if (!name || !price || !stock) return alert('Fill name, price, stock');
-      const files=Array.from(($('mpImages').files||[])).slice(0,10);
-      const images=[]; if (!files.length){ save(); } else {
-        let left=files.length;
-        files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--left===0) save(); }; fr.readAsDataURL(f); });
-      }
-      function save(){
-        const ups=getUserProducts();
-        const id='u'+Date.now();
-        const img=images[0] || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop';
-        ups.push({ id, title:name, cat, price, stock, img, images, desc, user:true });
-        setUserProducts(ups);
-        loadProductsManage();
-        alert('Product added');
-      }
-    };
-    function loadProductsManage(){
-      const box=$('mpManageList'); box.innerHTML='';
-      const ups=getUserProducts();
-      if (!ups.length){ box.innerHTML='<div class="small muted">No products yet.</div>'; return; }
-      ups.forEach(p=>{
-        const imgs=(p.images||[]).map(src=>`<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
-        const el=document.createElement('div'); el.className='card';
-        el.innerHTML=`<div class="list">
-          <div class="row" style="justify-content:space-between;align-items:flex-start">
-            <div>
-              <div><strong>${p.title}</strong> <span class="small muted">[${p.cat}]</span></div>
-              <div class="small muted">${p.desc||''}</div>
-              <div class="small"><strong>Price:</strong> $${Number(p.price).toFixed(2)} • <strong>Stock:</strong> ${p.stock}</div>
+    // Manage Products -> Food vendors multi-items
+    (function manageFoodProducts(){
+      const wrap = document.getElementById('foodItemsForm');
+      const list = document.getElementById('foodItemsList');
+      if (!wrap || !list) return;
+
+      function ensureRow(){
+        const row = document.createElement('div');
+        row.className='card'; row.style.margin='8px 0';
+        row.innerHTML = `
+          <div class="grid-2">
+            <div class="field"><label class="small">Category</label>
+              <select class="f-cat">
+                <option value="fastfood">Fast food</option>
+                <option value="grocery">Groceries</option>
+              </select>
             </div>
-            <div class="row" style="gap:6px"><button class="btn ghost" data-k="del" data-id="${p.id}">Delete</button></div>
+            <div class="field"><label class="small">Title</label><input class="f-title" placeholder="Item title"></div>
           </div>
-          <div class="row" style="gap:6px;flex-wrap:wrap">${imgs||'<span class="small muted">No images</span>'}</div>
-        </div>`;
-        box.appendChild(el);
-      });
-      box.querySelectorAll('button[data-k="del"]').forEach(b=> b.onclick=()=>{ const id=b.dataset.id; const arr=getUserProducts().filter(x=>x.id!==id); setUserProducts(arr); loadProductsManage(); });
-    }
+          <div class="grid-2">
+            <div class="field"><label class="small">Price</label><input class="f-price" type="number" min="0" step="0.01"></div>
+            <div class="field"><label class="small">Images (up to 5)</label><input class="f-imgs" type="file" accept="image/*" multiple></div>
+          </div>
+          <div class="field"><label class="small">Description</label><textarea class="f-desc" rows="2"></textarea></div>
+          <div class="row"><label class="small"><input type="checkbox" class="f-cash" checked> Cash</label><label class="small"><input type="checkbox" class="f-card" checked> Card</label></div>
+        `;
+        wrap.appendChild(row);
+      }
+      function getSaved(){ try { return JSON.parse(localStorage.getItem('zup_food_menu')||'[]'); } catch { return []; } }
+      function setSaved(arr){ localStorage.setItem('zup_food_menu', JSON.stringify(arr||[])); }
+      function loadList(){
+        const data = getSaved(); list.innerHTML='';
+        if (!data.length) { list.innerHTML='<div class="small muted">No items yet.</div>'; return; }
+        data.forEach((it, idx)=>{
+          const card=document.createElement('div'); card.className='card';
+          const imgs=(it.images||[]).map(src=>`<img src="${src}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+          card.innerHTML = `
+            <div class="row" style="justify-content:space-between;align-items:flex-start">
+              <div>
+                <div><strong>${it.title}</strong> <span class="small muted">[${it.cat}]</span></div>
+                <div class="small muted">${it.desc||''}</div>
+                <div class="small"><strong>Price:</strong> $${Number(it.price).toFixed(2)} • <strong>Pay:</strong> ${(it.pay||[]).join(', ')||'—'}</div>
+              </div>
+              <div class="row" style="gap:6px">
+                <button class="btn ghost" data-k="edit" data-i="${idx}">Edit</button>
+                <button class="btn ghost" data-k="del" data-i="${idx}">Delete</button>
+              </div>
+            </div>
+            <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">${imgs||'<span class="small muted">No images</span>'}</div>
+          `;
+          list.appendChild(card);
+        });
+        list.onclick = (e)=>{
+          const b=e.target.closest('[data-k]'); if(!b) return;
+          const i=Number(b.getAttribute('data-i')); const data=getSaved();
+          if (b.getAttribute('data-k')==='del'){ data.splice(i,1); setSaved(data); loadList(); }
+          if (b.getAttribute('data-k')==='edit'){
+            const it=data[i]; wrap.innerHTML=''; ensureRow();
+            const r=wrap.querySelector('.card');
+            r.querySelector('.f-cat').value=it.cat;
+            r.querySelector('.f-title').value=it.title;
+            r.querySelector('.f-price').value=it.price;
+            r.querySelector('.f-desc').value=it.desc||'';
+            r.querySelector('.f-cash').checked=(it.pay||[]).includes('cash');
+            r.querySelector('.f-card').checked=(it.pay||[]).includes('card');
+            document.getElementById('saveFoodItems').onclick = ()=> saveItems(i);
+          }
+        };
+      }
+      function readImages(input, limit){
+        const files=Array.from((input.files||[])).slice(0,limit);
+        if (!files.length) return Promise.resolve([]);
+        return new Promise(res=>{
+          const imgs=[]; let left=files.length;
+          files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ imgs.push(fr.result); if(--left===0) res(imgs); }; fr.readAsDataURL(f); });
+        });
+      }
+      async function saveItems(replaceIdx){
+        const cards = Array.from(wrap.querySelectorAll('.card'));
+        const items=[];
+        for (const c of cards){
+          const cat=c.querySelector('.f-cat').value;
+          const title=c.querySelector('.f-title').value.trim();
+          const price=parseFloat(c.querySelector('.f-price').value||'0');
+          const desc=c.querySelector('.f-desc').value.trim();
+          const imgs=await readImages(c.querySelector('.f-imgs'), 5);
+          const pay=[]; if (c.querySelector('.f-cash').checked) pay.push('cash'); if (c.querySelector('.f-card').checked) pay.push('card');
+          if (title && price>0) items.push({ cat, title, price, desc, images:imgs, pay });
+        }
+        if (!items.length) return alert('Add at least one valid item');
+        const saved=getSaved();
+        if (typeof replaceIdx==='number'){ saved[replaceIdx]=items[0]; } else { saved.unshift(...items); }
+        setSaved(saved); wrap.innerHTML=''; ensureRow(); loadList(); alert('Saved');
+        document.getElementById('saveFoodItems').onclick = ()=> saveItems(undefined);
+      }
+
+      document.getElementById('addFoodRow')?.addEventListener('click', ensureRow);
+      document.getElementById('saveFoodItems')?.addEventListener('click', ()=> saveItems(undefined));
+
+      if (!wrap.querySelector('.card')) ensureRow();
+      loadList();
+    })();
 
     // Manage Services (user)
     function getUserServices(){ try { return JSON.parse(localStorage.getItem('zup_user_services')||'[]'); } catch { return []; } }
@@ -1493,7 +1525,7 @@ Add “Others” s
 
     function wireProfilePages(){
       $('manageServicesBtn').onclick   = ()=>{ showPage('manage-services'); loadServicesManage(); };
-      $('manageProductsBtn').onclick   = ()=>{ showPage('manage-products'); loadProductsManage(); };
+      $('manageProductsBtn').onclick   = ()=>{ showPage('manage-products'); };
       $('emergencyContactsBtn').onclick= ()=>{ showPage('emergency-contacts'); loadContactsForm(); };
       $('providerVerifyBtn').onclick   = ()=>{ showPage('verify-provider'); };
       $('vpSubmit').onclick = ()=>{ $('vpStatus').textContent='Submitted. Awaiting admin review.'; };
@@ -1546,9 +1578,6 @@ Add “Others” s
       const inMenusVendorIds = Object.keys(MENUS).filter(vid => (MENUS[vid]||[]).some(m=>m.title.toLowerCase().includes(q)));
       const keep = new Set(inVendors.map(v=>v.id).concat(inMenusVendorIds));
       renderVendorsList(VENDORS.filter(v=>keep.has(v.id)));
-    }
-    function openFoodVendors(){
-      renderVendorsList(VENDORS);
     }
     function renderVendorsList(list){
       const box=$('foodVendorsList'); box.innerHTML='';
@@ -1863,590 +1892,250 @@ Add “Others” s
       } catch {}
     };
   </script>
+
+  <!-- Reliable cancel -->
   <script>
-(function cancelFix(){
-  const $=id=>document.getElementById(id);
-  function closeAll(){ ['cancelReasonsModal','instantModal','trackModal','providersModal'].forEach(id=>$(id)?.classList.remove('open')); }
-  function doCancel(reason){
-    try{ if (window.requestId && window.BASE_API) fetch(`${BASE_API}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`,{method:'DELETE'});}catch{}
-    try{ if (window.stopInstant) window.stopInstant(); }catch{}
-    try{ if (window.trackPoll){ clearInterval(window.trackPoll); window.trackPoll=null; } }catch{}
-    window.requestId=null; closeAll();
-    try{ if (typeof showPage==='function') showPage('services'); }catch{}
-    alert('Request cancelled');
-  }
-  const ensureReasons=()=>{
-    const m=$('cancelReasonsModal'); if (!m) return;
-    const list=$('crList'); if (!list) return;
-    if (!list.children.length){
-      ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{ const row=document.createElement('label'); row.className='row'; row.innerHTML=`<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`; list.appendChild(row); });
-      const other=document.createElement('input'); other.id='crOther'; other.placeholder='If Other, describe…'; other.style.cssText='width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px'; list.appendChild(other);
+  (function cancelFix(){
+    const $=id=>document.getElementById(id);
+    function closeAll(){ ['cancelReasonsModal','instantModal','trackModal','providersModal'].forEach(id=>$(id)?.classList.remove('open')); }
+    function doCancel(reason){
+      try{ if (window.requestId && window.BASE_API) fetch(`${BASE_API}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`,{method:'DELETE'});}catch{}
+      try{ if (window.stopInstant) window.stopInstant(); }catch{}
+      try{ if (window.trackPoll){ clearInterval(window.trackPoll); window.trackPoll=null; } }catch{}
+      window.requestId=null; closeAll();
+      try{ if (typeof showPage==='function') showPage('services'); }catch{}
+      alert('Request cancelled');
     }
-    $('crClose')&&($('crClose').onclick=()=>m.classList.remove('open'));
-    $('crBack') &&($('crBack').onclick =()=>m.classList.remove('open'));
-    $('crConfirm')&&($('crConfirm').onclick=()=>{ const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other'; const other=$('crOther')?.value?.trim(); doCancel(picked==='Other'?(other||'Other'):picked); });
-  };
-  const openReasons=()=>{ const m=$('cancelReasonsModal'); if (m){ ensureReasons(); m.classList.add('open'); } else doCancel('User cancelled'); };
-  const ci=$('cancelInstant'); if (ci) ci.onclick=(e)=>{ e.preventDefault(); openReasons(); };
-  const tcb=$('trackCancelBtn'); if (tcb) tcb.onclick=(e)=>{ e.preventDefault(); openReasons(); };
-})();
-</script>
+    const ensureReasons=()=>{
+      const m=$('cancelReasonsModal'); if (!m) return;
+      const list=$('crList'); if (!list) return;
+      if (!list.children.length){
+        ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{ const row=document.createElement('label'); row.className='row'; row.innerHTML=`<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`; list.appendChild(row); });
+        const other=document.createElement('input'); other.id='crOther'; other.placeholder='If Other, describe…'; other.style.cssText='width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px'; list.appendChild(other);
+      }
+      $('crClose')&&($('crClose').onclick=()=>m.classList.remove('open'));
+      $('crBack') &&($('crBack').onclick =()=>m.classList.remove('open'));
+      $('crConfirm')&&($('crConfirm').onclick=()=>{ const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other'; const other=$('crOther')?.value?.trim(); doCancel(picked==='Other'?(other||'Other'):picked); });
+    };
+    const openReasons=()=>{ const m=$('cancelReasonsModal'); if (m){ ensureReasons(); m.classList.add('open'); } else doCancel('User cancelled'); };
+    const ci=$('cancelInstant'); if (ci) ci.onclick=(e)=>{ e.preventDefault(); openReasons(); };
+    const tcb=$('trackCancelBtn'); if (tcb) tcb.onclick=(e)=>{ e.preventDefault(); openReasons(); };
+  })();
+  </script>
+
+  <!-- Inject backbars once -->
   <script>
-(function backbars(){
-  document.querySelectorAll('.page').forEach(p=>{
-    if (p.id==='page-home' || p.querySelector('.backbar')) return;
-    const bar=document.createElement('div'); bar.className='backbar';
-    bar.innerHTML='<button class="backbtn" type="button">← Back</button><strong style="margin-left:8px">'+(p.querySelector('.title')?.textContent||p.id.replace('page-',''))+'</strong>';
-    p.insertBefore(bar, p.firstChild);
-    bar.querySelector('.backbtn').onclick=()=> (history.length>1?history.back():document.querySelector('.nav button[data-page="home"]')?.click());
-  });
-})();
-</script>
-  <style id="zup-overrides">
-  :root { --header-h: 58px; }
-
-  /* Keep header fixed and visible under notches; greet/location and map sit below it */
-  header {
-    position: fixed !important;
-    top: 0; left: 0; right: 0;
-    height: calc(var(--header-h) + env(safe-area-inset-top, 0px)) !important;
-    padding-top: env(safe-area-inset-top, 0px) !important;
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    z-index: 100;
-  }
-  /* If your header has a row container, keep it aligned */
-  header .row { align-items: center !important; padding: 10px 12px !important; gap: 8px !important; }
-
-  /* Raise bell and account a bit and keep them on the bar */
-  #notifBtn, #accountBtn { position: relative; top: -2px; }
-  /* Move bell closer to account */
-  #notifBtn { margin-right: 4px; }
-
-  /* Main content starts below header and above footer */
-  .page {
-    position: fixed !important;
-    top: calc(var(--header-h) + env(safe-area-inset-top, 0px)) !important;
-    bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)) !important;
-    left: 0; right: 0;
-    overflow-y: auto; overflow-x: hidden;
-  }
-
-  /* Greeting + location/map never hide */
-  .greet, .greet-wrap, #homeMap { display: block; }
-
-  /* Back buttons always clickable */
-  .backbar .back { pointer-events: auto; }
-</style>
-  <script id="zup-patches">
-(function(){
-  const $ = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
-
-  // A) Copy/microcopy
-  try {
-    const tag = document.querySelector('.auth-tagline, [data-auth-tagline]');
-    if (tag) tag.textContent = 'ZippUp: Hustle faster!';
-  } catch {}
-  try {
-    const panicCopy = document.querySelector('#panicModal .small, #panicModal .muted, #panicModal [data-panic-copy]');
-    if (panicCopy) panicCopy.textContent = "We'll notify your contacts and nearby security with your location.";
-  } catch {}
-
-  // B) Reliable instant booking cancel
-  function stopGeolocation() {
-    try {
-      if (window.live && window.live.watchId != null && navigator.geolocation?.clearWatch) {
-        navigator.geolocation.clearWatch(window.live.watchId);
-        window.live.watchId = null;
-      }
-    } catch {}
-  }
-  function stopTimers() {
-    try {
-      if (window.live?.timer) { clearInterval(window.live.timer); window.live.timer = null; }
-      if (window.trackInterval) { clearInterval(window.trackInterval); window.trackInterval = null; }
-      if (window.statusPoll) { clearInterval(window.statusPoll); window.statusPoll = null; }
-    } catch {}
-  }
-  function closeTrackingUI() {
-    ['trackModal','instantModal','cancelReasonsModal','providersModal'].forEach(id=>{
-      const el = document.getElementById(id);
-      if (el) el.classList.remove('open');
-    });
-  }
-  function resetLiveFlags() {
-    try {
-      if (!window.live) window.live = {};
-      window.live.active = false;
-      window.live.serviceType = null;
-      window.live.startedAt = null;
-      window.live.arrivedAt = null;
-    } catch {}
-  }
-  async function cancelActiveBooking() {
-    // Try to call your API if available; fail-safe does local cleanup
-    try {
-      if (window.requestId && window.BASE_API) {
-        fetch(`${window.BASE_API}/api/requests/${window.requestId}/cancel`, { method:'POST' }).catch(()=>{});
-      }
-    } catch {}
-    stopGeolocation();
-    stopTimers();
-    resetLiveFlags();
-    closeTrackingUI();
-    // Return user to the correct section (transport/services) or Home as fallback
-    const transportTab = document.querySelector('[data-nav="home"]');
-    if (transportTab) transportTab.click();
-  }
-  // Wire Cancel buttons without breaking your existing handlers
-  function bindCancel() {
-    const ids = ['#instantCancelBtn','#cancelBtn','#btnCancel'];
-    ids.forEach(sel=>{
-      const el = document.querySelector(sel);
-      if (el && !el.__zupCancelBound) {
-        el.__zupCancelBound = true;
-        el.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); cancelActiveBooking(); }, { passive:false });
-      }
-    });
-    // Any generic cancel action buttons
-    document.body.addEventListener('click', (e)=>{
-      const t = e.target.closest('[data-action="cancel"],[data-cancel],[data-role="cancel"]');
-      if (t) { e.preventDefault(); e.stopPropagation(); cancelActiveBooking(); }
-    }, { passive:false });
-  }
-
-  // C) Roadside button fix
-  try {
-    const road = document.getElementById('btnRoadside') || document.querySelector('[data-emer="roadside"],[data-emergency="roadside"]');
-    if (road && !road.__zupBound) {
-      road.__zupBound = true;
-      road.addEventListener('click', ()=>{
-        // Minimal provider list open
-        const providers = document.getElementById('emergencyProviders') || document.getElementById('providersList');
-        if (providers) providers.innerHTML = `
-          <div class="card"><div class="row" style="justify-content:space-between">
-            <div><strong>Roadside Team A</strong><div class="small muted">ETA 5 min</div></div>
-            <button class="btn primary">Request</button>
-          </div></div>
-        `;
-        const picker = document.getElementById('emergencyPicker'); if (picker) picker.classList.add('open');
-      });
-    }
-  } catch {}
-
-  // D) Search bars inside services categories (filter by card text)
-  function attachFilter(inputSel, listSel, itemSel) {
-    const inp = document.querySelector(inputSel);
-    const list = document.querySelector(listSel);
-    if (!inp || !list) return;
-    inp.addEventListener('input', ()=>{
-      const q = (inp.value||'').toLowerCase();
-      list.querySelectorAll(itemSel).forEach(card=>{
-        const txt = card.textContent.toLowerCase();
-        card.style.display = txt.includes(q) ? '' : 'none';
-      });
-    });
-  }
-  attachFilter('#emergencySearch', '#emergencyProviders', '.card');
-  attachFilter('#vendorSearch',   '#vendorsList',      '.card');
-  attachFilter('#marketSearch',   '#marketItems',      '.card');
-
-  // E) Restrict Manage Product to food vendors; rename button
-  (function gateManageProduct(){
-    // Try to find the Manage Product button by id or label text
-    const btn = document.getElementById('manageProductsBtn') ||
-      Array.from(document.querySelectorAll('button, a')).find(x=>/manage product/i.test(x.textContent));
-    if (!btn) return;
-    // Rename
-    btn.textContent = 'Manage Product (Food Vendors Only)';
-    // Gate
-    if (!btn.__zupGateBound) {
-      btn.__zupGateBound = true;
-      btn.addEventListener('click', (e)=>{
-        e.preventDefault();
-        // Check vendor flag; if you have a real flag replace this check
-        const isFoodVendor = (window.currentUser?.isFoodVendor) || (window.userRole === 'seller') || false;
-        if (!isFoodVendor) {
-          alert('This section is for food vendors only. Switch to a vendor account to continue.');
-          return;
-        }
-        // Open your existing food vendor manage modal if present; else no-op
-        const mf = document.getElementById('manageFood') || document.getElementById('vendorManageModal');
-        if (mf) mf.classList.add('open');
-      });
-    }
-  })();
-
-  // F) Add "Sell products" button to Marketplace header (non-cart, Facebook-style)
-  (function addSellButton(){
-    const header = document.getElementById('marketplaceHeader') || document.querySelector('#marketplace .section .title')?.parentElement;
-    if (!header) return;
-    if (document.getElementById('sellBtn')) return;
-    const btn = document.createElement('button');
-    btn.id = 'sellBtn';
-    btn.className = 'btn ghost';
-    btn.textContent = 'Sell products';
-    btn.style.marginLeft = 'auto';
-    header.appendChild(btn);
-    btn.addEventListener('click', ()=>{
-      const sf = document.getElementById('sellForm') || document.getElementById('marketSellModal');
-      if (sf) sf.classList.add('open');
-      else alert('Open sell form (marketplace listing)');
+  (function backbars(){
+    document.querySelectorAll('.page').forEach(p=>{
+      if (p.id==='page-home' || p.querySelector('.backbar')) return;
+      const bar=document.createElement('div'); bar.className='backbar';
+      bar.innerHTML='<button class="backbtn" type="button">← Back</button><strong style="margin-left:8px">'+(p.querySelector('.title')?.textContent||p.id.replace('page-',''))+'</strong>';
+      p.insertBefore(bar, p.firstChild);
+      bar.querySelector('.backbtn').onclick=()=> (history.length>1?history.back():document.querySelector('.nav button[data-page="home"]')?.click());
     });
   })();
+  </script>
 
-  // G) Wallet UI additions (history, send)
-  (function wireWallet(){
-    const bal = document.getElementById('walletBalance');
-    const txc = document.getElementById('walletTx');
-    if (!bal || !txc) return;
-    function money(n){ return `$${(n||0).toFixed(2)}`; }
-    try {
-      const tx = JSON.parse(localStorage.getItem('zup_wallet_tx')||'[]');
-      bal.textContent = money((window.user?.wallet) || window.walletBalance || 0);
-      txc.innerHTML = tx.map(t=>`
-        <div class="card">
-          <div class="row" style="justify-content:space-between">
-            <div>${t.note||t.type}</div>
-            <div style="font-weight:700">${t.type==='debit'?'-':''}${money(t.amount)}</div>
-          </div>
-        </div>
-      `).join('') || '<div class="small muted">No transactions</div>';
-    } catch {}
-    const send = document.getElementById('walletSend'); if (send && !send.__zupBound) {
-      send.__zupBound = true;
-      send.addEventListener('click', ()=>{
-        const to = prompt('Send to (username/email)'); if (!to) return;
-        const amt = parseFloat(prompt('Amount')||'0'); if (!amt || amt<=0) return;
-        const tx = JSON.parse(localStorage.getItem('zup_wallet_tx')||'[]');
-        tx.unshift({ id:'tx'+Date.now(), type:'debit', amount:amt, note:`Send to ${to}` });
-        localStorage.setItem('zup_wallet_tx', JSON.stringify(tx));
-        alert('Transfer recorded (demo).');
-      });
-    }
-  })();
-
-  // H) Food/Grocery entry: show vendor lists + search when user taps
-  (function wireFoodEntry(){
-    const food = document.querySelector('[data-service="food"]');
-    const groc = document.querySelector('[data-service="grocery"]');
-    function openPicker(){
-      const entry = document.getElementById('foodEntry');
-      if (entry) entry.classList.add('open');
-    }
-    if (food && !food.__zupBound) { food.__zupBound = true; food.addEventListener('click', openPicker); }
-    if (groc && !groc.__zupBound) { groc.__zupBound = true; groc.addEventListener('click', openPicker); }
-  })();
-
-  // I) Ensure in-app back arrows work
-  (function bindBacks(){
-    document.body.addEventListener('click', (e)=>{
-      const b = e.target.closest('.back,[data-back]');
-      if (!b) return;
-      e.preventDefault();
-      const target = b.getAttribute('data-back');
-      if (target==='home') {
-        const homeTab = document.querySelector('.nav .item[data-nav="home"]');
-        if (homeTab) homeTab.click();
-      } else if (target) {
-        const sec = document.getElementById(target);
-        if (sec) {
-          // show target section if your app uses sections
-          sec.style.display = '';
-        }
-      }
-      // Close containing modal if any
-      const modal = e.target.closest('.modal'); if (modal) modal.classList.remove('open');
-      e.stopPropagation();
-    }, { passive:false });
-  })();
-
-  // J) Bind cancel buttons once DOM is ready
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    bindCancel();
-  } else {
-    document.addEventListener('DOMContentLoaded', bindCancel, { once:true });
-  }
-})();
-</script>
+  <!-- Move bell before Account -->
   <script>
-(function(){
-  const $ = id => document.getElementById(id);
+  (function fixBellBeforeAccount(){
+    const right = document.querySelector('header .row > .row');
+    const bell = document.getElementById('notifBtn');
+    const acct = document.getElementById('profileBtn');
+    if (right && bell && acct && bell.nextElementSibling !== acct) right.insertBefore(bell, acct);
+  })();
+  </script>
 
-  // Voice helper (reuse if you already have)
-  function voiceToInput(inputEl, onResult){
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert('Voice not supported'); return; }
-    const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
-    rec.onresult = (e)=>{ const text=e.results[0][0].transcript||''; inputEl.value=text; onResult&&onResult(text); };
-    rec.start();
-  }
+  <!-- Kill splash fail-safe -->
+  <script>
+  (function killSplash(){
+    function hide() {
+      try {
+        const s = document.getElementById('splash');
+        if (s) { s.style.opacity = '0'; setTimeout(()=> s && s.remove(), 200); }
+        const home = document.getElementById('page-home');
+        if (home && !home.classList.contains('active')) home.classList.add('active');
+        document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
+      } catch {}
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(hide, 0);
+    else document.addEventListener('DOMContentLoaded', hide, { once:true });
+    window.addEventListener('load', hide, { once:true });
+    setTimeout(hide, 1200);
+  })();
+  </script>
 
-  // Roadside dialog open + search
-  function openRoadside(){
-    const m = $('roadsideModal'); if (!m) return;
-    renderRoadsideList('');
-    m.classList.add('open');
-  }
-  function renderRoadsideList(q){
-    const list = $('roadList'); if (!list) return;
-    const all = [
-      { name:'Tyre change • Team A', eta:'5 min' },
-      { name:'Battery jumpstart • Team B', eta:'7 min' },
-      { name:'Fuel delivery • Team C', eta:'10 min' },
-      { name:'Tow truck • Wingate', eta:'12 min' }
-    ];
-    const f = (q||'').toLowerCase();
-    const rows = all.filter(x => x.name.toLowerCase().includes(f)).map(x=>`
-      <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:center">
-          <div><strong>${x.name}</strong><div class="small muted">ETA ${x.eta}</div></div>
+  <!-- Others modal wiring -->
+  <script>
+  (function othersSearch(){
+    const grid = document.getElementById('servicesGrid');
+    function open() { document.getElementById('othersModal').classList.add('open'); render(''); }
+    function render(q){
+      const list = document.getElementById('othersList');
+      const all = [
+        { name:'Event Planner' }, { name:'Tutor (Math)' }, { name:'Photographer' },
+        { name:'Laundry Pickup' }, { name:'Errands Runner' }
+      ];
+      const f = (q||'').toLowerCase();
+      list.innerHTML = all.filter(x=>x.name.toLowerCase().includes(f)).map(x=>`
+        <div class="card"><div class="row" style="justify-content:space-between">
+          <div><strong>${x.name}</strong></div>
           <button class="btn primary" type="button" onclick="alert('Request sent')">Request</button>
-        </div>
-      </div>`).join('');
-    list.innerHTML = rows || '<div class="small muted">No matches</div>';
-  }
-
-  // Wire Emergency grid: roadside -> dialog; others -> existing flow
-  const emergencyGrid = document.getElementById('emergencyGrid');
-  if (emergencyGrid) {
-    emergencyGrid.addEventListener('click', (e)=>{
-      const card = e.target.closest('.card.service'); if (!card) return;
-      const label = card.innerText || '';
-      if (/roadside/i.test(label)) { openRoadside(); }
-    });
-  }
-
-  // Roadside modal controls
-  const roadClose = $('roadClose'); if (roadClose) roadClose.onclick = ()=> $('roadsideModal').classList.remove('open');
-  const roadGo = $('roadGo'); if (roadGo) roadGo.onclick = ()=> renderRoadsideList(($('roadSearch').value||'').trim());
-  const roadVoice = $('roadVoice'); if (roadVoice) roadVoice.onclick = ()=> voiceToInput($('roadSearch'), txt=>renderRoadsideList(txt));
-
-  // Food mic
-  const foodVoice = $('foodVoice'); if (foodVoice) foodVoice.onclick = ()=> voiceToInput($('foodSearch'), ()=>document.getElementById('foodSearchBtn')?.click());
-
-  // Bell stays right next to Account: ensure small gap
-  const notifBtn = $('notifBtn'); if (notifBtn) notifBtn.style.marginRight = '6px';
-})();
-</script>
-  <script>
-(function vendorsSearchMic(){
-  const $ = id => document.getElementById(id);
-
-  function filterVendors() {
-    const q = (($('fvSearch')?.value)||'').toLowerCase();
-    const box = $('foodVendorsList');
-    if (!box) return;
-    box.querySelectorAll('.card').forEach(card=>{
-      const txt = card.textContent.toLowerCase();
-      card.style.display = txt.includes(q) ? '' : 'none';
-    });
-  }
-
-  $('fvSearch')?.addEventListener('input', filterVendors);
-  $('fvSearchBtn')?.addEventListener('click', filterVendors);
-  $('fvVoice')?.addEventListener('click', ()=> {
-    if (typeof voiceToInput === 'function') voiceToInput($('fvSearch'), filterVendors);
-    else alert('Voice not supported');
-  });
-
-  // If you open vendors after clicking Fast food or Groceries, run a quick filter refresh
-  const fvModal = document.getElementById('foodVendorsModal');
-  if (fvModal) {
-    fvModal.addEventListener('transitionend', filterVendors);
-    // also refresh whenever you render vendors
-    window.applyVendorFilter = filterVendors;
-  }
-})();
-</script>
-  <script>
-(function killSplash(){
-  function hide() {
-    try {
-      const s = document.getElementById('splash');
-      if (s) { s.style.opacity = '0'; setTimeout(()=> s && s.remove(), 200); }
-      const home = document.getElementById('page-home');
-      if (home && !home.classList.contains('active')) home.classList.add('active');
-      // close any overlay that might block the UI
-      document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
-    } catch {}
-  }
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(hide, 0);
-  } else {
-    document.addEventListener('DOMContentLoaded', hide, { once:true });
-  }
-  window.addEventListener('load', hide, { once:true });
-  window.addEventListener('error', hide, true);
-  setTimeout(hide, 1200);
-})();
-</script>
-  <script>
-(function fixBellOrder(){
-  const headerRight = document.querySelector('header .row > .row');
-  const notif = document.getElementById('notifBtn');
-  const profile = document.getElementById('profileBtn');
-  if (headerRight && notif && profile && notif.nextElementSibling !== profile) {
-    headerRight.insertBefore(notif, profile);
-  }
-})();
-</script>
-  <script>
-(function addDigitalService(){
-  const grid = document.getElementById('servicesGrid');
-  if (!grid || grid.querySelector('[data-service="digital"]')) return;
-  const card = document.createElement('div');
-  card.className = 'card service';
-  card.setAttribute('data-service','digital');
-  card.innerHTML = '<div class="row"><div style="font-size:28px">💳</div><h4>Digital Services</h4></div><div class="small muted" style="margin-top:6px">Airtime, data, bills, digital products</div>';
-  grid.appendChild(card);
-  grid.addEventListener('click', (e)=>{
-    const c = e.target.closest('.service'); if (!c) return;
-    if (c.getAttribute('data-service')==='digital') {
-      document.getElementById('page-digital')?.classList.add('active');
-      document.getElementById('page-home')?.classList.remove('active');
+        </div></div>`).join('') || '<div class="small muted">No matches</div>';
     }
-  }, { once:true });
-})();
-</script>
-  <script>
-(function othersSearch(){
-  const grid = document.getElementById('servicesGrid');
-  function open() { document.getElementById('othersModal').classList.add('open'); render(''); }
-  function render(q){
-    const list = document.getElementById('othersList');
-    const all = [
-      { name:'Event Planner' }, { name:'Tutor (Math)' }, { name:'Photographer' },
-      { name:'Laundry Pickup' }, { name:'Errands Runner' }
-    ];
-    const f = (q||'').toLowerCase();
-    list.innerHTML = all.filter(x=>x.name.toLowerCase().includes(f)).map(x=>`
-      <div class="card"><div class="row" style="justify-content:space-between">
-        <div><strong>${x.name}</strong></div>
-        <button class="btn primary" type="button" onclick="alert('Request sent')">Request</button>
-      </div></div>`).join('') || '<div class="small muted">No matches</div>';
-  }
-  if (grid && !grid.__othersBound){
-    grid.__othersBound = true;
-    grid.addEventListener('click', (e)=>{
-      const c = e.target.closest('.service'); if (!c) return;
-      if ((c.textContent||'').toLowerCase().includes('others')) open();
-    });
-  }
-  const go = document.getElementById('othersGo'); if (go) go.onclick = ()=>render(document.getElementById('othersSearch').value.trim());
-  const mic= document.getElementById('othersVoice');
-  if (mic) mic.onclick = ()=> {
-    const input = document.getElementById('othersSearch');
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return alert('Voice not supported');
-    const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
-    rec.onresult = e=>{ input.value = e.results[0][0].transcript||''; render(input.value); };
-    rec.start();
-  };
-})();
-</script>
-  <script>
-(function fixBellBeforeAccount(){
-  const right = document.querySelector('header .row > .row');
-  const bell = document.getElementById('notifBtn');
-  const acct = document.getElementById('profileBtn');
-  if (right && bell && acct && bell.nextElementSibling !== acct) right.insertBefore(bell, acct);
-})();
-</script>
-  <script>
-(function homeMapInit(){
-  if (!document.getElementById('homeMap')) return;
-  try {
-    const m = L.map('homeMap',{ zoomControl:false }).setView([0,0], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(m);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(p=>{
-        const {latitude,longitude}=p.coords; m.setView([latitude,longitude], 15);
-        L.marker([latitude,longitude]).addTo(m);
+    if (grid && !grid.__othersBound){
+      grid.__othersBound = true;
+      grid.addEventListener('click', (e)=>{
+        const c = e.target.closest('.service'); if (!c) return;
+        if ((c.textContent||'').toLowerCase().includes('others')) open();
       });
     }
-  } catch {}
-})();
-</script>
-  <script>
-(function digitalBtn(){
-  const grid = document.getElementById('servicesGrid');
-  if (!grid || grid.querySelector('[data-service="digital"]')) return;
-  const card = document.createElement('div');
-  card.className='card service'; card.dataset.service='digital';
-  card.innerHTML='<div class="row"><div style="font-size:28px">💳</div><h4>Digital Services</h4></div><div class="small muted" style="margin-top:6px">Airtime, data, bills, digital products</div>';
-  grid.appendChild(card);
-  grid.addEventListener('click', (e)=>{
-    const c=e.target.closest('.service'); if(!c) return;
-    if (c.dataset.service==='digital'){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById('page-digital')?.classList.add('active'); }
-  }, { once:true });
-})();
-</script>
-  <script>
-(function providersSearch(){
-  const row = document.getElementById('provSearchRow');
-  if (!row) return;
-  const list = document.getElementById('providersList');
-  function voiceToInput(inputEl, onResult){
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return alert('Voice not supported');
-    const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
-    rec.onresult=e=>{ const t=e.results[0][0].transcript||''; inputEl.value=t; onResult&&onResult(t); }; rec.start();
-  }
-  function filter(){ const q=(document.getElementById('provSearch').value||'').toLowerCase(); list?.querySelectorAll('.card').forEach(c=>{ c.style.display = c.textContent.toLowerCase().includes(q)?'':'none'; }); }
-  document.getElementById('provSearch')?.addEventListener('input', filter);
-  document.getElementById('provSearchBtn')?.addEventListener('click', filter);
-  document.getElementById('provVoice')?.addEventListener('click', ()=>voiceToInput(document.getElementById('provSearch'), filter));
+    const go = document.getElementById('othersGo'); if (go) go.onclick = ()=>render(document.getElementById('othersSearch').value.trim());
+    const mic= document.getElementById('othersVoice');
+    if (mic) mic.onclick = ()=> {
+      const input = document.getElementById('othersSearch');
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return alert('Voice not supported');
+      const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult = e=>{ input.value = e.results[0][0].transcript||''; render(input.value); };
+      rec.start();
+    };
+  })();
+  </script>
 
-  // Show search row only for specified categories
-  const origOpenCategory = window.openCategory;
-  window.openCategory = function(catId, label){
-    if (['home','tech','construction','auto','automobile'].includes((catId||'').toLowerCase())) row.style.display='';
-    else row.style.display='none';
-    return origOpenCategory ? origOpenCategory.apply(this, arguments) : undefined;
-  };
-})();
-</script>
+  <!-- Providers modal search for home/tech/construction/auto -->
   <script>
-(function foodLanding(){
-  function show(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id)?.classList.add('active'); }
-  // Buttons inside your Food options modal
-  document.getElementById('foodFastBtn')?.addEventListener('click', ()=>{ document.getElementById('foodOptionsModal')?.classList.remove('open'); show('page-fastfood'); renderFF(''); });
-  document.getElementById('foodGroceryBtn')?.addEventListener('click', ()=>{ document.getElementById('foodOptionsModal')?.classList.remove('open'); show('page-grocery'); renderGR(''); });
+  (function providersSearch(){
+    const row = document.getElementById('provSearchRow');
+    const list = document.getElementById('providersList');
+    if (!row || !list) return;
 
-  function renderFF(q){
-    const list=document.getElementById('ffList'); const f=(q||'').toLowerCase();
-    const menu=window.MENUS||{}; const vs=(window.VENDORS||[]).filter(v=>v.kind==='fastfood');
-    list.innerHTML = vs.filter(v=> v.name.toLowerCase().includes(f) || (menu[v.id]||[]).some(m=>m.title.toLowerCase().includes(f))).map(v=>`
-      <div class="card"><div class="row" style="justify-content:space-between">
-        <div><strong>${v.name}</strong><div class="small muted">Payments: ${v.payment.join(', ')}</div></div>
-        <button class="btn primary" type="button" onclick="alert('Open ${v.name} menu')">Open</button>
-      </div></div>`).join('') || '<div class="small muted">No vendors</div>';
-  }
-  function renderGR(q){
-    const list=document.getElementById('grList'); const f=(q||'').toLowerCase();
-    const menu=window.MENUS||{}; const vs=(window.VENDORS||[]).filter(v=>v.kind==='grocery');
-    list.innerHTML = vs.filter(v=> v.name.toLowerCase().includes(f) || (menu[v.id]||[]).some(m=>m.title.toLowerCase().includes(f))).map(v=>`
-      <div class="card"><div class="row" style="justify-content:space-between">
-        <div><strong>${v.name}</strong><div class="small muted">Payments: ${v.payment.join(', ')}</div></div>
-        <button class="btn primary" type="button" onclick="alert('Open ${v.name} items')">Open</button>
-      </div></div>`).join('') || '<div class="small muted">No vendors</div>';
-  }
-  // Search + mic
-  function voice(el, cb){
-    const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return alert('Voice not supported');
-    const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
-    rec.onresult=e=>{ el.value=e.results[0][0].transcript||''; cb(el.value); }; rec.start();
-  }
-  document.getElementById('ffGo')?.addEventListener('click', ()=>renderFF(document.getElementById('ffSearch').value.trim()));
-  document.getElementById('ffSearch')?.addEventListener('input', e=>renderFF(e.target.value));
-  document.getElementById('ffVoice')?.addEventListener('click', ()=>voice(document.getElementById('ffSearch'), renderFF));
+    function voiceToInput(inputEl, onResult){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return alert('Voice not supported');
+      const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult=e=>{ const t=e.results[0][0].transcript||''; inputEl.value=t; onResult&&onResult(t); }; rec.start();
+    }
+    function filter(){ const q=(document.getElementById('provSearch').value||'').toLowerCase(); list?.querySelectorAll('.card').forEach(c=>{ c.style.display = c.textContent.toLowerCase().includes(q)?'':'none'; }); }
+    document.getElementById('provSearch')?.addEventListener('input', filter);
+    document.getElementById('provSearchBtn')?.addEventListener('click', filter);
+    document.getElementById('provVoice')?.addEventListener('click', ()=>voiceToInput(document.getElementById('provSearch'), filter));
 
-  document.getElementById('grGo')?.addEventListener('click', ()=>renderGR(document.getElementById('grSearch').value.trim()));
-  document.getElementById('grSearch')?.addEventListener('input', e=>renderGR(e.target.value));
-  document.getElementById('grVoice')?.addEventListener('click', ()=>voice(document.getElementById('grSearch'), renderGR));
-})();
-</script>
+    const origOpenCategory = window.openCategory;
+    window.openCategory = function(catId, label){
+      if (['home','tech','construction','auto','automobile'].includes((catId||'').toLowerCase())) row.style.display='';
+      else row.style.display='none';
+      return origOpenCategory ? origOpenCategory.apply(this, arguments) : undefined;
+    };
+  })();
+  </script>
+
+  <!-- Food landing pages nav + mic -->
+  <script>
+  (function foodLanding(){
+    function show(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id)?.classList.add('active'); }
+
+    document.getElementById('foodFastBtn')?.addEventListener('click', ()=>{ document.getElementById('foodOptionsModal')?.classList.remove('open'); show('page-fastfood'); renderFF(''); });
+    document.getElementById('foodGroceryBtn')?.addEventListener('click', ()=>{ document.getElementById('foodOptionsModal')?.classList.remove('open'); show('page-grocery'); renderGR(''); });
+
+    function renderFF(q){
+      const list=document.getElementById('ffList'); const f=(q||'').toLowerCase();
+      const menu=window.MENUS||{}; const vs=(window.VENDORS||[]).filter(v=>v.kind==='fastfood');
+      list.innerHTML = vs.filter(v=> v.name.toLowerCase().includes(f) || (menu[v.id]||[]).some(m=>m.title.toLowerCase().includes(f))).map(v=>`
+        <div class="card"><div class="row" style="justify-content:space-between">
+          <div><strong>${v.name}</strong><div class="small muted">Payments: ${v.payment.join(', ')}</div></div>
+          <button class="btn primary" type="button" onclick="alert('Open ${v.name} menu')">Open</button>
+        </div></div>`).join('') || '<div class="small muted">No vendors</div>';
+    }
+    function renderGR(q){
+      const list=document.getElementById('grList'); const f=(q||'').toLowerCase();
+      const menu=window.MENUS||{}; const vs=(window.VENDORS||[]).filter(v=>v.kind==='grocery');
+      list.innerHTML = vs.filter(v=> v.name.toLowerCase().includes(f) || (menu[v.id]||[]).some(m=>m.title.toLowerCase().includes(f))).map(v=>`
+        <div class="card"><div class="row" style="justify-content:space-between">
+          <div><strong>${v.name}</strong><div class="small muted">Payments: ${v.payment.join(', ')}</div></div>
+          <button class="btn primary" type="button" onclick="alert('Open ${v.name} items')">Open</button>
+        </div></div>`).join('') || '<div class="small muted">No vendors</div>';
+    }
+    function voice(el, cb){
+      const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return alert('Voice not supported');
+      const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult=e=>{ el.value=e.results[0][0].transcript||''; cb(el.value); }; rec.start();
+    }
+    document.getElementById('ffGo')?.addEventListener('click', ()=>renderFF(document.getElementById('ffSearch').value.trim()));
+    document.getElementById('ffSearch')?.addEventListener('input', e=>renderFF(e.target.value));
+    document.getElementById('ffVoice')?.addEventListener('click', ()=>voice(document.getElementById('ffSearch'), renderFF));
+
+    document.getElementById('grGo')?.addEventListener('click', ()=>renderGR(document.getElementById('grSearch').value.trim()));
+    document.getElementById('grSearch')?.addEventListener('input', e=>renderGR(e.target.value));
+    document.getElementById('grVoice')?.addEventListener('click', ()=>voice(document.getElementById('grSearch'), renderGR));
+  })();
+  </script>
+
+  <!-- Roadside wiring -->
+  <script>
+  (function roadside(){
+    const $ = id => document.getElementById(id);
+    function voiceToInput(inputEl, onResult){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert('Voice not supported'); return; }
+      const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult = (e)=>{ const text=e.results[0][0].transcript||''; inputEl.value=text; onResult&&onResult(text); };
+      rec.start();
+    }
+    function openRoadside(){
+      const m = $('roadsideModal'); if (!m) return;
+      renderRoadsideList('');
+      m.classList.add('open');
+    }
+    function renderRoadsideList(q){
+      const list = $('roadList'); if (!list) return;
+      const all = [
+        { name:'Tyre change • Team A', eta:'5 min' },
+        { name:'Battery jumpstart • Team B', eta:'7 min' },
+        { name:'Fuel delivery • Team C', eta:'10 min' },
+        { name:'Tow truck • Wingate', eta:'12 min' }
+      ];
+      const f = (q||'').toLowerCase();
+      const rows = all.filter(x => x.name.toLowerCase().includes(f)).map(x=>`
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <div><strong>${x.name}</strong><div class="small muted">ETA ${x.eta}</div></div>
+            <button class="btn primary" type="button" onclick="alert('Request sent')">Request</button>
+          </div>
+        </div>`).join('');
+      list.innerHTML = rows || '<div class="small muted">No matches</div>';
+    }
+    document.getElementById('roadClose')?.addEventListener('click', ()=> document.getElementById('roadsideModal').classList.remove('open'));
+    document.getElementById('roadGo')?.addEventListener('click', ()=> renderRoadsideList((document.getElementById('roadSearch').value||'').trim()));
+    document.getElementById('roadVoice')?.addEventListener('click', ()=> voiceToInput(document.getElementById('roadSearch'), txt=>renderRoadsideList(txt)));
+
+    const emergencyGrid = document.getElementById('emergencyGrid');
+    if (emergencyGrid && !emergencyGrid.__roadbound){
+      emergencyGrid.__roadbound = true;
+      emergencyGrid.addEventListener('click', (e)=>{
+        const card = e.target.closest('.card.service'); if (!card) return;
+        if (/roadside/i.test(card.textContent||'')) openRoadside();
+      });
+    }
+  })();
+  </script>
+
+  <!-- Home map init -->
+  <script>
+  (function homeMapInit(){
+    const mapEl = document.getElementById('homeMap');
+    if (!mapEl) return;
+    try {
+      const m = L.map('homeMap',{ zoomControl:false }).setView([0,0], 2);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(m);
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(p=>{
+          const {latitude,longitude}=p.coords; m.setView([latitude,longitude], 15);
+          L.marker([latitude,longitude]).addTo(m);
+        });
+      }
+    } catch {}
+  })();
+  </script>
 </body>
 </html>
