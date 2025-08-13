@@ -11,11 +11,10 @@
 
   <!-- SDKs -->
   <script src="https://js.stripe.com/v3"></script>
-  <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
     :root {
@@ -51,15 +50,6 @@
     .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:14px; box-shadow:var(--shadow) }
     .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap }
     .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; border-radius:999px; background:#EEF2FF; color:#3730A3 }
-    .badge { padding:4px 8px; font-size:12px; border-radius:999px }
-    .success{ background:#ECFDF5; color:#065F46 }
-    .muted { color:var(--muted) }
-    .avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--border); background:#eef2ff; display:flex; align-items:center; justify-content:center; font-size:18px }
-    .field { display:flex; flex-direction:column; gap:6px }
-    .field input, .field textarea, .field select { padding:10px; border:1px solid var(--border); border-radius:10px }
-    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:100% }
-    .price { font-weight:700; color:#111 }
-    .hint { font-size:12px; color:#6b7280 }
 
     .nav {
       position:fixed; left:0; right:0; bottom:0; height:var(--nav-h);
@@ -85,7 +75,7 @@
     #checkoutModal .sheet, #sellModal .sheet { height: calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column }
     #checkoutModal .sheet .body, #sellModal .sheet .body { flex:1; overflow:auto }
 
-    /* Header alignment: greeting removed; push actions into header fully */
+    /* Header alignment */
     header .row > .left { flex:1; min-width:0; }
     #notifBtn { margin-right:6px; }
 
@@ -104,9 +94,9 @@
           <button class="btn ghost" id="profileBtn" type="button">👤 Account</button>
           <div id="profileMenu" style="position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:220px; z-index:300; padding:6px">
             <button class="btn ghost" id="menuProfile" type="button">👤 Profile</button>
-            <button class="btn ghost" id="menuOrders" type="button">📦 Manage Orders</button>
+            <button class="btn ghost" id="menuOrders" type="button">📋 My Bookings</button>
             <button class="btn ghost" id="menuWallet" type="button">💰 Wallet</button>
-            <button class="btn ghost" id="menuTopup" type="button">⚡ Digital Services</button>
+            <button class="btn ghost" id="menuTopup" type="button">💳 Digital Services</button>
             <button class="btn ghost" id="menuSupport" type="button">🆘 Contact Support</button>
             <button class="btn ghost" id="menuLogout" type="button">🚪 Logout</button>
           </div>
@@ -122,7 +112,7 @@
       <div class="small">📍 <span id="userLocUnder">Detecting location…</span></div>
     </section>
 
-    <!-- Live map with simulated vehicles -->
+    <!-- Live map -->
     <section class="section">
       <div id="homeMap" style="height:180px;border-radius:12px;border:1px solid var(--border)"></div>
     </section>
@@ -205,7 +195,7 @@
     </section>
   </main>
 
-  <!-- Orders -->
+  <!-- Orders (My Bookings) -->
   <main id="page-orders" class="page">
     <section class="section">
       <div class="title">My Bookings</div>
@@ -299,7 +289,7 @@
             <div class="field">
               <label class="small">Catalog images (up to 4)</label>
               <input id="msImages" type="file" accept="image/*" multiple/>
-              <div class="hint">Optional</div>
+              <div class="small muted">Optional</div>
             </div>
           </div>
           <button class="btn primary" id="msAdd" type="button">+ Add Service</button>
@@ -357,15 +347,7 @@
     </section>
   </main>
 
-  <!-- Bottom Nav -->
-  <nav class="nav">
-    <button data-page="home" class="active" type="button">🏠 Home</button>
-    <button data-page="orders" type="button">📋 My Bookings</button>
-    <button data-page="marketplace" type="button">🛍️ Marketplace</button>
-    <button data-page="profile" type="button">👤 Profile</button>
-  </nav>
-
-  <!-- Providers Modal (with search/mic toggle) -->
+  <!-- Providers Modal -->
   <div class="modal" id="providersModal">
     <div class="sheet">
       <div class="head">
@@ -426,7 +408,7 @@
     </div>
   </div>
 
-  <!-- Instant Request / Tracking -->
+  <!-- Instant / Tracking -->
   <div class="modal" id="instantModal">
     <div class="sheet">
       <div class="head">
@@ -438,7 +420,7 @@
           <div>Time left: <strong id="countdown">90</strong>s</div>
           <div class="small muted" id="instantHint">Waiting for provider to accept…</div>
         </div>
-        <div class="controls" style="margin-top:10px">
+        <div class="row" style="margin-top:10px">
           <button class="btn ghost" id="findOthers" type="button">Find other providers</button>
         </div>
       </div>
@@ -461,7 +443,7 @@
     </div>
   </div>
 
-  <!-- Others category search -->
+  <!-- Others -->
   <div class="modal" id="othersModal">
     <div class="sheet">
       <div class="head"><strong>Others</strong><button class="btn ghost" id="othersClose" type="button">✖</button></div>
@@ -640,7 +622,7 @@
     </div>
   </div>
 
-  <!-- Sell Product (Marketplace) -->
+  <!-- Sell Product -->
   <div class="modal" id="sellModal">
     <div class="sheet">
       <div class="head"><strong>Sell a product</strong><div class="row" style="gap:6px"><button class="btn ghost" id="sellBack" type="button">← Back</button><button class="btn ghost" id="sellClose" type="button">✖</button></div></div>
@@ -673,7 +655,7 @@
     </div>
   </div>
 
-  <!-- Panic Modal -->
+  <!-- Panic -->
   <div class="modal" id="panicModal">
     <div class="sheet">
       <div class="head">
@@ -697,30 +679,24 @@
       </div>
     </div>
   </div>
-
-  <!-- Floating Panic -->
   <button class="floating-panic" id="panicBtn" type="button">🚨</button>
 
   <!-- Splash -->
-  <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
+  <div id="splash" style="position:fixed;inset:0;background:#2563EB;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
     <div style="font-size:28px;font-weight:800;margin-top:12px">ZippUp</div>
     <div style="opacity:.9;margin-top:4px">On‑demand services, fast.</div>
   </div>
 
+  <!-- Fail-safe splash remover -->
   <script>
-    const BASE_API = 'https://zippup-backend-v3.onrender.com';
-    const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+  (function(){function hide(){try{var s=document.getElementById('splash');if(s){s.style.opacity='0';setTimeout(function(){s&&s.remove();},200);}var home=document.getElementById('page-home');if(home&&!home.classList.contains('active'))home.classList.add('active');document.querySelectorAll('.modal').forEach(function(m){m.classList.remove('open');});}catch(e){}}if(document.readyState!=='loading'){setTimeout(hide,0);}else{document.addEventListener('DOMContentLoaded',hide,{once:true});}window.addEventListener('load',hide,{once:true});setTimeout(hide,1500);} )();
+  </script>
 
-    // Firebase init
-    const firebaseConfig = {
-      apiKey: "AIzaSyApgmcfu5qGFn9tw872dQ2KkdDz_GPmL70",
-      authDomain: "zippup-535ca.firebaseapp.com",
-      projectId: "zippup-535ca",
-      appId: "1:382212325227:web:c04d91386817c7cff7d62e",
-      messagingSenderId: "382212325227",
-      measurementId: "G-YKJEVL8M6V"
-    };
-    if (!window.firebase?.apps?.length) firebase.initializeApp(firebaseConfig);
+  <!-- App -->
+  <script>
+    // Firebase
+    const firebaseConfig = { apiKey:"AIzaSyApgmcfu5qGFn9tw872dQ2KkdDz_GPmL70", authDomain:"zippup-535ca.firebaseapp.com", projectId:"zippup-535ca", appId:"1:382212325227:web:c04d91386817c7cff7d62e" };
+    try{ if(!firebase.apps.length) firebase.initializeApp(firebaseConfig); }catch(e){}
     const auth = firebase.auth();
 
     // State
@@ -731,7 +707,7 @@
     let cart = loadCart();
     function loadCart(){ try{ return JSON.parse(localStorage.getItem('food_cart')||'{"vendorId":null,"vendorName":null,"vendorPayment":[],"items":[]}'); }catch{ return { vendorId:null, vendorName:null, vendorPayment:[], items:[] } } }
     function saveCart(){ localStorage.setItem('food_cart', JSON.stringify(cart)); }
-    function resetCart(){ cart={ vendorId:null, vendorName:null, vendorPayment:[], items:[] }; saveCart(); }
+    function resetCart(){ cart={ vendorId:null, vendorName:null, vendorPayment:[], items:[] }; saveCart(); updateBellBadge(); }
 
     const $ = s => document.querySelector(s);
     const $$ = s => Array.from(document.querySelectorAll(s));
@@ -758,7 +734,7 @@
     $('#menuOrders').onclick  = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="orders"]').click(); };
     $('#menuWallet').onclick  = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="wallet"]')?.click(); };
     $('#menuTopup').onclick   = ()=>{ $('#profileMenu').style.display='none'; $('.nav [data-page="digital"]')?.click(); };
-    $('#menuSupport').onclick = ()=>{ $('#profileMenu').style.display='none'; alert('Support: email support@zippup.app'); };
+    $('#menuSupport').onclick = ()=>{ $('#profileMenu').style.display='none'; alert('Support: support@zippup.app'); };
     $('#menuLogout').onclick  = async ()=>{ $('#profileMenu').style.display='none'; try{ await auth.signOut(); alert('Signed out'); }catch{} };
 
     // Services & Emergency
@@ -782,7 +758,7 @@
     ];
 
     function renderServices(){
-      const grid = $('#servicesGrid'); grid.innerHTML='';
+      const grid = $('#servicesGrid'); if(!grid) return; grid.innerHTML='';
       SERVICES.forEach(s=>{
         const el=document.createElement('div'); el.className='card service';
         el.innerHTML = `<div class="row"><div style="font-size:28px">${s.icon}</div><h4>${s.name}</h4></div><div class="small muted" style="margin-top:6px">${s.desc}</div>`;
@@ -791,7 +767,7 @@
       });
     }
     function renderEmergency(){
-      const grid = $('#emergencyGrid'); grid.innerHTML='';
+      const grid = $('#emergencyGrid'); if(!grid) return; grid.innerHTML='';
       EMERGENCY.forEach(e=>{
         const el=document.createElement('div'); el.className='card service';
         el.innerHTML = `<div class="row"><div style="font-size:28px">${e.icon}</div><h4>${e.name}</h4></div>`;
@@ -800,7 +776,6 @@
       });
     }
 
-    // Open Category
     function openCategory(catId, label){
       if (catId==='digital'){ $('.nav [data-page="digital"]').click(); return; }
       if (catId==='marketplace'){ $('.nav [data-page="marketplace"]').click(); return; }
@@ -808,33 +783,36 @@
       if (catId==='others'){ openOthers(); return; }
       if (catId==='transport'){ $('#transportOptionsModal').classList.add('open'); return; }
 
-      // For home/tech/construction/auto: show providers with search row
       $('#provSearchRow').style.display = ['home','tech','construction','auto'].includes(catId) ? '' : 'none';
       $('#providersTitle').textContent = label + ' — Providers';
       renderProviders(dummyProviders(catId));
       $('#providersModal').classList.add('open');
     }
 
-    // Transport Options handlers
     $('#transportOptionsClose').onclick = ()=> $('#transportOptionsModal').classList.remove('open');
     $('#transportOptionsModal').addEventListener('click',(e)=>{
       const card = e.target.closest('[data-transport]'); if (!card) return;
       const sub = card.getAttribute('data-transport'); $('#transportOptionsModal').classList.remove('open');
       $('#providersTitle').textContent = (sub==='ride'?'Ride / Taxi':'Truck / Backie') + ' — Drivers nearby';
       renderProviders(nearbyDrivers(sub));
-      $('#provSearchRow').style.display=''; // enable search in providers
+      $('#provSearchRow').style.display='';
       $('#providersModal').classList.add('open');
     });
+
     function nearbyDrivers(sub){
       return [
-        { id:'d1', publicName:'Sam K.', jobTitle:(sub==='ride'?'Taxi':'Truck'), verified:true, rating:4.9, distance:'0.6km', eta:'5-7m', fee:'$6-9', available:true, icon:'🚗' },
-        { id:'d2', publicName:'Lara B.', jobTitle:(sub==='ride'?'Taxi':'Truck'), verified:true, rating:4.7, distance:'1.1km', eta:'7-10m', fee:'$7-10', available:true, icon:'🚗' }
+        { id:'d1', publicName:'Sam K.', jobTitle:(sub==='ride'?'Taxi':'Truck'), verified:true, distance:'0.6km', eta:'5-7m', fee:'$6-9', available:true, icon:'🚗' },
+        { id:'d2', publicName:'Lara B.', jobTitle:(sub==='ride'?'Taxi':'Truck'), verified:true, distance:'1.1km', eta:'7-10m', fee:'$7-10', available:true, icon:'🚗' }
       ];
     }
-
-    // Providers render with Instant/Schedule
+    function dummyProviders(cat){
+      return [
+        { id:'pr1', publicName:'Handy Pro', jobTitle:cat, verified:true, distance:'0.8km', eta:'6-9m', fee:'$20-30', available:true, icon:'👤' },
+        { id:'pr2', publicName:'Quick Help', jobTitle:cat, verified:false, distance:'1.2km', eta:'8-12m', fee:'$15-25', available:true, icon:'⚡' }
+      ];
+    }
     function renderProviders(list){
-      const box=$('#providersList'); box.innerHTML='';
+      const box=$('#providersList'); if(!box) return; box.innerHTML='';
       list.forEach(p=>{
         const el=document.createElement('div'); el.className='card';
         el.innerHTML = `
@@ -847,7 +825,7 @@
                 <div class="small"><strong>Est.:</strong> ${p.fee||'—'}</div>
               </div>
             </div>
-            <span class="badge ${p.available ? 'success':''}">${p.available ? 'available':'unavailable'}</span>
+            <span class="pill" style="background:#ECFDF5;color:#065F46">${p.available ? 'available':'unavailable'}</span>
           </div>
           <div class="row" style="gap:8px; margin-top:6px">
             <button class="btn primary" data-k="instant" type="button">Instant</button>
@@ -860,33 +838,30 @@
     }
     $('#closeProviders').onclick = ()=> $('#providersModal').classList.remove('open');
 
-    // Emergency lists (functional)
     async function openEmergency(id,label){
       $('#providersTitle').textContent = label + ' — Nearby';
       renderProviders([
-        { publicName:`${label} Team A`, jobTitle:label, verified:true, rating:4.8, distance:'0.8km', eta:'6m', fee:'—', available:true, icon:'🚑' },
-        { publicName:`${label} Team B`, jobTitle:label, verified:true, rating:4.6, distance:'1.3km', eta:'9m', fee:'—', available:true, icon:'🚑' }
+        { publicName:`${label} Team A`, jobTitle:label, verified:true, distance:'0.8km', eta:'6m', fee:'—', available:true, icon:'🚑' },
+        { publicName:`${label} Team B`, jobTitle:label, verified:true, distance:'1.3km', eta:'9m', fee:'—', available:true, icon:'🚑' }
       ]);
-      $('#provSearchRow').style.display=''; $('#providersModal').classList.add('open');
+      $('#provSearchRow').style.display='';
+      $('#providersModal').classList.add('open');
     }
 
-    // Instant flow (Bolt-like)
     function startInstant(provider){
       requestId = 'rq-'+Date.now();
       instantLeft = 90; $('#countdown').textContent=String(instantLeft);
       $('#instantHint').textContent='Waiting for provider to accept…';
       $('#providersModal').classList.remove('open');
       $('#instantModal').classList.add('open');
-      playTone(660, 150); // notify provider sound (demo)
 
       if (instantTimer) clearInterval(instantTimer);
-      instantTimer = setInterval(async ()=>{
+      instantTimer = setInterval(()=>{
         instantLeft--; $('#countdown').textContent=String(instantLeft);
-        if (instantLeft===86){ // accept
+        if (instantLeft===86){
           $('#instantModal').classList.remove('open');
           $('#trackModal').classList.add('open'); setTimeout(initTrackMap,50);
           $('#trackStatus').textContent='Provider accepted. En route…';
-          playTone(880, 200); // user accept sound
         }
         if (instantLeft<=0){ clearInterval(instantTimer); $('#instantModal').classList.remove('open'); alert('No response. Try others.'); }
       }, 1000);
@@ -911,7 +886,6 @@
           if (coords && nx.distanceTo(userMarker.getLatLng())<20){
             clearInterval(trackPoll);
             $('#trackStatus').textContent='Driver arrived';
-            playTone(520, 250); // arrival sound
           }
         }, 1000);
       }catch{}
@@ -919,7 +893,7 @@
     $('#trackCancelBtn').onclick = ()=> { if (trackPoll) clearInterval(trackPoll); $('#trackModal').classList.remove('open'); };
     $('#closeTrack').onclick = ()=> { if (trackPoll) clearInterval(trackPoll); $('#trackModal').classList.remove('open'); };
 
-    // Booking Form
+    // Booking
     $('#closeBooking').onclick = ()=> $('#bookingModal').classList.remove('open');
     $('#bkUseCurrent').onclick = async ()=>{
       try {
@@ -929,7 +903,7 @@
     };
     $('#bookingForm').onsubmit = (e)=>{ e.preventDefault(); $('#bookingModal').classList.remove('open'); alert('Booking requested'); };
 
-    // Others category search
+    // Others
     function openOthers(){ renderOthers(''); $('#othersModal').classList.add('open'); }
     function renderOthers(q){
       const all = [
@@ -1022,7 +996,7 @@
 
     // Cart
     $('#closeCart').onclick = ()=> $('#cartModal').classList.remove('open');
-    $('#cartClear').onclick = ()=>{ resetCart(); renderCart(); updateBellBadge(); };
+    $('#cartClear').onclick = ()=>{ resetCart(); renderCart(); };
     $('#checkoutBtn').onclick = ()=> openCheckout();
     function renderCart(){
       const list=$('#cartList'); const totalEl=$('#cartTotal'); list.innerHTML='';
@@ -1043,7 +1017,6 @@
         list.appendChild(row);
       });
       totalEl.textContent=total.toFixed(2);
-
       list.onclick = (e)=>{
         const btn=e.target.closest('[data-k]'); if(!btn) return;
         const id=btn.closest('.card')?.dataset?.id; const k=btn.getAttribute('data-k');
@@ -1083,7 +1056,6 @@
     }
     $('#chkBack').onclick = ()=> { $('#checkoutModal').classList.remove('open'); $('#cartModal').classList.add('open'); };
     $('#closeCheckout').onclick = ()=> $('#checkoutModal').classList.remove('open');
-
     $('#placeOrderBtn').onclick = ()=>{
       if (!$('#chkTerms').checked) return alert('Please accept the Terms');
       if (!cart.items.length) return alert('Cart is empty');
@@ -1096,7 +1068,7 @@
         <div class="small muted" style="margin-top:6px">Please don't share this code with the seller until your goods are delivered and confirmed.</div>
       </div>`;
       $('#orderModal').classList.add('open');
-      resetCart(); updateBellBadge();
+      resetCart();
     };
     $('#closeOrder').onclick = ()=> $('#orderModal').classList.remove('open');
 
@@ -1265,7 +1237,7 @@
         });
       }
       async function saveItems(replaceIdx){
-        const cards = Array.from(wrap.querySelectorAll('.card'));
+        const cards = Array.from(document.querySelectorAll('#foodItemsForm .card'));
         const items=[];
         for (const c of cards){
           const cat=c.querySelector('.f-cat').value;
@@ -1279,7 +1251,7 @@
         if (!items.length) return alert('Add at least one valid item');
         const saved=getSaved();
         if (typeof replaceIdx==='number'){ saved[replaceIdx]=items[0]; } else { saved.unshift(...items); }
-        setSaved(saved); wrap.innerHTML=''; ensureRow(); loadList(); alert('Saved');
+        setSaved(saved); document.getElementById('foodItemsForm').innerHTML=''; ensureRow(); loadList(); alert('Saved');
         document.getElementById('saveFoodItems').onclick = ()=> saveItems(undefined);
       }
       document.getElementById('addFoodRow').addEventListener('click', ensureRow);
@@ -1313,7 +1285,7 @@
     }
     $('#ecSave').onclick = saveContacts;
 
-    // Notifications (cart badge)
+    // Notifications
     function updateBellBadge(){
       const n=cart.items.reduce((a,b)=>a+(b.qty||0),0);
       let badge = document.getElementById('notifBellBadge');
@@ -1336,33 +1308,18 @@
       document.getElementById('notifModal').classList.add('open');
     };
 
-    // Availability toggle
-    const availKey='zippup_availability';
-    const toggle=document.getElementById('availToggle'); const knob=document.getElementById('availKnob'); const track=document.getElementById('availTrack');
-    toggle.checked = localStorage.getItem(availKey) === 'on';
-    knob.style.transform = toggle.checked ? 'translateX(20px)' : 'translateX(0)';
-    track.style.background = toggle.checked ? '#10B981' : '#d1d5db';
-    toggle.onchange = (e)=>{ localStorage.setItem(availKey, e.target.checked?'on':'off'); knob.style.transform = e.target.checked?'translateX(20px)':'translateX(0)'; track.style.background = e.target.checked ? '#10B981' : '#d1d5db'; };
-
-    // Panic
-    function updatePanicLoc(){ document.getElementById('panicLocHint').textContent = coords ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : 'Unknown'; }
-    document.getElementById('panicBtn').onclick = ()=> { updatePanicLoc(); document.getElementById('panicStatus').textContent=''; document.getElementById('panicMsg').value=''; document.getElementById('panicModal').classList.add('open'); };
-    document.getElementById('panicClose').onclick = ()=> document.getElementById('panicModal').classList.remove('open');
-    document.getElementById('panicCancel').onclick = ()=> document.getElementById('panicModal').classList.remove('open');
-    document.getElementById('panicSend').onclick = ()=>{ document.getElementById('panicStatus').textContent='Alert sent.'; setTimeout(()=> document.getElementById('panicModal').classList.remove('open'), 700); };
-
-    // Voice helpers
-    function voiceToInput(inputEl, onResult){
+    // Voice
+    function voiceToInput(el, cb){
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) { alert('Voice not supported'); return; }
       const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
-      rec.onresult = (e)=>{ const text=e.results[0][0].transcript||''; inputEl.value=text; onResult&&onResult(text); };
+      rec.onresult = (e)=>{ el.value = e.results[0][0].transcript||''; cb&&cb(); };
       rec.start();
     }
-    document.getElementById('voiceBtn').onclick = ()=> voiceToInput(document.getElementById('search'), ()=>{});
+    document.getElementById('voiceBtn').onclick = ()=> voiceToInput(document.getElementById('search'));
     document.getElementById('mpVoice').onclick  = ()=> voiceToInput(document.getElementById('mpSearch'), ()=> document.getElementById('mpSearchBtn').click());
 
-    // Search route
+    // Search dispatch
     document.getElementById('searchBtn').onclick = ()=>{
       const q=(document.getElementById('search').value||'').toLowerCase();
       if (!q) return;
@@ -1415,29 +1372,19 @@
       } catch {}
     }
 
-    // Simple tones
-    function playTone(freq, ms){
-      try{
-        const ac = new (window.AudioContext||window.webkitAudioContext)();
-        const o=ac.createOscillator(), g=ac.createGain();
-        o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ac.destination);
-        g.gain.setValueAtTime(0.0001, ac.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.2, ac.currentTime+0.02);
-        o.start();
-        setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+0.02); o.stop(ac.currentTime+0.03); }, ms||150);
-      }catch{}
-    }
+    // Panic
+    function updatePanicLoc(){ document.getElementById('panicLocHint').textContent = coords ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : 'Unknown'; }
+    document.getElementById('panicBtn').onclick = ()=> { updatePanicLoc(); document.getElementById('panicStatus').textContent=''; document.getElementById('panicMsg').value=''; document.getElementById('panicModal').classList.add('open'); };
+    document.getElementById('panicClose').onclick = ()=> document.getElementById('panicModal').classList.remove('open');
+    document.getElementById('panicCancel').onclick = ()=> document.getElementById('panicModal').classList.remove('open');
+    document.getElementById('panicSend').onclick = ()=>{ document.getElementById('panicStatus').textContent='Alert sent.'; setTimeout(()=> document.getElementById('panicModal').classList.remove('open'), 700); };
 
     // Init
     document.addEventListener('DOMContentLoaded', async ()=>{
-      renderServices(); renderEmergency();
-      renderMarketplace();
+      renderServices(); renderEmergency(); renderMarketplace();
       await initLocation(); initHomeMap();
-      updateProfileUI();
-      // close hooks
-      document.getElementById('closeNotif').onclick = ()=> document.getElementById('notifModal').classList.remove('open');
-      // splash off
-      setTimeout(()=>{ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } }, 250);
+      updateBellBadge();
+      setTimeout(()=>{ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } }, 300);
     });
   </script>
 </body>
