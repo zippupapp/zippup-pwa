@@ -2075,5 +2075,41 @@
   if (!firebase.auth().currentUser) enterAuth();
 })();
 </script>
+  <script>
+(function restoreHomeNow(){
+  try {
+    // Kill auth gate and prevent it from re-applying
+    window.enterAuthMode = function(){};
+    window.exitAuthMode = function(){};
+    document.body.removeAttribute('data-auth');
+
+    // Hide any full-page auth modal
+    var am = document.getElementById('authModal');
+    if (am) { am.classList.remove('open'); am.style.display = 'none'; }
+
+    // Remove gate CSS if present
+    ['zup-auth-gate','auth-full-css'].forEach(function(id){
+      var s = document.getElementById(id);
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+    });
+
+    // Ensure header/nav/pages are visible
+    document.querySelectorAll('header, .nav, .page').forEach(function(el){ el.style.display = ''; });
+
+    // Kill splash if still visible
+    var sp = document.getElementById('splash');
+    if (sp) { sp.style.opacity='0'; setTimeout(function(){ try{ sp.remove(); }catch(e){} }, 150); }
+
+    // Show Home page
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    var home = document.getElementById('page-home');
+    if (home){ home.classList.add('active'); home.style.display = 'block'; }
+
+    // Remove any custom logout override that re-opens auth
+    var lo = document.getElementById('menuLogout');
+    if (lo) lo.onclick = null;
+  } catch(e){}
+})();
+</script>
 </body>
 </html>
