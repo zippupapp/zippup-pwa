@@ -2172,5 +2172,39 @@
   if (!firebase.auth().currentUser) enterAuth();
 })();
 </script>
+  <script>
+(function splashAuthFix(){
+  const $=s=>document.querySelector(s);
+  function hideSplash(){
+    const s=$('#splash'); if(!s) return;
+    s.style.opacity='0'; setTimeout(()=>{ try{ s.remove(); }catch{} },200);
+  }
+  function openAuth(){
+    document.body.setAttribute('data-auth','1');
+    const m=$('#authModal'); if (m){ m.style.display='flex'; m.classList.add('open'); }
+  }
+  function closeAuth(){
+    document.body.removeAttribute('data-auth');
+    const m=$('#authModal'); if (m){ m.classList.remove('open'); m.style.display='none'; }
+  }
+
+  // Always kill splash on load and on any error
+  if (document.readyState==='complete' || document.readyState==='interactive') setTimeout(hideSplash, 0);
+  else window.addEventListener('DOMContentLoaded', hideSplash, {once:true});
+  window.addEventListener('load', hideSplash, {once:true});
+  window.addEventListener('error', hideSplash);
+
+  // Gate by Firebase auth state (sign-out => show auth; sign-in => close auth)
+  try{
+    firebase.auth().onAuthStateChanged(u=>{
+      hideSplash();
+      if (u) closeAuth(); else openAuth();
+    });
+  }catch(e){
+    // Fallback if Firebase not ready: show auth after splash
+    setTimeout(()=>{ hideSplash(); openAuth(); }, 400);
+  }
+})();
+</script>
 </body>
 </html>
