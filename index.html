@@ -1587,5 +1587,214 @@
 
     $('#bkUseCurrent').onclick = ()=>{ if (coords) $('#bkAddress').value = $('#userLocUnder').textContent || `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`; };
   </script>
+  <style id="zup-auth-gate">
+  body[data-auth="1"] header,
+  body[data-auth="1"] .nav,
+  body[data-auth="1"] .page { display: none !important; }
+</style>
+  <!-- Ratings -->
+<div class="modal" id="ratingModal">
+  <div class="sheet">
+    <div class="head">
+      <strong>Rate your experience</strong>
+      <button class="btn ghost" id="rateClose" type="button">✖</button>
+    </div>
+    <div class="body">
+      <div class="row" id="rateStars" style="gap:6px"></div>
+      <div class="field" style="margin-top:8px">
+        <label class="small">Comment (optional)</label>
+        <textarea id="rateNote" rows="3"></textarea>
+      </div>
+      <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px">
+        <button class="btn ghost" id="rateLater" type="button">Later</button>
+        <button class="btn primary" id="rateSubmit" type="button">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+Script (auth gating, bookings to orders, roadside booking, sounds, ratings)
+<script>
+(function upgrades(){
+  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+
+  // Auth full‑page gate (Firebase)
+  function enterAuthMode(){ document.body.setAttribute('data-auth','1'); $('#authModal')?.classList.add('open'); }
+  function exitAuthMode(){ document.body.removeAttribute('data-auth'); $('#authModal')?.classList.remove('open'); typeof showPage==='function' && showPage('home'); }
+  window.enterAuthMode = enterAuthMode; window.exitAuthMode = exitAuthMode;
+
+  try {
+    firebase.auth().onAuthStateChanged(u=>{
+      if (u) {
+        user.email=u.email||''; user.name=u.displayName|| (user.email?user.email.split('@')[0]:'Guest');
+        updateProfileUI && updateProfileUI();
+        exitAuthMode();
+      } else {
+        enterAuthMode();
+      }
+    });
+  } catch {}
+
+  // Force Logout → Auth page
+  try {
+    document.getElementById('menuLogout').onclick = async ()=>{
+      $('#profileMenu').style.display='none';
+      try{ await firebase.auth().signOut(); }catch{}
+      user = { name:'Guest', email:'' };
+      enterAuthMode();
+    };
+  } catch {}
+
+  // Auth modal: close only if signed-in
+  try {
+    document.getElementById('authClose').onclick = ()=>{
+      if (!firebase.auth().currentUser) { enterAuthMode(); return; }
+      document.getElementById('authModal').classList.remove('open');
+    };
+    document.getElementById('authLogin').onclick = async ()=>{
+      const email=$('#authEmail').value.trim(), pass=$('#authPass').value.trim();
+      if (!email || !pass) return alert('Enter email and password');
+      try { await firebase.auth().signInWithEmailAndPassword(email, pass); } catch(e){ alert('Sign in failed: '+(e?.message||'')); }
+    };
+  } catch {}
+
+  // Sounds on creation/accept/arrival (uses your playSound)
+  const _createServiceInstant = window.createServiceInstant;
+  window.createServiceInstant = function(){
+    try{ playSound && playSound('request'); }catch{}
+    const r = _createServiceInstant ? _createServiceInstant.apply(this, arguments) : undefined;
+    renderOrders && renderOrders();
+    return r;
+  };
+  const _addFoodOrder = window.addFoodOrder;
+  window.addFoodOrder = function(){
+    try{ playSound && playSound('request'); }catch{}
+    const r = _addFoodOrder ? _addFoodOrder.apply(this, arguments) : undefined;
+    renderOrders && renderOrders();
+    return r;
+  };
+  const _createTransportInstant = window.createTransportInstant;
+  window.createTransportInstant = function(driver, pickup, dest, stops){
+    try{ playSound && playSound('request'); }catch{}
+    const r = _createTransportInstant ? _createTransportInstant.apply(this, arguments) : undefined;
+    try { window.currentTrackingOrderId = (window.orders && window.orders[0] && window.orders[0].id) || window.currentTrackingOrderId; } catch {}
+    renderOrders && renderOrders();
+    return r;
+  };
+
+  // Roadside "Request" → creates booking (so it appears in My Bookings)
+  window.requestRoadside = function(name){
+    const id='svc-'+Date.now();
+    try {
+      orders.unshift({ id, type:'service', category:'roadside', title:name, status:'preparing', createdAt:Date.now() });
+      setOrders(orders); renderOrders && renderOrders();
+      setTimeout(()=> beginServiceTracking && beginServiceTracking(id), 10*60*1000);
+      addNotification && addNotification({ kind:'booking', text:`${name} booking created`, data:{ orderId:id } });
+      playSound && playSound('request');
+      document.getElementById('roadsideModal')?.classList.remove('open');
+    } catch {}
+  };
+  // Override list renderer to wire data-road buttons
+  window.renderRoadsideList = function(q){
+    const all = [
+      { name:'Tyre change • Team A', eta:'5 min' },
+      { name:'Battery jumpstart • Team B', eta:'7 min' },
+      { name:'Fuel delivery • Team C', eta:'10 min' },
+      { name:'Tow truck • Wingate', eta:'12 min' }
+    ];
+    const f=(q||'').toLowerCase();
+    const list = all.filter(x=>x.name.toLowerCase().includes(f));
+    const html = list.map(x=>`
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div><strong>${x.name}</strong><div class="small muted">ETA ${x.eta}</div></div>
+          <button class="btn primary" data-road="${x.name}" type="button">Request</button>
+        </div>
+      </div>`).join('') || '<div class="small muted">No matches</div>';
+    const box = document.getElementById('roadList'); if (box) box.innerHTML = html;
+  };
+  document.getElementById('roadList')?.addEventListener('click', (e)=>{
+    const b=e.target.closest('button[data-road]'); if (!b) return;
+    requestRoadside(b.getAttribute('data-road'));
+  });
+
+  // Ratings storage
+  window.ratings = JSON.parse(localStorage.getItem('zup_ratings')||'[]');
+  function saveRatings(){ localStorage.setItem('zup_ratings', JSON.stringify(window.ratings)); }
+  function openRate(orderId){
+    const m=document.getElementById('ratingModal'); if(!m) return;
+    m.classList.add('open'); m.dataset.orderId=orderId||'';
+    const row=document.getElementById('rateStars'); row.innerHTML='';
+    let sel=5; for (let i=1;i<=5;i++){ const b=document.createElement('button'); b.className='btn ghost'; b.textContent='⭐'; b.dataset.v=i; b.onclick=()=>{ sel=i; $$(`#rateStars .btn`).forEach((x,j)=>x.style.background=(j<i)?'#FFE08A':''); }; row.appendChild(b); }
+    $$(`#rateStars .btn`).forEach((x,j)=>x.style.background=(j<5)?'#FFE08A':'');
+    document.getElementById('rateSubmit').onclick=()=>{
+      const note=$('#rateNote').value.trim();
+      const o=orders.find(x=>x.id===orderId) || {};
+      const target = o.vendorName || o.driver || (o.title||'service');
+      window.ratings.unshift({ id:'r'+Date.now(), orderId, by:user.email||'guest', target, stars:sel, note, at:Date.now() });
+      saveRatings();
+      $('#rateNote').value='';
+      m.classList.remove('open');
+      if (o.id){ o.status='completed'; setOrders(orders); renderOrders&&renderOrders(); }
+    };
+    document.getElementById('rateLater').onclick=()=> m.classList.remove('open');
+    document.getElementById('rateClose').onclick=()=> m.classList.remove('open');
+  }
+  window.openRate = openRate;
+
+  // Ask for rating when tracking stops (arrival or cancel)
+  const _stopTracking = window.stopTracking;
+  window.stopTracking = function(){
+    const id = (window.currentTrackingOrderId) || (orders && orders.find(o=>['enroute','assigned'].includes(o.status))?.id);
+    const r=_stopTracking ? _stopTracking.apply(this, arguments):undefined;
+    if (id) setTimeout(()=> openRate(id), 350);
+    return r;
+  };
+
+  // Show provider ratings on cards (avg from local ratings); user history line
+  const _renderProviders = window.renderProviders;
+  window.renderProviders = function(list, catId){
+    _renderProviders && _renderProviders.call(this, list, catId);
+    try {
+      const map = {};
+      (window.ratings||[]).forEach(r=>{ if(!r.target) return; map[r.target]=map[r.target]||{sum:0,n:0}; map[r.target].sum+=(+r.stars||0); map[r.target].n++; });
+      $$('#providersList .card').forEach(card=>{
+        const name = card.querySelector('strong')?.textContent||'';
+        const stat = map[name]; if (!stat) return;
+        const line = document.createElement('div');
+        line.className='small muted';
+        line.textContent = `⭐ ${ (stat.sum/stat.n).toFixed(1) } (${stat.n}) • Your history: ${orders.length} bookings`;
+        const info = card.querySelector('.row .row + div') || card.querySelector('.row');
+        info && info.appendChild(line);
+      });
+    } catch {}
+  };
+
+  // Ensure all current orders render and bell badge updates
+  document.addEventListener('DOMContentLoaded', ()=>{
+    renderOrders && renderOrders();
+    updateBellBadge && updateBellBadge();
+  });
+})();
+</script>
+  <!-- Ratings -->
+<div class="modal" id="ratingModal">
+  <div class="sheet">
+    <div class="head">
+      <strong>Rate your experience</strong>
+      <button class="btn ghost" id="rateClose" type="button">✖</button>
+    </div>
+    <div class="body">
+      <div class="row" id="rateStars" style="gap:6px"></div>
+      <div class="field" style="margin-top:8px">
+        <label class="small">Comment (optional)</label>
+        <textarea id="rateNote" rows="3"></textarea>
+      </div>
+      <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px">
+        <button class="btn ghost" id="rateLater" type="button">Later</button>
+        <button class="btn primary" id="rateSubmit" type="button">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
