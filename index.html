@@ -1643,18 +1643,49 @@
     };
   } catch {}
 
-  // Auth modal: close only if signed-in
-  try {
-    document.getElementById('authClose').onclick = ()=>{
-      if (!firebase.auth().currentUser) { enterAuthMode(); return; }
-      document.getElementById('authModal').classList.remove('open');
-    };
-    document.getElementById('authLogin').onclick = async ()=>{
-      const email=$('#authEmail').value.trim(), pass=$('#authPass').value.trim();
-      if (!email || !pass) return alert('Enter email and password');
-      try { await firebase.auth().signInWithEmailAndPassword(email, pass); } catch(e){ alert('Sign in failed: '+(e?.message||'')); }
-    };
-  } catch {}
+  // Auth modal
+  <!-- Auth (full page) -->
+<div class="modal open" id="authModal" style="display:none">
+  <div class="sheet">
+    <div class="head">
+      <div id="authBrand">
+        <div class="logo">🚀</div>
+        <div class="tag">ZippUp: Hustle faster!</div>
+      </div>
+    </div>
+    <div class="body">
+      <div id="authCard">
+        <div id="authTabs">
+          <button id="tabSignIn" class="active" type="button">Sign in</button>
+          <button id="tabSignUp" type="button">Sign up</button>
+          <button id="tabReset"  type="button">Recover</button>
+        </div>
+
+        <div id="paneSignIn" class="auth-pane active">
+          <div class="field"><label class="small">Email</label><input id="inEmail" placeholder="you@example.com"/></div>
+          <div class="field"><label class="small">Password</label><input id="inPass" type="password" placeholder="••••••••"/></div>
+          <button class="btn primary block" id="btnSignIn" type="button">Continue</button>
+          <div class="small muted" style="margin:10px 0; text-align:center">or</div>
+          <button class="btn block" id="googleBtn" type="button">🔵 Continue with Google</button>
+        </div>
+
+        <div id="paneSignUp" class="auth-pane">
+          <div class="field"><label class="small">Name</label><input id="upName" placeholder="Your name"/></div>
+          <div class="field"><label class="small">Email</label><input id="upEmail" placeholder="you@example.com"/></div>
+          <div class="field"><label class="small">Password</label><input id="upPass" type="password" placeholder="At least 6 characters"/></div>
+          <button class="btn primary block" id="btnSignUp" type="button">Create account</button>
+          <div class="small muted" style="margin:10px 0; text-align:center">or</div>
+          <button class="btn block" id="googleBtn2" type="button">🔵 Continue with Google</button>
+        </div>
+
+        <div id="paneReset" class="auth-pane">
+          <div class="field"><label class="small">Email</label><input id="rsEmail" placeholder="you@example.com"/></div>
+          <button class="btn primary block" id="btnReset" type="button">Send reset link</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
   // Sounds on creation/accept/arrival (uses your playSound)
   const _createServiceInstant = window.createServiceInstant;
@@ -1795,5 +1826,116 @@
     </div>
   </div>
 </div>
+  <style id="auth-full-css">
+  body[data-auth="1"] header,
+  body[data-auth="1"] .nav,
+  body[data-auth="1"] .page { display: none !important; }
+
+  #authModal .sheet {
+    height: 100vh; width: 100vw; max-width: none; border-radius: 0;
+    padding-top: env(safe-area-inset-top, 0); display: flex; flex-direction: column; border: 0;
+    background: var(--bg);
+  }
+  #authModal .head { border: 0; padding: 16px; justify-content: center; }
+  #authModal .body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; }
+
+  #authCard {
+    width: 100%; max-width: 420px; background: #fff; border: 1px solid var(--border);
+    border-radius: 16px; box-shadow: var(--shadow); padding: 18px;
+  }
+  #authBrand { text-align: center; margin-bottom: 10px; }
+  #authBrand .logo { font-size: 42px; }
+  #authBrand .tag { margin-top: 4px; color: var(--muted); font-weight: 600; }
+  #authTabs { display: grid; grid-auto-flow: column; gap: 8px; margin: 10px 0 12px; }
+  #authTabs button { padding: 10px 12px; border-radius: 10px; background: #F3F4F6; }
+  #authTabs button.active { background: #EEF2FF; color: #3730A3; font-weight: 700; }
+  .auth-pane { display: none; }
+  .auth-pane.active { display: block; }
+  #googleBtn { width: 100%; background: #fff; border: 1px solid var(--border); }
+</style>
+  <script>
+(function authFull(){
+  const $=s=>document.querySelector(s);
+
+  // Gate helpers (idempotent)
+  window.enterAuthMode = window.enterAuthMode || function(){ document.body.setAttribute('data-auth','1'); const m=$('#authModal'); if(m){ m.style.display='flex'; m.classList.add('open'); } };
+  window.exitAuthMode  = window.exitAuthMode  || function(){ document.body.removeAttribute('data-auth'); const m=$('#authModal'); if(m){ m.classList.remove('open'); m.style.display='none'; } };
+
+  // Tabs
+  function setTab(which){
+    ['SignIn','SignUp','Reset'].forEach(k=>{
+      $('#tab'+k)?.classList.toggle('active', k===which);
+      $('#pane'+k)?.classList.toggle('active', k===which);
+    });
+  }
+  $('#tabSignIn')?.addEventListener('click', ()=>setTab('SignIn'));
+  $('#tabSignUp')?.addEventListener('click', ()=>setTab('SignUp'));
+  $('#tabReset') ?.addEventListener('click', ()=>setTab('Reset'));
+
+  // Firebase handlers
+  function provider(){ try { return new firebase.auth.GoogleAuthProvider(); } catch { return null; } }
+
+  $('#btnSignIn')?.addEventListener('click', async ()=>{
+    const email=$('#inEmail').value.trim(), pass=$('#inPass').value.trim();
+    if(!email||!pass) return alert('Enter email and password');
+    try { await firebase.auth().signInWithEmailAndPassword(email, pass); } catch(e){ alert(e?.message||'Sign in failed'); }
+  });
+
+  $('#btnSignUp')?.addEventListener('click', async ()=>{
+    const name=$('#upName').value.trim(), email=$('#upEmail').value.trim(), pass=$('#upPass').value.trim();
+    if(!name||!email||!pass) return alert('Fill name, email, password');
+    try {
+      const { user:u } = await firebase.auth().createUserWithEmailAndPassword(email, pass);
+      try { await u.updateProfile({ displayName:name }); } catch {}
+    } catch(e){ alert(e?.message||'Sign up failed'); }
+  });
+
+  $('#btnReset')?.addEventListener('click', async ()=>{
+    const email=$('#rsEmail').value.trim(); if(!email) return alert('Enter your email');
+    try { await firebase.auth().sendPasswordResetEmail(email); alert('Reset link sent'); setTab('SignIn'); } catch(e){ alert(e?.message||'Failed to send reset link'); }
+  });
+
+  const g = provider();
+  const googleSign = async ()=>{ if(!g) return alert('Google not available'); try{ await firebase.auth().signInWithPopup(g); }catch(e){ alert(e?.message||'Google sign-in failed'); } };
+  $('#googleBtn') ?.addEventListener('click', googleSign);
+  $('#googleBtn2')?.addEventListener('click', googleSign);
+
+  // Show gate on logout (override safely if already set)
+  const menuLogout = document.getElementById('menuLogout');
+  if (menuLogout) {
+    menuLogout.onclick = async ()=>{
+      document.getElementById('profileMenu').style.display='none';
+      try{ await firebase.auth().signOut(); }catch{}
+      enterAuthMode();
+    };
+  }
+
+  // Open Support shortcut in profile list too
+  document.getElementById('openSupportBtn')?.addEventListener('click', ()=> window.showPage && showPage('support'));
+
+  // Gate on auth state
+  try {
+    firebase.auth().onAuthStateChanged(u=>{
+      if (u) {
+        // Signed in
+        try {
+          window.user = window.user || {};
+          user.email = u.email||''; user.name = u.displayName || (user.email?user.email.split('@')[0]:'Guest');
+          window.updateProfileUI && updateProfileUI();
+        } catch {}
+        exitAuthMode();
+      } else {
+        // Signed out
+        enterAuthMode();
+      }
+    });
+  } catch {
+    // if Firebase not loaded, keep app usable
+  }
+
+  // If explicitly asked to sign in (e.g., deep link later)
+  window.openAuth = ()=>{ enterAuthMode(); setTab('SignIn'); };
+})();
+</script>
 </body>
 </html>
