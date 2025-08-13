@@ -669,50 +669,66 @@
     </div>
   </div>
 
-  <!-- Auth Modal (overlay only; no page gating) -->
-  <div class="modal" id="authModal">
+  <div class="modal" id="chatModal">
     <div class="sheet">
       <div class="head">
-        <strong>Sign in</strong>
-        <button class="btn ghost" id="authClose" type="button">✖</button>
+        <strong id="chatTitle">Chat</strong>
+        <button class="btn ghost" id="chatClose" type="button">✖</button>
       </div>
       <div class="body">
-        <div class="list" id="authCard">
-          <div style="text-align:center;font-weight:800;font-size:18px;margin-bottom:6px">ZippUp: Hustle faster!</div>
+        <div id="chatList" class="list" style="max-height:50vh;overflow:auto"></div>
+        <div class="row" style="gap:8px;margin-top:8px">
+          <input id="chatInput" placeholder="Type a message…" style="flex:1"/>
+          <button class="btn primary" id="chatSend" type="button">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-          <div class="row" id="authTabs" style="gap:6px;margin-bottom:10px">
+  <!-- Auth modal (kept as overlay; no page gating) -->
+  <div class="modal" id="authModal" style="display:none">
+    <div class="sheet" style="height:100vh;width:100vw;max-width:none;border-radius:0;border:0;background:var(--bg);display:flex;flex-direction:column">
+      <div class="head" style="border:0;justify-content:center">
+        <div style="text-align:center;margin:6px 0 0">
+          <div style="font-size:42px">🚀</div>
+          <div style="margin-top:4px;color:var(--muted);font-weight:600">ZippUp: Hustle faster!</div>
+        </div>
+      </div>
+      <div class="body" style="display:flex;align-items:center;justify-content:center">
+        <div id="authCard" style="width:100%;max-width:420px;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:18px">
+          <div id="authTabs" style="display:grid;grid-auto-flow:column;gap:8px;margin:10px 0 12px">
             <button id="tabSignIn" class="btn ghost" type="button">Sign in</button>
             <button id="tabSignUp" class="btn ghost" type="button">Sign up</button>
-            <button id="tabPhone"  class="btn ghost" type="button">Phone</button>
-            <button id="tabReset"  class="btn ghost" type="button">Recover</button>
+            <button id="tabPhone" class="btn ghost" type="button">Phone</button>
+            <button id="tabReset" class="btn ghost" type="button">Recover</button>
           </div>
 
-          <div id="paneSignIn">
+          <div id="paneSignIn" class="auth-pane">
             <div class="field"><label class="small">Email</label><input id="inEmail" placeholder="you@example.com"/></div>
             <div class="field"><label class="small">Password</label><input id="inPass" type="password" placeholder="••••••••"/></div>
             <button class="btn primary block" id="btnSignIn" type="button">Continue</button>
             <div class="small muted" style="margin:10px 0; text-align:center">or</div>
-            <button class="btn block" id="googleBtn" type="button" style="width:100%;background:#fff;border:1px solid var(--border)">🔵 Continue with Google</button>
+            <button class="btn block" id="googleBtn" type="button" style="background:#fff;border:1px solid var(--border)">🔵 Continue with Google</button>
           </div>
 
-          <div id="paneSignUp" style="display:none">
+          <div id="paneSignUp" class="auth-pane" style="display:none">
             <div class="field"><label class="small">Name</label><input id="upName" placeholder="Your name"/></div>
             <div class="field"><label class="small">Email</label><input id="upEmail" placeholder="you@example.com"/></div>
             <div class="field"><label class="small">Password</label><input id="upPass" type="password" placeholder="At least 6 characters"/></div>
             <button class="btn primary block" id="btnSignUp" type="button">Create account</button>
             <div class="small muted" style="margin:10px 0; text-align:center">or</div>
-            <button class="btn block" id="googleBtn2" type="button" style="width:100%;background:#fff;border:1px solid var(--border)">🔵 Continue with Google</button>
+            <button class="btn block" id="googleBtn2" type="button" style="background:#fff;border:1px solid var(--border)">🔵 Continue with Google</button>
           </div>
 
-          <div id="panePhone" style="display:none">
+          <div id="panePhone" class="auth-pane" style="display:none">
             <div class="field"><label class="small">Phone (with country code)</label><input id="phNumber" placeholder="+27XXXXXXXXX"/></div>
             <div id="recaptcha-container" style="margin:6px 0"></div>
             <button class="btn primary block" id="btnPhoneSend" type="button">Send code</button>
-            <div class="field" style="margin-top:10px"><label class="small">Verification code</label><input id="phCode" placeholder="6‑digit code"/></div>
+            <div class="field" style="margin-top:10px"><label class="small">Verification code</label><input id="phCode" placeholder="123456"/></div>
             <button class="btn primary block" id="btnPhoneVerify" type="button">Verify & Sign in</button>
           </div>
 
-          <div id="paneReset" style="display:none">
+          <div id="paneReset" class="auth-pane" style="display:none">
             <div class="field"><label class="small">Email</label><input id="rsEmail" placeholder="you@example.com"/></div>
             <button class="btn primary block" id="btnReset" type="button">Send reset link</button>
           </div>
@@ -769,7 +785,7 @@
       $$('.nav button').forEach(b=>b.classList.toggle('active', b.getAttribute('data-page')===id));
     }
 
-    const sndRequest = new Audio('data:audio/mp3;base64,//uQZAAAAAAAA'); 
+    const sndRequest = new Audio('data:audio/mp3;base64,//uQZAAAAAAAA');
     const sndAccept  = new Audio('data:audio/mp3;base64,//uQZAAAAAAAA');
     const sndArrive  = new Audio('data:audio/mp3;base64,//uQZAAAAAAAA');
     function playSound(what){ try{ ({request:sndRequest,accept:sndAccept,arrive:sndArrive}[what])?.play(); }catch{} }
@@ -795,8 +811,7 @@
       $('#profileMenu').style.display='none';
       try{ await auth.signOut(); }catch{}
       user = { name:'Guest', email:'' };
-      showPage('home');
-      $('#authModal').classList.add('open');
+      $('#authModal').style.display='flex'; $('#authModal').classList.add('open');
     };
 
     $('#openSupportBtn').onclick = ()=> showPage('support');
@@ -1293,7 +1308,7 @@
     $('#ecBack').onclick = ()=> showPage('profile');
     $('#vpBack').onclick = ()=> showPage('profile');
 
-    const avail = $('#availToggle'), knob=$('#availKnob'), track=$('#availTrack']);
+    const avail = $('#availToggle'), knob=$('#availKnob'), track=$('#availTrack');
     function syncAvail(){ if (avail.checked){ track.style.background='#34D399'; knob.style.transform='translateX(20px)'; } else { track.style.background='#d1d5db'; knob.style.transform='translateX(0)'; } }
     avail.onchange = syncAvail; syncAvail();
 
@@ -1583,17 +1598,102 @@
       updateBellBadge();
     };
 
-    $('#authClose').onclick = ()=> $('#authModal').classList.remove('open');
-    // Keep legacy manual fallback (does not affect Firebase)
-    $('#authLogin').onclick = ()=>{
-      const email=$('#authEmail')?.value?.trim();
-      const pass=$('#authPass')?.value?.trim();
-      if (email && pass) {
-        user.email=email; user.name=email.split('@')[0];
-        updateProfileUI(); $('#authModal').classList.remove('open'); alert('Welcome, '+user.name);
+    // Auth controller (overlay only, no page gating)
+    (function authController(){
+      const $=s=>document.querySelector(s);
+      // Tabs
+      const tabs = { SignIn:'#paneSignIn', SignUp:'#paneSignUp', Phone:'#panePhone', Reset:'#paneReset' };
+      function setTab(which){
+        Object.keys(tabs).forEach(k=>{
+          $('#tab'+k)?.classList.toggle('primary', k===which);
+          $('#tab'+k)?.classList.toggle('ghost', k!==which);
+          const p = document.querySelector(tabs[k]);
+          if (p) p.style.display = (k===which?'block':'none');
+        });
       }
-    };
+      $('#tabSignIn')?.addEventListener('click', ()=>setTab('SignIn'));
+      $('#tabSignUp')?.addEventListener('click', ()=>setTab('SignUp'));
+      $('#tabPhone') ?.addEventListener('click', ()=>setTab('Phone'));
+      $('#tabReset') ?.addEventListener('click', ()=>setTab('Reset'));
+      setTab('SignIn');
 
+      // Open/close auth modal
+      function openAuth(){ const m=$('#authModal'); if (m) { m.style.display='flex'; m.classList.add('open'); } }
+      function closeAuth(){ const m=$('#authModal'); if (m) { m.classList.remove('open'); m.style.display='none'; } }
+      $('#authClose')?.addEventListener('click', closeAuth);
+
+      // Firebase handlers
+      function provider(){ try { return new firebase.auth.GoogleAuthProvider(); } catch { return null; } }
+
+      $('#btnSignIn')?.addEventListener('click', async ()=>{
+        const email=$('#inEmail')?.value.trim(), pass=$('#inPass')?.value.trim();
+        if(!email||!pass) return alert('Enter email and password');
+        try { await auth.signInWithEmailAndPassword(email, pass); } catch(e){ alert(e?.message||'Sign in failed'); }
+      });
+
+      $('#btnSignUp')?.addEventListener('click', async ()=>{
+        const name=$('#upName')?.value.trim(), email=$('#upEmail')?.value.trim(), pass=$('#upPass')?.value.trim();
+        if(!name||!email||!pass) return alert('Fill name, email, password');
+        try {
+          const { user:u } = await auth.createUserWithEmailAndPassword(email, pass);
+          try { await u.updateProfile({ displayName:name }); } catch {}
+        } catch(e){ alert(e?.message||'Sign up failed'); }
+      });
+
+      $('#btnReset')?.addEventListener('click', async ()=>{
+        const email=$('#rsEmail')?.value.trim(); if(!email) return alert('Enter your email');
+        try { await auth.sendPasswordResetEmail(email); alert('Reset link sent'); setTab('SignIn'); } catch(e){ alert(e?.message||'Failed to send reset link'); }
+      });
+
+      const g = provider();
+      const googleSign = async ()=>{ if(!g) return alert('Google not available'); try{ await auth.signInWithPopup(g); }catch(e){ alert(e?.message||'Google sign-in failed'); } };
+      $('#googleBtn') ?.addEventListener('click', googleSign);
+      $('#googleBtn2')?.addEventListener('click', googleSign);
+
+      // Phone auth
+      let recaptcha;
+      function ensureRecaptcha(){
+        if (recaptcha) return recaptcha;
+        try {
+          recaptcha = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size:'invisible' });
+        } catch {
+          try { recaptcha = new firebase.auth.RecaptchaVerifier('recaptcha-container'); } catch {}
+        }
+        return recaptcha;
+      }
+      let confirmationResult = null;
+      $('#btnPhoneSend')?.addEventListener('click', async ()=>{
+        const num = $('#phNumber')?.value.trim();
+        if (!num) return alert('Enter phone');
+        try {
+          ensureRecaptcha();
+          confirmationResult = await auth.signInWithPhoneNumber(num, recaptcha);
+          alert('Code sent');
+        } catch(e){ alert(e?.message||'Failed to send code'); }
+      });
+      $('#btnPhoneVerify')?.addEventListener('click', async ()=>{
+        const code = $('#phCode')?.value.trim();
+        if (!code || !confirmationResult) return alert('Enter the code');
+        try { await confirmationResult.confirm(code); } catch(e){ alert(e?.message||'Invalid code'); }
+      });
+
+      // Auth state
+      auth.onAuthStateChanged(u=>{
+        if (u) {
+          user.email=u.email||''; user.name=u.displayName || (user.email?user.email.split('@')[0]:'Guest');
+          updateProfileUI && updateProfileUI();
+          closeAuth();
+        } else {
+          openAuth();
+        }
+      });
+
+      // Logout already wired above to open modal
+      // Also open Support from profile list
+      $('#openSupportBtn')?.addEventListener('click', ()=> showPage && showPage('support'));
+    })();
+
+    function renderOrdersOnce(){ renderOrders && renderOrders(); }
     document.addEventListener('DOMContentLoaded', async ()=>{
       showPage('home');
       renderServices(); renderEmergency();
@@ -1602,101 +1702,12 @@
       updateProfileUI(); updateBellBadge();
       ensureFoodRow(); renderFoodItemsList();
       setTimeout(()=>{ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } }, 250);
+      renderOrdersOnce();
     });
+    window.addEventListener('load', ()=>{ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } });
+    setTimeout(()=>{ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } }, 2000);
 
     $('#bkUseCurrent').onclick = ()=>{ if (coords) $('#bkAddress').value = $('#userLocUnder').textContent || `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`; };
-  </script>
-
-  <!-- Authentication controller (overlay only, no layout gating) -->
-  <script>
-  (function authOverlay(){
-    const $=s=>document.querySelector(s);
-
-    function setTab(which){
-      const panes={SignIn:'#paneSignIn',SignUp:'#paneSignUp',Phone:'#panePhone',Reset:'#paneReset'};
-      Object.entries(panes).forEach(([k,sel])=>{ const el=$(sel); if(el) el.style.display=(k===which)?'':'none'; });
-      ['#tabSignIn','#tabSignUp','#tabPhone','#tabReset'].forEach(sel=>$(sel)?.classList.remove('active'));
-      $('#tab'+which)?.classList.add('active');
-    }
-    $('#tabSignIn')?.addEventListener('click',()=>setTab('SignIn'));
-    $('#tabSignUp')?.addEventListener('click',()=>setTab('SignUp'));
-    $('#tabPhone') ?.addEventListener('click',()=>setTab('Phone'));
-    $('#tabReset') ?.addEventListener('click',()=>setTab('Reset'));
-    setTab('SignIn');
-
-    // Email/password
-    $('#btnSignIn')?.addEventListener('click', async ()=>{
-      const email=$('#inEmail')?.value.trim(), pass=$('#inPass')?.value.trim();
-      if(!email||!pass) return alert('Enter email and password');
-      try{ await firebase.auth().signInWithEmailAndPassword(email, pass); }catch(e){ alert(e?.message||'Sign in failed'); }
-    });
-    $('#btnSignUp')?.addEventListener('click', async ()=>{
-      const name=$('#upName')?.value.trim(), email=$('#upEmail')?.value.trim(), pass=$('#upPass')?.value.trim();
-      if(!name||!email||!pass) return alert('Fill name, email, password');
-      try{ const { user:u }=await firebase.auth().createUserWithEmailAndPassword(email, pass); try{ await u.updateProfile({displayName:name}); }catch{} }catch(e){ alert(e?.message||'Sign up failed'); }
-    });
-    $('#btnReset')?.addEventListener('click', async ()=>{
-      const email=$('#rsEmail')?.value.trim(); if(!email) return alert('Enter your email');
-      try{ await firebase.auth().sendPasswordResetEmail(email); alert('Reset link sent'); setTab('SignIn'); }catch(e){ alert(e?.message||'Failed to send reset link'); }
-    });
-
-    // Google
-    function gp(){ try{ return new firebase.auth.GoogleAuthProvider(); }catch{ return null; } }
-    async function signGoogle(){ const p=gp(); if(!p) return alert('Google not available'); try{ await firebase.auth().signInWithPopup(p); }catch(e){ alert(e?.message||'Google sign-in failed'); } }
-    $('#googleBtn') ?.addEventListener('click', signGoogle);
-    $('#googleBtn2')?.addEventListener('click', signGoogle);
-
-    // Phone (OTP)
-    let recaptcha, confirmationResult;
-    function getRecaptcha(){
-      if (recaptcha) return recaptcha;
-      try{ recaptcha=new firebase.auth.RecaptchaVerifier('recaptcha-container',{size:'invisible'}); }catch(e){ alert('reCAPTCHA init failed'); }
-      return recaptcha;
-    }
-    $('#btnPhoneSend')?.addEventListener('click', async ()=>{
-      const phone=($('#phNumber')?.value||'').trim();
-      if(!/^\+?[1-9]\d{6,14}$/.test(phone)) return alert('Enter valid phone (e.g. +27...)');
-      try{ confirmationResult=await firebase.auth().signInWithPhoneNumber(phone, getRecaptcha()); alert('Code sent to '+phone); }catch(e){ alert(e?.message||'Failed to send code'); }
-    });
-    $('#btnPhoneVerify')?.addEventListener('click', async ()=>{
-      const code=($('#phCode')?.value||'').trim(); if(!confirmationResult||!code) return alert('Enter the code');
-      try{
-        const cred=await confirmationResult.confirm(code);
-        const u=cred.user; if(u && !u.displayName){ try{ await u.updateProfile({displayName:u.phoneNumber||'User'});}catch{} }
-      }catch(e){ alert(e?.message||'Invalid code'); }
-    });
-
-    // Logout → open modal (no layout gating)
-    const logoutBtn=document.getElementById('menuLogout');
-    if (logoutBtn){
-      logoutBtn.onclick=async ()=>{
-        document.getElementById('profileMenu').style.display='none';
-        try{ await firebase.auth().signOut(); }catch{}
-        const m=document.getElementById('authModal'); if(m){ m.classList.add('open'); }
-      };
-    }
-
-    // Close modal
-    document.getElementById('authClose')?.addEventListener('click', ()=>{
-      document.getElementById('authModal')?.classList.remove('open');
-    });
-
-    // Auth state → update header/profile; just hide modal
-    try{
-      firebase.auth().onAuthStateChanged(u=>{
-        if (u){
-          try{
-            window.user=window.user||{};
-            user.email=u.email||u.phoneNumber||'';
-            user.name = u.displayName || (user.email?user.email.split('@')[0]:'User');
-            window.updateProfileUI && updateProfileUI();
-          }catch{}
-          document.getElementById('authModal')?.classList.remove('open');
-          window.showPage && showPage('home');
-        }
-      });
-    }catch{}
-  })();
   </script>
 </body>
 </html>
