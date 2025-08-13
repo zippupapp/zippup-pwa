@@ -18,413 +18,762 @@
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    :root{
+    :root {
       --primary:#2563EB; --primary-600:#1D4ED8; --bg:#F9FAFB; --card:#FFFFFF; --text:#111827;
       --muted:#6B7280; --danger:#DC2626; --success:#10B981; --border:#E5E7EB; --radius:14px;
       --shadow:0 8px 24px rgba(17,24,39,.08);
-      --header-h:58px; --nav-h:64px;
+      --header-h:56px; --nav-h:64px;
     }
-    *{box-sizing:border-box;margin:0;padding:0}
-    html,body{width:100%;height:100%;max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;background:var(--bg);color:var(--text)}
+    * { box-sizing:border-box; margin:0; padding:0 }
+    html, body { width:100%; height:100%; max-width:100%; overflow-x:hidden; -webkit-text-size-adjust:100% }
+    body { font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif; background:var(--bg); color:var(--text) }
 
-    /* Fixed header bar with only title + right actions; greet/location goes below header */
-    header{
-      position:fixed;top:0;left:0;right:0;height:calc(var(--header-h) + env(safe-area-inset-top,0px));
-      padding-top:env(safe-area-inset-top,0px);background:var(--card);border-bottom:1px solid var(--border);
-      display:flex;align-items:flex-end;z-index:100;
+    header {
+      position:fixed; top:0; left:0; right:0; height:var(--header-h); z-index:100;
+      background:var(--card); border-bottom:1px solid var(--border); display:flex; align-items:center;
+      padding-top: env(safe-area-inset-top, 0px);
     }
-    header .bar{width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;gap:8px}
-    .brand{display:flex;align-items:center;gap:10px;min-width:0}
-    .brand strong{font-weight:800}
-    .brand small{color:var(--muted);display:block;line-height:1}
-    .right-actions{display:flex;align-items:center;gap:8px}
-    .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer}
-    .account-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;border:1px solid var(--border);background:#fff;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+    header .row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; width:100% }
+    .greet { display:flex; flex-direction:column; min-width:0 }
+    .greet strong, .greet .small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    .small { color:var(--muted); font-size:13px }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:12px; border:0; cursor:pointer; font-weight:600 }
+    .btn.primary { background:var(--primary); color:#fff }
+    .btn.primary:hover { background:var(--primary-600) }
+    .btn.ghost { background:#F3F4F6 }
+    .btn.block { width:100% }
 
-    /* Main page area below header; footer is fixed */
-    .page{position:fixed;top:calc(var(--header-h) + env(safe-area-inset-top,0px));bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px));left:0;right:0;overflow:auto}
-    .section{padding:12px 16px}
-    .title{font-weight:800;margin-bottom:10px}
-    .small{color:var(--muted);font-size:13px}
-    .muted{color:var(--muted)}
-    .row{display:flex;align-items:center;gap:10px}
-    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    @media(min-width:720px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    .card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:700}
-    .btn.primary{background:var(--primary);color:#fff}
-    .btn.ghost{background:#F3F4F6}
-    .btn.block{width:100%}
-    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:12px}
-    .success{background:#ECFDF5;color:#065F46}
-    .danger{background:#FEE2E2;color:#991B1B}
+    .search { padding:16px }
+    .search .box { display:flex; gap:8px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:8px 10px }
+    .search input { flex:1; border:0; outline:0; font-size:15px }
+    .section { padding:12px 16px }
+    .title { font-weight:700; margin-bottom:10px }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; max-width:100% }
+    @media(min-width:720px){ .grid{ grid-template-columns:repeat(3,minmax(0,1fr)) } }
+    .card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow) }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+    .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; font-size:12px; border-radius:999px; background:#EEF2FF; color:#3730A3 }
+    .badge { padding:4px 8px; font-size:12px; border-radius:999px }
+    .success{ background:#ECFDF5; color:#065F46 }
+    .muted { color:var(--muted) }
+    .avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--border); background:#eef2ff; display:flex; align-items:center; justify-content:center; font-size:18px }
+    .rating { color:#F59E0B; font-size:12px }
+    .verify { color:#2563EB; font-size:14px }
+    .field { display:flex; flex-direction:column; gap:6px }
+    .field input, .field textarea, .field select { padding:10px; border:1px solid var(--border); border-radius:10px }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:100% }
+    .price { font-weight:700; color:#111 }
+    .hint { font-size:12px; color:#6b7280 }
 
-    .search{padding:12px 16px}
-    .search .box{display:flex;gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 10px}
-    .search input{flex:1;border:0;outline:0;font-size:15px}
+    .nav {
+      position:fixed; left:0; right:0; bottom:0; height:var(--nav-h);
+      display:flex; align-items:center; justify-content:space-around; background:#fff; border-top:1px solid var(--border); z-index:90;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .nav button { background:none; border:0; padding:8px 10px; border-radius:10px; color:var(--muted) }
+    .nav button.active { color:var(--primary); background:#EFF6FF }
 
-    /* Greeting + location below header, visible on phones */
-    .greet-wrap{padding:8px 16px}
-    .greet{display:flex;gap:4px}
-    .loc-pin{display:inline-flex;align-items:center;gap:6px}
+    .page {
+      position:fixed; top:calc(var(--header-h) + env(safe-area-inset-top, 0px)); bottom:var(--nav-h); left:0; right:0;
+      overflow-y:auto; overflow-x:hidden; display:none; -webkit-overflow-scrolling:touch; background:var(--bg);
+    }
+    .page.active { display:block }
 
-    /* Map preview */
-    #homeMap{height:160px;border-radius:14px;border:1px solid var(--border);overflow:hidden}
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:200; padding:16px }
+    .modal.open { display:flex }
+    .sheet { width:100%; max-width:720px; background:#fff; border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow); max-width:100% }
+    .sheet .head { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between }
+    .sheet .body { padding:16px }
 
-    /* Modals */
-    .modal{position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.5);z-index:1000}
-    .modal.open{display:flex}
-    .sheet{width:100%;max-width:720px;background:#fff;border-top-left-radius:18px;border-top-right-radius:18px;max-height:88vh;overflow:hidden;border:1px solid var(--border)}
-    .sheet .head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
-    .sheet .body{padding:14px;overflow:auto;max-height:calc(88vh - 54px)}
-    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-    .field input,.field textarea,.field select{padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:15px}
+    /* Panic floating button */
+    .floating-panic { position:fixed; right:16px; bottom:80px; width:60px; height:60px; border-radius:50%; background:var(--danger); color:#fff; border:0; font-size:20px; box-shadow:var(--shadow); z-index:96; display:flex; align-items:center; justify-content:center }
 
-    /* Bottom nav */
-    .nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-h) + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:#fff;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;z-index:100}
-    .nav .item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;min-width:64px}
-    .nav .item.active strong{color:var(--primary)}
+    /* Hide header cart entirely, keep Account visible */
+    #cartBtn, #headerCartBadge { display:none !important; }
 
-    /* Product cards and vendor lists */
-    .product{display:flex;gap:12px}
-    .product img{width:92px;height:92px;border-radius:10px;object-fit:cover;border:1px solid var(--border)}
-    .product .meta{flex:1;min-width:0}
-    .vendor{display:flex;gap:10px;align-items:center;justify-content:space-between}
+    /* Checkout full-screen and scrollable */
+    #checkoutModal .sheet { height: calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column }
+    #checkoutModal .sheet .body { flex:1; overflow:auto }
 
-    /* Back bar inside pages/modals */
-    .backbar{display:flex;align-items:center;gap:8px;padding:8px 0;margin-bottom:8px;border-bottom:1px solid var(--border)}
-    .backbar .back{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer}
+    /* Terms modal */
+    #termsModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; padding:16px }
+    #termsModal .modal-content { width:100%; max-width:720px; background:#fff; border-radius:16px; border:1px solid var(--border); overflow:hidden }
+    #termsModal .modal-header { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between }
+    #termsModal .modal-body { padding:16px; max-height:65vh; overflow:auto }
 
-    /* Hide header cart permanently and keep Account/Bell visible in header bar */
-    #cartBtn,#headerCartBadge{display:none !important}
-    .right-actions .icon-btn{margin-right:2px}
+    /* Notifications modal */
+    #notifModal .sheet { max-width:560px }
 
-    /* Terms modal readability */
-    #termsModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center}
-    #termsModal .modal-content{width:100%;max-width:720px;background:#fff;border:1px solid var(--border);border-radius:14px;max-height:80vh;overflow:hidden}
-    #termsModal .modal-body{padding:14px;overflow:auto;max-height:calc(80vh - 54px)}
+    /* Product cards (marketplace) */
+    .product img { width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid var(--border) }
+    /* Keep greet/location fully visible under notches */
+header { height: calc(var(--header-h) + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); }
+.page { top: calc(var(--header-h) + env(safe-area-inset-top, 0px)); }
   </style>
 </head>
 <body>
-
-  <!-- Header bar: title + bell + account (aligned to the bar) -->
+  <!-- Header -->
   <header>
-    <div class="bar">
-      <div class="brand">
-        <div>
-          <strong>ZippUp</strong>
-          <small class="muted">On‑Demand Services</small>
-        </div>
+    <div class="row">
+      <div class="greet">
+        <strong>Hello, <span id="userName">Guest</span></strong>
+        <span class="small">📍 <span id="userLoc">Detecting location…</span></span>
       </div>
-      <div class="right-actions">
-        <button id="notifBtn" class="icon-btn" title="Notifications">🔔</button>
-        <button id="accountBtn" class="account-btn" title="Account">👤 <span id="accountName">Account</span></button>
+      <div class="row">
+        <button class="btn ghost" id="notifBtn" type="button" title="Notifications">🔔</button>
+        <div style="position:relative">
+          <button class="btn ghost" id="cartBtn" type="button">🛒</button>
+          <span id="headerCartBadge" style="position:absolute; top:-6px; right:-6px; background:#DC2626; color:#fff; border-radius:999px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">0</span>
+        </div>
+        <div style="position:relative">
+          <button class="btn ghost" id="profileBtn" type="button">👤 Account</button>
+          <div id="profileMenu" style="position:absolute; right:0; top:110%; display:none; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); min-width:200px; z-index:300; padding:6px">
+            <button class="btn ghost" id="menuProfile" type="button">👤 Profile</button>
+            <button class="btn ghost" id="menuOrders" type="button">📦 Manage Orders</button>
+            <button class="btn ghost" id="menuWallet" type="button">💰 Wallet</button>
+            <button class="btn ghost" id="menuTopup" type="button">⚡ Top‑up</button>
+            <!-- Contact Support removed as requested -->
+            <button class="btn ghost" id="menuLogout" type="button">🚪 Logout</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- Main page -->
-  <main id="page-home" class="page">
-    <!-- Greeting + geo location under header -->
-    <div class="greet-wrap">
-      <div class="greet">
-        <strong id="greetLine">Hello 👋</strong>
-        <span class="small muted">ZippUp: Hustle faster!</span>
-        <div class="loc-pin small"><span>📍</span><span id="locText">Locating you…</span></div>
-      </div>
-    </div>
-
-    <!-- Small map preview -->
-    <div class="section">
-      <div id="homeMap"></div>
-    </div>
-
-    <!-- Search -->
-    <div class="search">
+  <!-- Pages -->
+  <main id="page-home" class="page active">
+    <section class="search">
       <div class="box">
-        <span>🔎</span>
-        <input id="globalSearch" placeholder="Search services, vendors, items…"/>
+        <input id="search" placeholder="Search transport, food, services, emergency…"/>
+        <button class="btn ghost" id="voiceBtn" type="button">🎤</button>
+        <button class="btn primary" id="searchBtn" type="button">Search</button>
       </div>
-    </div>
+    </section>
 
-    <!-- Services grid (moved up) -->
-    <div class="section">
-      <div class="title">Services</div>
-      <div class="grid" id="servicesGrid">
-        <div class="card service" data-service="transport">🚗 Transport</div>
-        <div class="card service" data-service="home">🏠 Home Services</div>
-        <div class="card service" data-service="construction">🏗️ Construction</div>
-        <div class="card service" data-service="cleaning">🧹 Cleaning</div>
-        <div class="card service" data-service="tech">💻 Tech Help</div>
-        <div class="card service" data-service="food">🍔 Food</div>
-        <div class="card service" data-service="grocery">🛒 Grocery</div>
-        <div class="card service" data-service="marketplace">🛍️ Marketplace</div>
-        <div class="card service" data-service="emergencyRoot">🚨 Emergency Services</div>
-        <div class="card service" data-service="digitalRoot">💳 Digital Services</div>
-      </div>
-    </div>
+    <section class="section">
+      <div class="title">Emergency</div>
+      <div class="grid" id="emergencyGrid"></div>
+    </section>
 
-    <!-- Marketplace header with Sell button -->
-    <div class="section" id="marketplaceHeader" style="display:none">
-      <div class="row" style="justify-content:space-between">
-        <div class="title">Marketplace</div>
-        <button id="sellBtn" class="btn ghost">Sell products</button>
-      </div>
-    </div>
-    <div class="section" id="marketplaceList" style="display:none">
-      <div class="search">
-        <div class="box">
-          <span>🔎</span>
-          <input id="marketSearch" placeholder="Search marketplace…"/>
-        </div>
-      </div>
-      <div id="marketItems" class="grid"></div>
-    </div>
+    <section class="section">
+      <div class="title">All Services</div>
+      <div class="grid" id="servicesGrid"></div>
+    </section>
 
-    <!-- Vendors list for Food/Grocery -->
-    <div class="section" id="vendorsSection" style="display:none">
-      <div class="backbar">
-        <button class="back" data-back="home">←</button>
-        <strong id="vendorsTitle">Vendors</strong>
-      </div>
-      <div class="search">
-        <div class="box">
-          <span>🔎</span>
-          <input id="vendorSearch" placeholder="Search vendors or items…"/>
-        </div>
-      </div>
-      <div id="vendorsList" class="grid"></div>
-    </div>
-
-    <!-- Vendor menu -->
-    <div class="section" id="menuSection" style="display:none">
-      <div class="backbar">
-        <button class="back" data-back="vendors">←</button>
-        <strong id="menuVendorName">Menu</strong>
-      </div>
-      <div id="menuItems" class="grid"></div>
-      <div class="section">
-        <button id="openCartBtn" class="btn primary block">View Cart</button>
-      </div>
-    </div>
-
-    <!-- Wallet -->
-    <div class="section" id="walletSection" style="display:none">
-      <div class="backbar">
-        <button class="back" data-back="home">←</button>
-        <strong>Wallet</strong>
-      </div>
-      <div class="card">
-        <div class="row" style="justify-content:space-between">
-          <div>
-            <div class="small muted">Balance</div>
-            <div style="font-size:22px;font-weight:800" id="walletBalance">$0.00</div>
-          </div>
-          <div class="row">
-            <button class="btn ghost" id="walletAdd">Add Funds (Coming soon)</button>
-            <button class="btn ghost" id="walletCashOut">Cash Out (Coming soon)</button>
-          </div>
-        </div>
-        <div class="row" style="margin-top:10px;gap:8px">
-          <button class="btn ghost" id="walletSend">Send to user</button>
-          <button class="btn ghost" id="walletCards">Saved cards</button>
-        </div>
-      </div>
-      <div class="section" style="padding:12px 0">
-        <div class="title">Transactions</div>
-        <div id="walletTx" class="grid"></div>
-      </div>
-    </div>
-
+    <section class="section">
+      <div class="title">Recent</div>
+      <div id="recentList"></div>
+    </section>
   </main>
 
-  <!-- Bottom navigation -->
+  <main id="page-services" class="page">
+    <section class="section">
+      <div class="title">Services</div>
+      <div class="grid" id="servicesAllGrid"></div>
+    </section>
+  </main>
+
+  <main id="page-bookings" class="page">
+    <section class="section">
+      <div class="title">My Bookings</div>
+      <div id="bookingsList"></div>
+    </section>
+  </main>
+
+  <main id="page-marketplace" class="page">
+    <section class="search">
+      <div class="box">
+        <input id="mpSearch" placeholder="Search products…"/>
+        <button class="btn ghost" id="mpVoice" type="button">🎤</button>
+        <button class="btn primary" id="mpSearchBtn" type="button">Search</button>
+      </div>
+    </section>
+    <section class="section">
+      <div class="controls" id="mpChips"></div>
+    </section>
+    <section class="section">
+      <div class="title">Products</div>
+      <div class="grid" id="mpGrid"></div>
+    </section>
+  </main>
+
+  <main id="page-profile" class="page">
+    <section class="section">
+      <div class="title">Profile</div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center">
+          <div class="row">
+            <div id="user-avatar" style="width:48px;height:48px;border-radius:50%;background:#E5EDFF;display:flex;align-items:center;justify-content:center">👤</div>
+            <div style="margin-left:8px">
+              <div><strong id="profName">Demo User</strong> <span class="small muted">(Public name)</span></div>
+              <div class="small" id="profEmail">demo@zippup.com</div>
+            </div>
+          </div>
+          <button class="btn primary" id="editProfileBtn" type="button">Edit</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="row" style="justify-content:space-between; align-items:center">
+          <div><strong>Availability</strong><div class="small muted">Go Offline / Available</div></div>
+          <label style="position:relative;display:inline-block;width:48px;height:28px">
+            <input id="availToggle" type="checkbox" style="display:none"/>
+            <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#d1d5db;border-radius:999px"></span>
+            <span style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:#fff;border-radius:999px;transition:.2s" id="availKnob"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="list" style="margin-top:12px">
+        <button class="btn ghost" id="manageServicesBtn" type="button">Manage Services</button>
+        <button class="btn ghost" id="manageProductsBtn" type="button">Manage Products</button>
+        <button class="btn ghost" id="emergencyContactsBtn" type="button">Emergency Contacts</button>
+        <button class="btn ghost" id="providerVerifyBtn" type="button">Become Verified Provider</button>
+      </div>
+    </section>
+  </main>
+
+  <main id="page-orders" class="page">
+    <section class="section">
+      <div class="title">Manage Orders</div>
+      <div class="card">
+        <div class="list">
+          <div class="small muted">Buyer view</div>
+          <div id="buyerOrders" class="list"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="list">
+          <div class="small muted">Seller view</div>
+          <div id="sellerOrders" class="list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <main id="page-wallet" class="page">
+    <section class="section">
+      <div class="title">Wallet</div>
+      <div class="card">Balance: <strong>$245.80</strong></div>
+    </section>
+  </main>
+
+  <main id="page-topup" class="page">
+    <section class="section">
+      <div class="title">Top‑up (Digital)</div>
+      <div class="grid">
+        <div class="card service" data-topup="airtime"><div class="row"><div style="font-size:24px">📞</div><h4>Buy Airtime</h4></div></div>
+        <div class="card service" data-topup="data"><div class="row"><div style="font-size:24px">📶</div><h4>Data Bundles</h4></div></div>
+        <div class="card service" data-topup="bills"><div class="row"><div style="font-size:24px">💡</div><h4>Pay Bills</h4></div></div>
+      </div>
+    </section>
+  </main>
+
+  <main id="page-manage-services" class="page">
+    <section class="section">
+      <div class="title">Manage Services</div>
+      <div class="card">
+        <div class="list">
+          <div class="grid-2">
+            <div class="field">
+              <label class="small">Category</label>
+              <select id="msCategory">
+                <option value="transport">Transport</option>
+                <option value="food">Food</option>
+                <option value="tech">Tech Services</option>
+                <option value="home">Home Services</option>
+                <option value="construction">Construction</option>
+                <option value="auto">Automobile Repair</option>
+                <option value="others">Others</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="small">Service type</label>
+              <input id="msType" placeholder="e.g., Driver, Plumber"/>
+            </div>
+          </div>
+          <div class="field">
+            <label class="small">Details</label>
+            <textarea id="msDetails" rows="3" placeholder="Describe your service…"></textarea>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label class="small">Price (per 1–2hr)</label>
+              <input id="msPrice" type="number" min="0" step="0.01" placeholder="e.g., 50"/>
+            </div>
+            <div class="field">
+              <label class="small">Catalog images (up to 4)</label>
+              <input id="msImages" type="file" accept="image/*" multiple/>
+              <div class="hint">Optional</div>
+            </div>
+          </div>
+          <button class="btn primary" id="msAdd" type="button">+ Add Service</button>
+        </div>
+      </div>
+      <div class="list" style="margin-top:12px" id="msList"></div>
+    </section>
+  </main>
+
+  <main id="page-manage-products" class="page">
+    <section class="section">
+      <div class="title">Manage Products</div>
+      <div class="card">
+        <div class="list">
+          <div class="grid-2">
+            <div class="field">
+              <label class="small">Category</label>
+              <select id="mpCatSelect">
+                <option value="electronics">Electronics</option>
+                <option value="fashion">Fashion</option>
+                <option value="home">Home & Garden</option>
+                <option value="sports">Sports</option>
+                <option value="automobile">Automobile</option>
+                <option value="spares">Spare Parts</option>
+                <option value="others">Others</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="small">Product name</label>
+              <input id="mpName" placeholder="e.g., iPhone 13"/>
+            </div>
+          </div>
+          <div class="field">
+            <label class="small">Description</label>
+            <textarea id="mpDesc" rows="3" placeholder="Describe the product…"></textarea>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label class="small">Price</label><input id="mpPrice" type="number" min="0" step="0.01"/></div>
+            <div class="field"><label class="small">Stock</label><input id="mpStock" type="number" min="0" step="1"/></div>
+          </div>
+          <div class="field">
+            <label class="small">Images (up to 10)</label>
+            <input id="mpImages" type="file" accept="image/*" multiple/>
+            <div class="hint">Optional</div>
+          </div>
+          <button class="btn primary" id="mpAdd" type="button">+ Add Product</button>
+        </div>
+      </div>
+      <div class="list" style="margin-top:12px" id="mpManageList"></div>
+    </section>
+  </main>
+
+  <main id="page-emergency-contacts" class="page">
+    <section class="section">
+      <div class="title">Emergency Contacts</div>
+      <div class="card">
+        <div class="small muted">Add up to 5 contacts (name and phone).</div>
+        <div id="ecForm" class="list" style="margin-top:10px"></div>
+        <button class="btn primary" id="ecSave" type="button">Save Contacts</button>
+      </div>
+    </section>
+  </main>
+
+  <main id="page-verify-provider" class="page">
+    <section class="section">
+      <div class="title">Become Verified Provider</div>
+      <div class="card">
+        <div class="list">
+          <div class="field"><label class="small">Full name</label><input id="vpName" placeholder="Your name"/></div>
+          <div class="field"><label class="small">Service category</label><input id="vpCategory" placeholder="e.g., Driver, Plumber"/></div>
+          <div class="field"><label class="small">ID number</label><input id="vpId" placeholder="Your ID"/></div>
+          <div class="field"><label class="small">ID/Passport docs</label><input id="vpIdDocs" type="file" accept="image/*,application/pdf" multiple/></div>
+          <div class="field"><label class="small">Business/License docs</label><input id="vpBizDocs" type="file" accept="image/*,application/pdf" multiple/></div>
+          <button class="btn primary" id="vpSubmit" type="button">Submit for Verification</button>
+          <div id="vpStatus" class="small" style="color:#2563EB"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Nav -->
   <nav class="nav">
-    <div class="item active" data-nav="home">🏠<strong>Home</strong></div>
-    <div class="item" data-nav="wallet">👛<strong>Wallet</strong></div>
-    <div class="item" data-nav="orders">📦<strong>Orders</strong></div>
-    <div class="item" data-nav="chat">💬<strong>Chat</strong></div>
-    <div class="item" data-nav="profile">👤<strong>Profile</strong></div>
+    <button data-page="home" class="active" type="button">🏠 Home</button>
+    <button data-page="services" type="button">🔧 Services</button>
+    <button data-page="bookings" type="button">📋 Bookings</button>
+    <button data-page="marketplace" type="button">🛍️ Marketplace</button>
   </nav>
 
-  <!-- Emergency and Digital category pickers -->
-  <div class="modal" id="emergencyPicker">
+  <!-- Providers -->
+  <div class="modal" id="providersModal">
     <div class="sheet">
-      <div class="head"><strong>Emergency Services</strong><button class="btn ghost" data-close="emergencyPicker">✖</button></div>
+      <div class="head">
+        <strong id="providersTitle">Providers</strong>
+        <button class="btn ghost" id="closeProviders" type="button">✖</button>
+      </div>
       <div class="body">
-        <div class="grid">
-          <button class="card" data-emer="ambulance">🚑 Ambulance</button>
-          <button class="card" data-emer="fire">🔥 Fire Service</button>
-          <button class="card" data-emer="roadside" id="btnRoadside">🛠️ Roadside Assist</button>
-          <button class="card" data-emer="security">🛡️ Security</button>
-          <button class="card" data-emer="towing">🚛 Towing</button>
-        </div>
-        <div class="section">
-          <div class="search">
-            <div class="box">
-              <span>🔎</span>
-              <input id="emergencySearch" placeholder="Search providers…"/>
+        <div class="list" id="providersList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Booking Form -->
+  <div class="modal" id="bookingModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Book Service</strong>
+        <button class="btn ghost" id="closeBooking" type="button">✖</button>
+      </div>
+      <div class="body">
+        <form id="bookingForm" class="list">
+          <div class="grid-2">
+            <div class="field"><label class="small">Date</label><input id="bkDate" type="date" required/></div>
+            <div class="field"><label class="small">Time</label><input id="bkTime" type="time" required/></div>
+          </div>
+          <div class="field">
+            <label class="small">Address</label>
+            <div class="row" style="gap:8px">
+              <input id="bkAddress" required placeholder="Enter address" style="flex:1"/>
+              <button class="btn ghost" id="bkUseCurrent" type="button">📍 Use current</button>
             </div>
           </div>
-          <div id="emergencyProviders" class="grid"></div>
-        </div>
+          <div class="field"><label class="small">Details</label><textarea id="bkDesc" rows="3" placeholder="Describe the job…"></textarea></div>
+          <button class="btn primary block" type="submit">Send Booking Request</button>
+        </form>
       </div>
     </div>
   </div>
 
-  <div class="modal" id="digitalPicker">
+  <!-- Transport Instant -->
+  <div class="modal" id="tiModal">
     <div class="sheet">
-      <div class="head"><strong>Digital Services</strong><button class="btn ghost" data-close="digitalPicker">✖</button></div>
-      <div class="body">
-        <div class="grid">
-          <button class="card" data-digital="airtime">📱 Buy Airtime</button>
-          <button class="card" data-digital="data">📶 Buy Data</button>
-          <button class="card" data-digital="bills">🧾 Pay Bills</button>
-          <button class="card" data-digital="digital-products">🛒 Digital Products</button>
-        </div>
+      <div class="head">
+        <strong>Ride Details</strong>
+        <button class="btn ghost" id="tiClose" type="button">✖</button>
       </div>
-    </div>
-  </div>
-
-  <!-- Food/Grocery entry modal -->
-  <div class="modal" id="foodEntry">
-    <div class="sheet">
-      <div class="head"><strong>Select type</strong><button class="btn ghost" data-close="foodEntry">✖</button></div>
       <div class="body">
-        <div class="grid">
-          <button class="card" data-food="fast">🍔 Fast food</button>
-          <button class="card" data-food="grocery">🛒 Groceries</button>
-        </div>
-        <div class="section">
-          <div class="search">
-            <div class="box">
-              <span>🔎</span>
-              <input id="foodSearch" placeholder="Search vendors or foods…"/>
+        <div class="list">
+          <div class="field">
+            <label class="small">Pickup address</label>
+            <div class="row" style="gap:8px; width:100%">
+              <input id="tiPickup" placeholder="Your current or preferred pickup…" style="flex:1"/>
+              <button class="btn ghost" id="tiUseCurrent" type="button">📍 Use current</button>
             </div>
           </div>
+          <div class="field">
+            <label class="small">Destination address</label>
+            <input id="tiDestination" placeholder="Where are you going?"/>
+          </div>
+          <div class="field">
+            <label class="small">Stops (optional, max 5)</label>
+            <div id="tiStops" class="list"></div>
+            <div class="row" style="gap:8px;margin-top:6px">
+              <button class="btn ghost" id="tiAddStop" type="button">＋ Add stop</button>
+              <button class="btn ghost" id="tiRemoveStop" type="button">− Remove stop</button>
+            </div>
+          </div>
+          <button class="btn primary" id="tiStart" type="button">Start Instant Request</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Cart / Checkout -->
+  <!-- Instant Request -->
+  <div class="modal" id="instantModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="instantTitle">Contacting provider…</strong>
+        <button class="btn ghost" id="cancelInstant" type="button">Cancel</button>
+      </div>
+      <div class="body">
+        <div class="card">
+          <div>Time left: <strong id="countdown">90</strong>s</div>
+          <div class="small muted" id="instantHint">Waiting for provider to accept…</div>
+        </div>
+        <div class="controls" style="margin-top:10px">
+          <button class="btn ghost" id="findOthers" type="button">Find other providers</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel Reasons -->
+  <div class="modal" id="cancelReasonsModal">
+    <div class="sheet">
+      <div class="head"><strong>Cancel request</strong><button class="btn ghost" id="crClose" type="button">✖</button></div>
+      <div class="body">
+        <div id="crList" class="list"></div>
+        <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px">
+          <button class="btn ghost" id="crBack" type="button">Back</button>
+          <button class="btn primary" id="crConfirm" type="button">Confirm cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tracking -->
+  <div class="modal" id="trackModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Live Tracking</strong>
+        <div class="row" style="gap:6px">
+          <button class="btn ghost" id="trackCancelBtn" type="button">Cancel</button>
+          <button class="btn ghost" id="closeTrack" type="button">✖</button>
+        </div>
+      </div>
+      <div class="body">
+        <div id="trackStatus" class="small muted">Provider accepted. En route…</div>
+        <div id="trackMapWrap" style="margin-top:10px"><div id="track-map" style="width:100%;height:360px;border-radius:12px;border:1px solid var(--border)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Options -->
+  <div class="modal" id="categoryOptionsModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="categoryOptionsTitle">Options</strong>
+        <button class="btn ghost" id="closeCategoryOptions" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div id="categoryOptionsList" class="list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Food Options (new) -->
+  <div class="modal" id="foodOptionsModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Food</strong>
+        <button class="btn ghost" id="closeFoodOptions" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="search">
+          <div class="box">
+            <input id="foodSearch" placeholder="Search vendors or food…"/>
+            <button class="btn primary" id="foodSearchBtn" type="button">Search</button>
+          </div>
+        </div>
+        <div class="row" style="gap:8px;margin-top:8px">
+          <button class="btn primary" id="foodFastBtn" type="button">🍔 Fast food</button>
+          <button class="btn ghost" id="foodGroceryBtn" type="button">🛒 Groceries</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items/Search -->
+  <div class="modal" id="itemsModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="itemsTitle">Find Items</strong>
+        <button class="btn ghost" id="closeItems" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="row" style="gap:8px;margin-bottom:10px">
+          <input id="itemSearch" placeholder="Say or type what you need…" style="flex:1"/>
+          <button class="btn ghost" id="itemVoice" type="button">🎤</button>
+          <button class="btn primary" id="itemGo" type="button">Search</button>
+        </div>
+        <div id="itemChips" class="controls"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Food Vendors -->
+  <div class="modal" id="foodVendorsModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="foodVendorsTitle">Food Vendors</strong>
+        <button class="btn ghost" id="closeFoodVendors" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div id="foodVendorsList" class="list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Food Menu -->
+  <div class="modal" id="foodMenuModal">
+    <div class="sheet">
+      <div class="head">
+        <strong id="foodMenuTitle">Menu</strong>
+        <button class="btn ghost" id="closeFoodMenu" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div id="foodMenuList" class="list"></div>
+        <div class="row" style="justify-content:space-between;margin-top:10px">
+          <div class="price">Total: $<span id="foodCartTotal">0.00</span></div>
+          <button class="btn primary" id="foodCheckoutBtn" type="button">Checkout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart (Food/Grocery) -->
   <div class="modal" id="cartModal">
     <div class="sheet">
-      <div class="head"><strong>Cart</strong><button class="btn ghost" data-close="cartModal">✖</button></div>
-      <div class="body" style="display:flex;flex-direction:column;gap:12px">
-        <div id="cartItems"></div>
-        <div class="card">
-          <div class="field">
-            <label class="small">Payment method</label>
-            <select id="payMethod">
-              <option value="card">Card</option>
-              <option value="cash">Cash</option>
-              <option value="wallet">Wallet</option>
-            </select>
-          </div>
-          <div class="row" style="justify-content:space-between">
-            <div class="small muted">Subtotal</div><div id="cartSubtotal"><strong>$0.00</strong></div>
-          </div>
-          <div class="row" style="justify-content:space-between">
-            <div class="small muted">Delivery</div><div id="cartDelivery"><strong>$0.00</strong></div>
-          </div>
-          <div class="row" style="justify-content:space-between">
-            <div>Total</div><div id="cartTotal" style="font-weight:800">$0.00</div>
-          </div>
-          <div class="field" style="margin-top:8px">
-            <label class="small"><input type="checkbox" id="termsChk"> I accept the terms</label>
-            <button id="openTerms" class="btn ghost" type="button">Read Terms</button>
-          </div>
-          <button id="placeOrderBtn" class="btn primary block">Place order</button>
+      <div class="head">
+        <strong>My Cart</strong>
+        <button class="btn ghost" id="closeCart" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div id="cartList" class="list"></div>
+        <div class="row" style="justify-content:space-between;margin-top:10px">
+          <div class="price">Total: $<span id="cartTotal">0.00</span></div>
+          <button class="btn primary" id="checkoutBtn" type="button">Checkout</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Terms modal -->
+  <!-- Checkout -->
+  <div class="modal" id="checkoutModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Checkout</strong>
+        <button class="btn ghost" id="closeCheckout" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div class="list" id="chkFormList">
+          <div class="grid-2">
+            <div class="field"><label class="small">Full Name</label><input id="chkName"/></div>
+            <div class="field"><label class="small">Phone</label><input id="chkPhone"/></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label class="small">Street / Address</label><input id="chkAddress"/></div>
+            <div class="field"><label class="small">Flat / House No.</label><input id="chkUnit"/></div>
+          </div>
+          <div class="field"><label class="small">Delivery Notes</label><textarea id="chkNotes" rows="3"></textarea></div>
+          <div class="field">
+            <label class="small">Payment Method</label>
+            <div class="controls">
+              <label><input type="radio" name="payMethod" value="card" checked/> Card</label>
+              <label><input type="radio" name="payMethod" value="cash"/> Cash</label>
+            </div>
+            <div class="small muted" id="vendorPayHint"></div>
+          </div>
+          <label class="row" style="align-items:flex-start;gap:8px"><input type="checkbox" id="chkTerms"/> <span>I accept the Terms. <a href="#" id="readTerms">Read Terms</a></span></label>
+          <div id="chkItemsList" class="list"></div>
+          <button class="btn primary" id="placeOrderBtn" type="button">Place Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Status -->
+  <div class="modal" id="orderModal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Order Status</strong>
+        <button class="btn ghost" id="closeOrder" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div id="orderInfo" class="list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terms -->
   <div id="termsModal">
     <div class="modal-content">
-      <div class="head" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)">
-        <strong>Terms and Conditions</strong>
-        <button id="termsClose" class="btn ghost">✖</button>
+      <div class="modal-header">
+        <h3 class="modal-title">Terms and Conditions</h3>
+        <button id="termsClose" class="btn ghost" type="button">×</button>
       </div>
       <div class="modal-body">
-        <p><strong>Food/Grocery:</strong> Your payment may be held in escrow until the seller confirms delivery using your one‑time code.</p>
-        <p><strong>Delivery Code:</strong> Please do not share your confirm delivery code with the seller until you receive and confirm the product in their presence. If you lose the code, open Account → Manage Orders, pick the order to view it again.</p>
-        <p><strong>Transport:</strong> Charges are calculated and deducted when the trip ends based on distance/time like Bolt.</p>
-        <p><strong>Other Services:</strong> Billing starts when provider marks Arrived; after 7 minutes, time‑based charges accrue by the provider’s hourly rate until they end the job.</p>
-        <p><strong>Wallet:</strong> Card top‑up coming soon. Wallet can be used to pay card‑required services when balance is sufficient.</p>
+        <p><strong>Payments and delivery:</strong> Your payment is held in escrow until the seller enters the one‑time delivery code you provide after you receive goods.</p>
+        <p><strong>Safety:</strong> Do not share your delivery code until the goods are delivered and verified in good condition.</p>
+        <p><strong>Refunds:</strong> If there’s an issue, do not share your code; contact support immediately from Profile.</p>
+        <p><strong>Privacy:</strong> We only share essential order details with the seller to fulfill your order.</p>
       </div>
     </div>
   </div>
 
-  <!-- Orders page -->
-  <div class="modal" id="ordersPage">
-    <div class="sheet">
-      <div class="head"><strong>Manage Orders</strong><button class="btn ghost" data-close="ordersPage">✖</button></div>
-      <div class="body">
-        <div class="small muted" style="margin-bottom:8px">Buyers can view their one‑time delivery codes here. Sellers can open an order and confirm delivery by entering buyer’s code.</div>
-        <div id="ordersList" class="grid"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Marketplace sell form -->
-  <div class="modal" id="sellForm">
-    <div class="sheet">
-      <div class="head"><strong>Sell a product</strong><button class="btn ghost" data-close="sellForm">✖</button></div>
-      <div class="body">
-        <div class="field">
-          <label class="small">Category</label>
-          <select id="mkCat">
-            <option value="electronics">Electronics</option>
-            <option value="fashion">Fashion</option>
-            <option value="home">Home & Kitchen</option>
-            <option value="auto">Auto</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        <div class="field"><label class="small">Type</label><input id="mkType" placeholder="e.g., Phone"/></div>
-        <div class="field"><label class="small">Title</label><input id="mkTitle" placeholder="Product title"/></div>
-        <div class="field"><label class="small">Price</label><input id="mkPrice" type="number" min="0" step="0.01"/></div>
-        <div class="field"><label class="small">Stock</label><input id="mkStock" type="number" min="0"/></div>
-        <div class="field">
-          <label class="small">Images (up to 10)</label>
-          <input id="mkImages" type="file" accept="image/*" multiple>
-        </div>
-        <button id="mkSubmit" class="btn primary block">Submit</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Food vendor manage products (profile) -->
-  <div class="modal" id="manageFood">
-    <div class="sheet">
-      <div class="head"><strong>Manage Product (Food Vendors Only)</strong><button class="btn ghost" data-close="manageFood">✖</button></div>
-      <div class="body">
-        <div class="small muted" style="margin-bottom:8px">Upload multiple items per batch; up to 5 images per item; set payment acceptance.</div>
-        <div id="foodItemsForm"></div>
-        <button id="addFoodRow" class="btn ghost" type="button">+ Add another item</button>
-        <button id="saveFoodItems" class="btn primary block" style="margin-top:10px">Save items</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Panic modal -->
+  <!-- Panic Modal -->
   <div class="modal" id="panicModal">
     <div class="sheet">
-      <div class="head"><strong>Emergency Alert</strong><button class="btn ghost" data-close="panicModal">✖</button></div>
+      <div class="head">
+        <strong>Emergency Alert</strong>
+        <button class="btn ghost" id="panicClose" type="button">✖</button>
+      </div>
       <div class="body">
-        <div class="small muted" style="margin-bottom:8px">We'll notify your contacts and nearby security with your location.</div>
-        <div class="field"><label class="small">Message (optional)</label><textarea id="panicMsg" rows="3" placeholder="Describe emergency…"></textarea></div>
-        <div class="row" style="justify-content:flex-end"><button id="panicSend" class="btn primary">Send Alert</button></div>
+        <div class="list">
+          <div class="small muted">We’ll notify your contacts and nearby providers with your location.</div>
+          <div class="field">
+            <label class="small">Message (optional)</label>
+            <textarea id="panicMsg" rows="3" placeholder="Describe the emergency…"></textarea>
+          </div>
+          <div class="small muted">Location: <span id="panicLocHint">Fetching…</span></div>
+          <div class="row" style="gap:8px; justify-content:flex-end; margin-top:8px">
+            <button class="btn ghost" id="panicCancel" type="button">Cancel</button>
+            <button class="btn primary" id="panicSend" type="button">Send Alert</button>
+          </div>
+          <div id="panicStatus" class="small muted" style="margin-top:6px"></div>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Confirm Delivery -->
+  <div id="confirmDeliveryModal" class="modal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Confirm Delivery</strong>
+        <button id="confirmClose" class="btn ghost" type="button">×</button>
+      </div>
+      <div class="body">
+        <div class="small muted">Seller: ask buyer for the one‑time delivery code and enter it below to mark delivery complete and release payment.</div>
+        <input id="confirmCode" placeholder="Enter 6‑digit code" inputmode="numeric" maxlength="6" style="margin-top:8px"/>
+        <button id="confirmSubmit" class="btn primary" type="button" style="margin-top:8px">Submit Code</button>
+        <div id="confirmStatus" class="small muted" style="margin-top:6px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Last Order -->
+  <div id="lastOrderModal" class="modal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Your Last Order</strong>
+        <button id="lastOrderClose" class="btn ghost" type="button">×</button>
+      </div>
+      <div class="body">
+        <div id="lastOrderInfo" class="small"></div>
+        <div class="row" style="gap:8px;justify-content:flex-end;margin-top:10px">
+          <button id="sendCodeSMS" class="btn ghost" type="button">Send Code by SMS</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications -->
+  <div id="notifModal" class="modal">
+    <div class="sheet">
+      <div class="head">
+        <strong>Notifications</strong>
+        <button class="btn ghost" id="closeNotif" type="button">✖</button>
+      </div>
+      <div class="body">
+        <div id="notifList" class="list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panic button -->
+  <button class="floating-panic" id="panicBtn" type="button">🚨</button>
+
+  <!-- Splash -->
+  <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
+    <svg width="160" height="160" viewBox="0 0 256 256" aria-hidden="true">
+      <defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2563EB"/><stop offset="1" stop-color="#1D4ED8"/></linearGradient></defs>
+      <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#g2)"/>
+      <path d="M58 184 L152 68 H90 L98 48 H198 L104 168 H170 L162 188 Z" fill="#fff"/>
+      <circle cx="172" cy="82" r="10" fill="#fff"/>
+      <path d="M168 96 L150 120 L128 114 L124 126 L146 132 L160 112 L170 126 L182 124 L174 108 L186 100 L180 92 L168 96 Z" fill="#fff"/>
+      <rect x="182" y="94" width="8" height="14" rx="1.5" fill="#0EA5E9"/>
+      <rect x="184" y="96" width="4" height="8" rx="1" fill="#22C55E"/>
+    </svg>
+    <div style="font-size:28px;font-weight:800;margin-top:12px">ZippUp</div>
+    <div style="opacity:.9;margin-top:4px">On‑demand services, fast.</div>
+  </div>
+
+  <!-- Core App Script -->
   <script>
-    // Firebase init (Auth only)
+    const BASE_API = 'https://zippup-backend-v3.onrender.com';
+    const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+
+    // Firebase init (auth only)
     const firebaseConfig = {
       apiKey: "AIzaSyApgmcfu5qGFn9tw872dQ2KkdDz_GPmL70",
       authDomain: "zippup-535ca.firebaseapp.com",
@@ -433,597 +782,1022 @@
       messagingSenderId: "382212325227",
       measurementId: "G-YKJEVL8M6V"
     };
-    if (window.firebase) {
-      try { firebase.initializeApp(firebaseConfig); } catch(e) {}
-    }
-
-    // Globals
-    const stripe = window.Stripe ? Stripe('pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd') : null;
-    const API_BASE = window.NEXT_PUBLIC_API_URL || '';
-    const $ = sel => document.querySelector(sel);
-    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    if (!window.firebase?.apps?.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
     // State
-    let user = { id:'demo-user', name:'Guest', role:'buyer', wallet: 120.50 };
-    let vendors = {
-      fast: [
-        { id:'v1', name:'Burger Hub', rating:4.6, distance:'1.2km', items:[
-          { id:'m1', title:'Cheese Burger', price:5.99, img:'' },
-          { id:'m2', title:'Fries', price:2.49, img:'' },
-        ], pay:{cash:true,card:true} },
-        { id:'v2', name:'Pizza Place', rating:4.4, distance:'2.0km', items:[
-          { id:'m3', title:'Pepperoni Slice', price:3.50, img:'' },
-        ], pay:{cash:false,card:true} },
-      ],
-      grocery: [
-        { id:'g1', name:'Fresh Mart', rating:4.7, distance:'0.9km', items:[
-          { id:'g11', title:'Apples (1kg)', price:2.99, img:'' },
-          { id:'g12', title:'Milk (1L)', price:1.49, img:'' },
-        ], pay:{cash:true,card:true} },
-      ]
-    };
-    let marketplace = [
-      { id:'p1', title:'iPhone 12', price:350, img:'', seller:'John', cat:'electronics' },
-      { id:'p2', title:'Sofa', price:120, img:'', seller:'Ava', cat:'home' },
-    ];
-    let cart = { vendorId:null, vendorName:'', type:'fast', items:[] }; // food/grocery only
-    let orders = JSON.parse(localStorage.getItem('zup_orders') || '[]');
-    let wallet = { balance: user.wallet, tx: JSON.parse(localStorage.getItem('zup_wallet_tx')||'[]'), cards:[{brand:'visa', last4:'4242'}] };
+    let user = { name:'Guest', email:'guest@example.com' };
+    let coords = null, map=null, userMarker=null, providerMarker=null, trackPoll=null;
+    let selectedProvider = null, lastCategory = null, requestId = null, instantTimer = null, instantLeft = 90;
 
-    // Booking/live tracking state for instant services
-    let live = { active:false, watchId:null, timer:null, startedAt:null, arrivedAt:null, serviceType:null, hourlyRate:20 };
+    // Food/Grocery cart restricted to single vendor
+    let cart = loadCart(); // { vendorId:null, vendorName:null, vendorPayment:['card','cash'], items:[] }
+    function loadCart(){ try{ return JSON.parse(localStorage.getItem('food_cart')||'{"vendorId":null,"vendorName":null,"vendorPayment":[],"items":[]}'); }catch{ return { vendorId:null, vendorName:null, vendorPayment:[], items:[] } } }
+    function saveCart(){ localStorage.setItem('food_cart', JSON.stringify(cart)); }
+    function resetCart(){ cart={ vendorId:null, vendorName:null, vendorPayment:[], items:[] }; saveCart(); }
 
-    // UI helpers
-    function money(n){ return `$${(n||0).toFixed(2)}`; }
-    function toast(msg){ alert(msg); }
+    // DOM helpers
+    const $ = (id)=>document.getElementById(id);
+    function showPage(page){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); (document.getElementById('page-'+page) || document.getElementById('page-home')).classList.add('active'); }
 
-    // Header/account
-    function renderHeader() {
-      $('#accountName').textContent = user.name || 'Account';
-      $('#greetLine').textContent = `Hello ${user.name || 'there'} 👋`;
-    }
+    // Header interactions
+    $('profileBtn').onclick = (e)=>{ e.stopPropagation(); const m=$('profileMenu'); m.style.display = (m.style.display==='block'?'none':'block'); };
+    document.addEventListener('click', ()=>{ const m=$('profileMenu'); if (m) m.style.display='none'; });
+    $('menuProfile').onclick = ()=>{ $('profileMenu').style.display='none'; showPage('profile'); updateProfileUI(); };
+    $('menuOrders').onclick  = ()=>{ $('profileMenu').style.display='none'; showPage('orders'); renderOrders(); };
+    $('menuWallet').onclick  = ()=>{ $('profileMenu').style.display='none'; showPage('wallet'); };
+    $('menuTopup').onclick   = ()=>{ $('profileMenu').style.display='none'; showPage('topup'); };
+    $('menuLogout').onclick  = async ()=>{ $('profileMenu').style.display='none'; try{ await auth.signOut(); }catch{} ensureGate(); };
 
-    // Geolocation + map
-    function initMap() {
-      const map = L.map('homeMap',{ zoomControl:false }).setView([0,0], 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos=>{
-          const { latitude, longitude } = pos.coords;
-          $('#locText').textContent = `Lat ${latitude.toFixed(4)}, Lng ${longitude.toFixed(4)}`;
-          map.setView([latitude, longitude], 15);
-          L.marker([latitude, longitude]).addTo(map);
-        }, _=> $('#locText').textContent='Location unavailable');
-      } else {
-        $('#locText').textContent = 'Location unavailable';
-      }
-    }
+    // Nav
+    document.querySelectorAll('.nav button').forEach(b=>{
+      b.onclick = ()=>{ document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); showPage(b.dataset.page); if (b.dataset.page==='marketplace') renderMarketplace(); };
+    });
 
-    // Services routing
-    function show(sectionId) {
-      // hide all major sections
-      ['vendorsSection','menuSection','marketplaceHeader','marketplaceList','walletSection'].forEach(id=>{
-        const el = $('#'+id); if (el) el.style.display = 'none';
-      });
-      if (sectionId) $('#'+sectionId).style.display = '';
-      // nav active
-      $$('.nav .item').forEach(i=>i.classList.remove('active'));
-      if (sectionId==='walletSection') $(`.nav .item[data-nav="wallet"]`)?.classList.add('active');
-      else $(`.nav .item[data-nav="home"]`)?.classList.add('active');
-    }
+    // Availability toggle
+    const availKey='zippup_availability'; const knob=$('availKnob'); const toggle=$('availToggle');
+    toggle.checked = localStorage.getItem(availKey) === 'on'; knob.style.transform = toggle.checked ? 'translateX(20px)' : 'translateX(0)';
+    toggle.onchange = (e)=>{ localStorage.setItem(availKey, e.target.checked?'on':'off'); knob.style.transform = e.target.checked?'translateX(20px)':'translateX(0)'; knob.previousElementSibling.style.background = e.target.checked ? '#10B981' : '#d1d5db'; };
 
-    // Food/Grocery entry
-    function openFoodEntry() { openModal('foodEntry'); }
-    function listVendors(kind) {
-      closeModal('foodEntry');
-      const list = vendors[kind] || [];
-      $('#vendorsTitle').textContent = kind==='fast' ? 'Fast food vendors' : 'Grocery vendors';
-      const q = ($('#foodSearch').value||'').toLowerCase();
-      const filtered = list.filter(v => v.name.toLowerCase().includes(q) || v.items.some(it=>it.title.toLowerCase().includes(q)));
-      const html = filtered.map(v=>`
-        <div class="card vendor">
-          <div>
-            <div style="font-weight:700">${v.name}</div>
-            <div class="small muted">⭐ ${v.rating} • ${v.distance}</div>
-            <div class="small">${v.pay.card ? 'Card' : ''} ${v.pay.cash ? 'Cash' : ''}</div>
-          </div>
-          <button class="btn primary" data-open-menu="${v.id}" data-kind="${kind}">Open</button>
-        </div>
-      `).join('');
-      $('#vendorsList').innerHTML = html || '<div class="small muted">No vendors found</div>';
-      show('vendorsSection');
-    }
-    function openMenu(kind, vendorId) {
-      const v = (vendors[kind]||[]).find(x=>x.id===vendorId);
-      if (!v) return;
-      $('#menuVendorName').textContent = v.name;
-      const items = v.items.map(it=>`
-        <div class="card product">
-          <img src="${it.img||'https://via.placeholder.com/160'}" alt="">
-          <div class="meta">
-            <div style="font-weight:700">${it.title}</div>
-            <div class="small muted">${money(it.price)}</div>
-            <div class="row" style="margin-top:6px">
-              <button class="btn ghost" data-add="${v.id}" data-kind="${kind}" data-id="${it.id}">Add</button>
-            </div>
-          </div>
-        </div>
-      `).join('');
-      $('#menuItems').innerHTML = items || '<div class="small muted">No items</div>';
-      show('menuSection');
-    }
+    // Notifications
+    (function wireNotifications(){
+      const bell = $('notifBtn');
+      const modal = $('notifModal');
+      const list  = $('notifList');
+      const badge = document.createElement('span'); badge.id='notifBellBadge'; badge.style.cssText='position:absolute; top:-4px; right:-4px; background:#DC2626; color:#fff; border-radius:999px; font-size:11px; padding:0 5px; line-height:16px; min-width:16px; text-align:center; display:none';
+      bell.style.position='relative'; bell.appendChild(badge);
+      $('closeNotif').onclick = ()=> modal.classList.remove('open');
+      modal.addEventListener('click',(e)=>{ if (e.target===modal) modal.classList.remove('open'); });
 
-    // Cart (single vendor only)
-    function addToCart(kind, vendorId, itemId) {
-      const v = (vendors[kind]||[]).find(x=>x.id===vendorId);
-      if (!v) return;
-      const item = v.items.find(i=>i.id===itemId);
-      if (!item) return;
-      if (cart.vendorId && cart.vendorId !== v.id) {
-        if (!confirm(`Cart contains items from ${cart.vendorName}. Clear cart to add from ${v.name}?`)) return;
-        cart = { vendorId:null, vendorName:'', type:kind, items:[] };
-      }
-      cart.vendorId = v.id; cart.vendorName = v.name; cart.type = kind;
-      const found = cart.items.find(ci=>ci.id===item.id);
-      if (found) found.qty += 1;
-      else cart.items.push({ id:item.id, title:item.title, price:item.price, qty:1 });
-      persistCart();
-      toast('Added to cart');
-    }
-    function persistCart(){ localStorage.setItem('zup_cart', JSON.stringify(cart)); }
-    function restoreCart(){
-      try{
-        const c = JSON.parse(localStorage.getItem('zup_cart')||'{}');
-        if (c && c.items) cart = c;
-      }catch{}
-    }
-    function renderCart() {
-      let subtotal = 0;
-      const rows = (cart.items||[]).map(ci=>{
-        const line = ci.price * ci.qty; subtotal += line;
-        return `
-          <div class="card">
-            <div class="row" style="justify-content:space-between">
-              <div><strong>${ci.title}</strong><div class="small muted">${money(ci.price)}</div></div>
-              <div class="row">
-                <button class="btn ghost" data-dec="${ci.id}">−</button>
-                <div style="min-width:24px;text-align:center">${ci.qty}</div>
-                <button class="btn ghost" data-inc="${ci.id}">+</button>
-                <button class="btn ghost" data-del="${ci.id}">🗑️</button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      $('#cartItems').innerHTML = rows || '<div class="small muted">Your cart is empty</div>';
-      const delivery = subtotal>0 ? 2.50 : 0;
-      $('#cartSubtotal').innerHTML = `<strong>${money(subtotal)}</strong>`;
-      $('#cartDelivery').innerHTML = `<strong>${money(delivery)}</strong>`;
-      $('#cartTotal').textContent = money(subtotal + delivery);
-    }
-    function changeQty(id, delta){
-      const it = cart.items.find(i=>i.id===id);
-      if (!it) return;
-      it.qty += delta;
-      if (it.qty<=0) cart.items = cart.items.filter(i=>i.id!==id);
-      persistCart(); renderCart();
-    }
-    function removeItem(id){
-      cart.items = cart.items.filter(i=>i.id!==id);
-      persistCart(); renderCart();
-    }
+      function getFoodCartCount(){ try{ const c=loadCart(); return c.items.reduce((a,b)=>a+(b.qty||0),0); }catch{return 0} }
+      function updateBadge(){ const n=getFoodCartCount(); badge.style.display = n>0 ? 'inline-block' : 'none'; badge.textContent = n || ''; }
 
-    // Checkout
-    function placeOrder(){
-      if (!cart.items || cart.items.length===0) { toast('Your cart is empty'); return; }
-      const accept = $('#termsChk').checked;
-      if (!accept) { toast('Please accept the terms'); return; }
-      const method = $('#payMethod').value;
-      const total = Number($('#cartTotal').textContent.replace(/[^0-9.]/g,''))||0;
-      // Vendor payment rules
-      const v = Object.values(vendors).flat().find(x=>x.id===cart.vendorId);
-      if (v) {
-        if (method==='cash' && !v.pay.cash) { toast('This vendor does not accept Cash'); return; }
-        if (method==='card' && !v.pay.card) { toast('This vendor does not accept Card'); return; }
-      }
-      if (method==='wallet') {
-        if (wallet.balance < total) { toast('Insufficient wallet balance'); return; }
-        wallet.balance -= total;
-        wallet.tx.unshift({ id:'tx'+Date.now(), type:'debit', amount:total, note:`Order at ${cart.vendorName}` });
-        localStorage.setItem('zup_wallet_tx', JSON.stringify(wallet.tx));
-        $('#walletBalance').textContent = money(wallet.balance);
-        confirmOrder('wallet');
-      } else if (method==='card') {
-        // Simulate Stripe redirect success
-        setTimeout(()=>confirmOrder('card'), 600);
-      } else if (method==='cash') {
-        confirmOrder('cash');
-      }
-    }
-    function confirmOrder(paidBy){
-      // Generate delivery code for food/grocery only
-      const needsCode = ['fast','grocery'].includes(cart.type);
-      const code = needsCode ? (''+Math.floor(100000 + Math.random()*900000)) : '';
-      const order = {
-        id:'ord'+Date.now(), vendorId:cart.vendorId, vendorName:cart.vendorName, items:cart.items,
-        total: $('#cartTotal').textContent, method: $('#payMethod').value, code,
-        role:user.role, status:'active', createdAt: new Date().toISOString()
-      };
-      orders.unshift(order);
-      localStorage.setItem('zup_orders', JSON.stringify(orders));
-      if (needsCode) {
-        alert(`Order placed.\nYour delivery code: ${code}\n\nPlease do not share your confirm delivery code with the seller until you receive and confirm the product in their presence.\nIf you lose the code, open Account → Manage Orders and view the order.`);
-      } else {
-        alert('Order placed.');
-      }
-      cart = { vendorId:null, vendorName:'', type:'fast', items:[] };
-      persistCart(); renderCart();
-      closeModal('cartModal');
-      openOrders();
-    }
+      function openCartModal(){ renderCart(); $('cartModal').classList.add('open'); }
 
-    // Orders (buyer/seller)
-    function openOrders(){
-      const html = orders.map(o=>{
-        return `
-          <div class="card">
-            <div class="row" style="justify-content:space-between">
-              <div>
-                <div><strong>${o.vendorName||'Marketplace'}</strong></div>
-                <div class="small muted">${o.items.length} item(s) • ${o.total}</div>
-                <div class="small">Status: ${o.status}</div>
-                ${o.code ? `<div class="badge success">Buyer Code: ${o.code}</div>` : ``}
-              </div>
-              <div class="row">
-                <button class="btn ghost" data-view-order="${o.id}">View</button>
-                ${user.role==='seller' && o.code ? `<button class="btn primary" data-confirm-order="${o.id}">Confirm delivery</button>` : ``}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      $('#ordersList').innerHTML = html || '<div class="small muted">No orders yet</div>';
-      openModal('ordersPage');
-    }
-    function viewOrder(id){
-      const o = orders.find(x=>x.id===id); if(!o) return;
-      const items = o.items.map(i=>`${i.title} ×${i.qty}`).join(', ');
-      alert(`Order ${id}\nVendor: ${o.vendorName}\nItems: ${items}\nTotal: ${o.total}\nMethod: ${o.method}\n${o.code?('Your code: '+o.code):''}`);
-    }
-    function confirmDelivery(id){
-      const o = orders.find(x=>x.id===id); if(!o) return;
-      const code = prompt('Enter buyer code to confirm delivery:');
-      if (!code) return;
-      if (code === o.code) {
-        o.status = 'completed';
-        o.code = ''; // expire code
-        localStorage.setItem('zup_orders', JSON.stringify(orders));
-        toast('Delivery confirmed. Payout will be processed for card orders.');
-        openOrders();
-      } else {
-        toast('Invalid code');
-      }
-    }
-
-    // Wallet
-    function openWallet(){
-      $('#walletBalance').textContent = money(wallet.balance);
-      const tx = wallet.tx.map(t=>`
-        <div class="card">
-          <div class="row" style="justify-content:space-between">
-            <div>${t.note||t.type}</div>
-            <div style="font-weight:700">${t.type==='debit'?'-':''}${money(t.amount)}</div>
-          </div>
-        </div>
-      `).join('');
-      $('#walletTx').innerHTML = tx || '<div class="small muted">No transactions</div>';
-      show('walletSection');
-    }
-
-    // Marketplace
-    function renderMarketplace(){
-      $('#marketplaceHeader').style.display = '';
-      $('#marketplaceList').style.display = '';
-      const q = ($('#marketSearch').value||'').toLowerCase();
-      const list = marketplace.filter(m => m.title.toLowerCase().includes(q));
-      $('#marketItems').innerHTML = list.map(m=>`
-        <div class="card product">
-          <img src="${m.img||'https://via.placeholder.com/160'}" alt="">
-          <div class="meta">
-            <div style="font-weight:700">${m.title}</div>
-            <div class="small muted">${money(m.price)} • ${m.seller}</div>
-            <div class="row" style="margin-top:6px">
-              <a class="btn ghost" href="tel:">Call</a>
-              <a class="btn ghost" href="https://wa.me/" target="_blank">WhatsApp</a>
-              <button class="btn primary" onclick="alert('Open in‑app chat')">Chat</button>
-            </div>
-          </div>
-        </div>
-      `).join('') || '<div class="small muted">No listings</div>';
-    }
-
-    // Sell form
-    function submitMarketplace(){
-      const item = {
-        id:'p'+Date.now(),
-        title: $('#mkTitle').value.trim(),
-        price: parseFloat($('#mkPrice').value||'0'),
-        img: '', seller: user.name||'You', cat: $('#mkCat').value
-      };
-      if (!item.title || !item.price) { toast('Enter title and price'); return; }
-      marketplace.unshift(item);
-      closeModal('sellForm');
-      renderMarketplace();
-      toast('Listing submitted');
-    }
-
-    // Manage food menu (vendors)
-    function ensureFoodRow(container){
-      const row = document.createElement('div');
-      row.className = 'card';
-      row.style.marginBottom = '10px';
-      row.innerHTML = `
-        <div class="field">
-          <label class="small">Category</label>
-          <select class="f-cat">
-            <option value="fast">Fast food</option>
-            <option value="grocery">Groceries</option>
-          </select>
-        </div>
-        <div class="field"><label class="small">Title</label><input class="f-title" placeholder="Item title"></div>
-        <div class="field"><label class="small">Price</label><input class="f-price" type="number" min="0" step="0.01"></div>
-        <div class="field"><label class="small">Description</label><textarea class="f-desc" rows="2"></textarea></div>
-        <div class="field">
-          <label class="small">Images (up to 5)</label>
-          <input class="f-imgs" type="file" accept="image/*" multiple>
-        </div>
-        <div class="row">
-          <label class="small"><input type="checkbox" class="f-cash" checked> Cash</label>
-          <label class="small"><input type="checkbox" class="f-card" checked> Card</label>
-        </div>
-      `;
-      container.appendChild(row);
-    }
-    function openManageFood(){
-      const wrap = $('#foodItemsForm'); wrap.innerHTML = '';
-      ensureFoodRow(wrap);
-      openModal('manageFood');
-    }
-    function saveFoodItems(){
-      const wrap = $('#foodItemsForm');
-      const cards = Array.from(wrap.querySelectorAll('.card'));
-      const items = cards.map(c=>{
-        return {
-          cat: c.querySelector('.f-cat').value,
-          title: c.querySelector('.f-title').value.trim(),
-          price: parseFloat(c.querySelector('.f-price').value||'0'),
-          desc: c.querySelector('.f-desc').value.trim(),
-          pay: { cash: c.querySelector('.f-cash').checked, card: c.querySelector('.f-card').checked },
-        };
-      }).filter(x=>x.title && x.price>0);
-      // Save into vendor dataset under current user as vendor
-      items.forEach(it=>{
-        const pool = vendors[it.cat];
-        let me = pool.find(v=>v.id==='me');
-        if (!me) { me = { id:'me', name:(user.name||'You'), rating:5.0, distance:'0.0km', items:[], pay:{cash:true,card:true} }; pool.unshift(me); }
-        me.pay = it.pay;
-        me.items.unshift({ id:'m'+Date.now()+Math.random(), title:it.title, price:it.price, img:'' });
-      });
-      closeModal('manageFood');
-      toast('Menu updated');
-    }
-
-    // Emergency
-    function openEmergency(){ openModal('emergencyPicker'); }
-    function openDigital(){ openModal('digitalPicker'); }
-    function handleEmergency(kind){
-      // All emergency categories share same search area with simple list
-      const providers = [
-        { id:'e1', name:`${kind} Team A`, eta:'5 min' },
-        { id:'e2', name:`${kind} Team B`, eta:'8 min' },
-      ];
-      const html = providers.map(p=>`
-        <div class="card">
-          <div class="row" style="justify-content:space-between">
-            <div><strong>${p.name}</strong><div class="small muted">ETA ${p.eta}</div></div>
-            <button class="btn primary" onclick="alert('Request sent')">Request</button>
-          </div>
-        </div>
-      `).join('');
-      $('#emergencyProviders').innerHTML = html;
-    }
-
-    // Instant booking cancel (reliable)
-    function startLive(serviceType, hourlyRate){
-      live.active = true; live.serviceType = serviceType; live.hourlyRate = hourlyRate || 20; live.startedAt = Date.now(); live.arrivedAt = null;
-      if (navigator.geolocation) {
-        live.watchId = navigator.geolocation.watchPosition(()=>{},()=>{});
-      }
-      live.timer = setInterval(()=>{}, 10000);
-    }
-    function markArrived(){
-      if (!live.active) return;
-      live.arrivedAt = Date.now();
-      // charges start after 7 minutes
-    }
-    function endJob(){
-      if (!live.active) return;
-      const cost = calcServiceCost();
-      stopLive();
-      alert(`Service ended. Cost: ${money(cost)}`);
-    }
-    function calcServiceCost(){
-      if (live.serviceType==='transport') {
-        // Simulate fixed at end
-        return 7.50 + Math.random()*5;
-      }
-      // Hourly rate after 7 minutes grace from arrival
-      if (!live.arrivedAt) return 0;
-      const ms = Math.max(0, Date.now() - (live.arrivedAt + 7*60*1000));
-      const hours = ms/3600000;
-      return hours * (live.hourlyRate||20);
-    }
-    function cancelLive(){
-      if (!live.active) { toast('No active booking'); return; }
-      if (!confirm('Cancel current request?')) return;
-      stopLive();
-      alert('Request cancelled');
-      // return to related service page
-      show(null); // back to home default
-    }
-    function stopLive(){
-      live.active=false;
-      if (live.watchId!=null) { try{navigator.geolocation.clearWatch(live.watchId);}catch{} live.watchId=null; }
-      if (live.timer){ clearInterval(live.timer); live.timer=null; }
-      live.startedAt=null; live.arrivedAt=null; live.serviceType=null;
-    }
-
-    // Panic
-    function sendPanic(){
-      alert('Emergency alert sent with your location.');
-      closeModal('panicModal');
-    }
-
-    // Modals
-    function openModal(id){ $('#'+id).classList.add('open'); }
-    function closeModal(id){ $('#'+id).classList.remove('open'); }
-
-    // Back buttons
-    function hookBacks(){
-      $$('.back').forEach(b=>{
-        b.addEventListener('click', ()=>{
-          const t = b.getAttribute('data-back');
-          if (t==='home') { show(null); }
-          if (t==='vendors') { show('vendorsSection'); }
+      function renderNotif(){
+        list.innerHTML='';
+        const items=[];
+        const n=getFoodCartCount();
+        if (n>0) items.push({ icon:'🛒', title:'Items in your Food cart', text:`You have ${n} item${n>1?'s':''} in your cart for ${cart.vendorName||'current vendor'}.`, action: openCartModal });
+        if (!items.length){ list.innerHTML='<div class="small muted">No new notifications.</div>'; return; }
+        items.forEach(x=>{
+          const row=document.createElement('div'); row.className='card'; row.style.cursor='pointer';
+          row.innerHTML=`<div class="row" style="justify-content:space-between; align-items:flex-start"><div class="row" style="align-items:center; gap:10px"><div style="font-size:20px">${x.icon}</div><div><div><strong>${x.title}</strong></div><div class="small muted">${x.text}</div></div></div><div>›</div></div>`;
+          row.onclick=()=>{ try{x.action&&x.action()}finally{modal.classList.remove('open')} };
+          list.appendChild(row);
         });
-      });
-    }
+      }
 
-    // Bindings
-    function bind() {
-      // Header buttons
-      $('#notifBtn').addEventListener('click', ()=> alert('Notifications will show here. Cart alerts are included.'));
-      $('#accountBtn').addEventListener('click', ()=> openOrders());
+      bell.onclick = ()=>{ renderNotif(); modal.classList.add('open'); };
+      updateBadge();
+      window.updateBellBadge = updateBadge;
+    })();
 
-      // Services
-      $$('#servicesGrid .service').forEach(s=>{
-        s.addEventListener('click', ()=>{
-          const type = s.getAttribute('data-service');
-          if (type==='food') return openFoodEntry();
-          if (type==='grocery') return openFoodEntry();
-          if (type==='marketplace') { renderMarketplace(); return; }
-          if (type==='emergencyRoot') return openEmergency();
-          if (type==='digitalRoot') return openDigital();
-          if (type==='transport') { startLive('transport'); alert('Transport request created. It will be charged when trip ends. Use Cancel to stop.'); return; }
-          // Other service: show search and allow instant request
-          alert('Open providers list (with search). Billing starts 7 minutes after Arrived.');
-          startLive('service', 25);
-        });
-      });
-
-      // Emergency
-      $('#btnRoadside').addEventListener('click', ()=> handleEmergency('Roadside'));
-      $('#emergencySearch').addEventListener('input', ()=> {/* filtering placeholder */});
-      $$('#emergencyPicker [data-emer]').forEach(b=> b.addEventListener('click', ()=> handleEmergency(b.getAttribute('data-emer'))));
-      $$('#emergencyPicker [data-close="emergencyPicker"]').forEach(b=> b.addEventListener('click', ()=> closeModal('emergencyPicker')));
-
-      // Digital
-      $$('#digitalPicker [data-close="digitalPicker"]').forEach(b=> b.addEventListener('click', ()=> closeModal('digitalPicker')));
-
-      // Food entry
-      $$('#foodEntry [data-close="foodEntry"]').forEach(b=> b.addEventListener('click', ()=> closeModal('foodEntry')));
-      $$('#foodEntry [data-food]').forEach(b=> b.addEventListener('click', ()=> listVendors(b.getAttribute('data-food'))));
-      $('#foodSearch').addEventListener('input', ()=>{
-        // re-filter based on current pick; default fast
-        // no-op until vendor type chosen
-      });
-
-      // Vendor list open
-      $('#vendorsList').addEventListener('click', e=>{
-        const btn = e.target.closest('[data-open-menu]'); if (!btn) return;
-        openMenu(btn.getAttribute('data-kind'), btn.getAttribute('data-open-menu'));
-      });
-      // Add to cart
-      $('#menuItems').addEventListener('click', e=>{
-        const btn = e.target.closest('[data-add]'); if (!btn) return;
-        addToCart(btn.getAttribute('data-kind'), btn.getAttribute('data-add'), btn.getAttribute('data-id'));
-      });
-      // Open cart
-      $('#openCartBtn').addEventListener('click', ()=>{ renderCart(); openModal('cartModal'); });
-
-      // Cart change
-      $('#cartItems').addEventListener('click', e=>{
-        const t = e.target;
-        const inc = t.closest('[data-inc]'); if (inc) { changeQty(inc.getAttribute('data-inc'), +1); return; }
-        const dec = t.closest('[data-dec]'); if (dec) { changeQty(dec.getAttribute('data-dec'), -1); return; }
-        const del = t.closest('[data-del]'); if (del) { removeItem(del.getAttribute('data-del')); return; }
-      });
-      $('#placeOrderBtn').addEventListener('click', placeOrder);
-      $('#openTerms').addEventListener('click', ()=> { $('#termsModal').style.display='flex'; });
-      $('#termsClose').addEventListener('click', ()=> { $('#termsModal').style.display='none'; });
-
-      // Marketplace
-      $('#sellBtn').addEventListener('click', ()=> openModal('sellForm'));
-      $('#mkSubmit').addEventListener('click', submitMarketplace);
-      $('#marketSearch').addEventListener('input', renderMarketplace);
-
-      // Orders
-      $('#ordersList').addEventListener('click', e=>{
-        const v = e.target.closest('[data-view-order]'); if (v) return viewOrder(v.getAttribute('data-view-order'));
-        const c = e.target.closest('[data-confirm-order]'); if (c) return confirmDelivery(c.getAttribute('data-confirm-order'));
-      });
-
-      // Wallet
-      $('#walletAdd').addEventListener('click', ()=> toast('Top‑up coming soon'));
-      $('#walletCashOut').addEventListener('click', ()=> toast('Cash out coming soon'));
-      $('#walletSend').addEventListener('click', ()=>{
-        const to = prompt('Enter recipient username or email:'); if (!to) return;
-        const amt = parseFloat(prompt('Amount')||'0'); if (!amt || amt<=0) return;
-        if (amt > wallet.balance) return toast('Insufficient balance');
-        wallet.balance -= amt; wallet.tx.unshift({ id:'tx'+Date.now(), type:'debit', amount:amt, note:`Send to ${to}` });
-        localStorage.setItem('zup_wallet_tx', JSON.stringify(wallet.tx));
-        $('#walletBalance').textContent = money(wallet.balance); openWallet();
-      });
-      $('#walletCards').addEventListener('click', ()=> {
-        const line = wallet.cards.map(c=>`${c.brand.toUpperCase()} •••• ${c.last4}`).join('\n') || 'No saved cards';
-        alert(line);
-      });
-
-      // Manage Food menu
-      $('#addFoodRow').addEventListener('click', ()=> ensureFoodRow($('#foodItemsForm')));
-      $('#saveFoodItems').addEventListener('click', saveFoodItems);
-
-      // Panic
-      $('#panicSend').addEventListener('click', sendPanic);
-
-      // Bottom nav
-      $$('.nav .item').forEach(i=> i.addEventListener('click', ()=>{
-        const tab = i.getAttribute('data-nav');
-        $$('.nav .item').forEach(n=>n.classList.remove('active')); i.classList.add('active');
-        if (tab==='home') { show(null); }
-        if (tab==='wallet') { openWallet(); }
-        if (tab==='orders') { openOrders(); }
-        if (tab==='profile') { openManageFood(); } // open food manage as main actionable in profile
-      }));
-
-      // Back arrows
-      hookBacks();
-
-      // Close buttons for modals
-      $$('[data-close]').forEach(b=> b.addEventListener('click', ()=> closeModal(b.getAttribute('data-close'))));
-
-      // Marketplace default hidden until user taps Marketplace
-      renderHeader();
-    }
+    // Panic modal
+    (function wirePanic(){
+      const modal=$('panicModal');
+      function updateLocHint(){ $('panicLocHint').textContent = coords ? (coords.lat.toFixed(5)+', '+coords.lng.toFixed(5)) : 'Unknown (we will try to fetch)'; }
+      $('panicBtn').onclick = ()=>{ updateLocHint(); $('panicStatus').textContent=''; $('panicMsg').value=''; modal.classList.add('open'); };
+      $('panicClose').onclick=()=> modal.classList.remove('open');
+      $('panicCancel').onclick=()=> modal.classList.remove('open');
+      modal.addEventListener('click',(e)=>{ if(e.target===modal) modal.classList.remove('open'); });
+      $('panicSend').onclick = async ()=>{
+        const btn=$('panicSend'); const st=$('panicStatus'); btn.disabled=true; st.textContent='Sending alert…';
+        try{
+          if (!coords) { try { await initLocation(); } catch{} }
+          const body={ type:'panic', userPublicName:(user?.name||'User'), message:($('panicMsg').value||'').trim()||undefined, location:coords?{latitude:coords.lat,longitude:coords.lng}:null };
+          const r=await fetch(`${BASE_API}/api/emergency/alert`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+          const d=await r.json().catch(()=>({}));
+          st.textContent = r.ok ? 'Alert sent.' : 'Alert sent (fallback).';
+          if (d.trackingUrl) { modal.classList.remove('open'); location.href=d.trackingUrl; }
+        }catch{ st.textContent='Could not reach server. Alert noted.' } finally { btn.disabled=false; }
+      };
+    })();
 
     // Init
-    function init() {
-      renderHeader();
-      initMap();
-      restoreCart();
-      bind();
+    document.addEventListener('DOMContentLoaded', () => {
+      $('userName').textContent = user.name;
+      updateProfileUI();
+      initLocation();
+      renderServices(); renderEmergency(); renderRecent(); renderServicesAll(); renderBookings();
+      initMarketplace();
+      wireProfilePages();
+      wireSupport();
+      wireFoodFlow();
+
+      // Cart/Checkout modal wiring
+      $('closeCart').onclick = ()=> $('cartModal').classList.remove('open');
+      $('checkoutBtn').onclick = ()=>{ $('cartModal').classList.remove('open'); openCheckout(); };
+      $('closeCheckout').onclick = ()=> $('checkoutModal').classList.remove('open');
+      $('closeOrder').onclick = ()=> $('orderModal').classList.remove('open');
+
+      // Terms
+      $('readTerms').onclick = (e)=>{ e.preventDefault(); $('termsModal').style.display='flex'; };
+      $('termsClose').onclick = ()=> $('termsModal').style.display='none';
+      $('termsModal').addEventListener('click',(e)=>{ if(e.target===$('termsModal')) $('termsModal').style.display='none'; });
+
+      // Splash
+      window.addEventListener('load', ()=> setTimeout(()=>{ const s=document.getElementById('splash'); if(s){ s.style.opacity='0'; setTimeout(()=>s.remove(),250); } }, 250));
+    });
+
+    // Location
+    async function initLocation(){
+      try {
+        const pos = await new Promise((res, rej)=>navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy:true, timeout:10000 }));
+        coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        const name = await reverseGeocode(coords.lat, coords.lng);
+        $('userLoc').textContent = name || 'Unknown';
+      } catch { $('userLoc').textContent = 'Location unavailable'; }
     }
-    document.addEventListener('DOMContentLoaded', init);
+    async function reverseGeocode(lat,lng){
+      try {
+        const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+        const d = await r.json(); return (d.locality || d.city || 'Unknown') + ', ' + (d.countryName || '');
+      } catch { return null; }
+    }
+
+    // Data
+    const SERVICES = [
+      { id:'transport', name:'Transport', icon:'🚗', desc:'Ride & moving', instant:true,  scheduled:true },
+      { id:'food',      name:'Food',      icon:'🍔', desc:'Restaurants & groceries', instant:true,  scheduled:true },
+      { id:'tech',      name:'Tech',      icon:'🔧', desc:'Phone/computer repair', instant:true,  scheduled:true },
+      { id:'home',      name:'Home',      icon:'🏠', desc:'Cleaning & maintenance', instant:true,  scheduled:true },
+      { id:'construction', name:'Construction', icon:'🏗️', desc:'Builders & electricians', instant:false, scheduled:true },
+      { id:'auto',      name:'Automobile', icon:'🛠️', desc:'Mechanics, tires, roadside', instant:true,  scheduled:true },
+      { id:'others',    name:'Others',    icon:'🎯', desc:'Events, tutors, more', instant:false, scheduled:true },
+    ];
+    const EMERGENCY = [
+      { id:'ambulance', name:'Ambulance', icon:'🚑' },
+      { id:'fire',      name:'Fire Service', icon:'🚒' },
+      { id:'towing',    name:'Towing', icon:'🚛' },
+      { id:'security',  name:'Security', icon:'🛡️' },
+      { id:'roadside',  name:'Roadside', icon:'🔧' },
+    ];
+
+    // Marketplace public products (contact-only)
+    const MP_CATEGORIES = [
+      { id:'electronics', name:'Electronics' },
+      { id:'fashion',     name:'Fashion' },
+      { id:'home',        name:'Home & Garden' },
+      { id:'sports',      name:'Sports' },
+      { id:'automobile',  name:'Automobile' },
+      { id:'spares',      name:'Spare Parts' },
+      { id:'others',      name:'Others' },
+    ];
+    let MP_PRODUCTS = [
+      { id:'p100', title:'Smartphone X', cat:'electronics', price:499, stock:12, img:'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop', seller:'Tony', phone:'+1234567890', whatsapp:'+1234567890' },
+      { id:'p101', title:'Wireless Earbuds', cat:'electronics', price:59,  stock:34, img:'https://images.unsplash.com/photo-1585386959984-a41552231658?q=80&w=800&auto=format&fit=crop', seller:'Mary', phone:'+234810000001', whatsapp:'+234810000001' },
+      { id:'p200', title:'Running Shoes', cat:'fashion', price:79,  stock:18, img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop', seller:'Kelvin', phone:'+233540000002', whatsapp:'+233540000002' },
+      { id:'p201', title:'Denim Jacket', cat:'fashion', price:69,  stock:9,  img:'https://images.unsplash.com/photo-1542060748-10c28b62716b?q=80&w=800&auto=format&fit=crop', seller:'Anita', phone:'+254710000003', whatsapp:'+254710000003' }
+    ];
+
+    // Food/Grocery sample vendors and menus
+    const VENDORS = [
+      { id:'v1', name:'Burger Place', kind:'fastfood', payment:['card','cash'], phone:'+12345001', whatsapp:'+12345001' },
+      { id:'v2', name:'Pizza Town',  kind:'fastfood', payment:['card'], phone:'+12345002', whatsapp:'+12345002' },
+      { id:'v3', name:'Green Grocer', kind:'grocery', payment:['cash'], phone:'+12345003', whatsapp:'+12345003' }
+    ];
+    const MENUS = {
+      v1: [
+        { id:'m1', title:'Cheeseburger', price:8.5, img:'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=800&auto=format&fit=crop' },
+        { id:'m2', title:'Fries',        price:3.0, img:'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?q=80&w=800&auto=format&fit=crop' },
+        { id:'m3', title:'Soda',         price:2.0, img:'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=800&auto=format&fit=crop' }
+      ],
+      v2: [
+        { id:'m4', title:'Pepperoni Pizza', price:12.0, img:'https://images.unsplash.com/photo-1548365328-9f547fb09530?q=80&w=800&auto=format&fit=crop' },
+        { id:'m5', title:'Margherita',      price:10.0, img:'https://images.unsplash.com/photo-1541745537413-b804b0c424d6?q=80&w=800&auto=format&fit=crop' }
+      ],
+      v3: [
+        { id:'m6', title:'Bananas (1kg)', price:2.5, img:'https://images.unsplash.com/photo-1571772805064-2073979f0d4a?q=80&w=800&auto=format&fit=crop' },
+        { id:'m7', title:'Tomatoes (1kg)', price:3.2, img:'https://images.unsplash.com/photo-1506806732259-39c2d0268443?q=80&w=800&auto=format&fit=crop' }
+      ]
+    };
+
+    // Services render
+    function renderServices(){
+      const grid = $('servicesGrid'); grid.innerHTML='';
+      SERVICES.forEach(s=>{
+        const el=document.createElement('div'); el.className='card service';
+        el.innerHTML = `<div class="row"><div style="font-size:28px">${s.icon}</div><h4>${s.name}</h4></div><div class="small muted" style="margin-top:6px">${s.desc}</div><div class="row" style="margin-top:8px">${s.instant?'<span class="pill">Instant</span>':''}${s.scheduled?'<span class="pill">Scheduled</span>':''}</div>`;
+        el.onclick = ()=> openCategory(s.id, s.name);
+        grid.appendChild(el);
+      });
+    }
+    function renderServicesAll(){
+      const grid = $('servicesAllGrid'); grid.innerHTML='';
+      SERVICES.forEach(s=>{
+        const el=document.createElement('div'); el.className='card service';
+        el.innerHTML = `<div class="row"><div style="font-size:28px">${s.icon}</div><h4>${s.name}</h4></div><div class="small muted" style="margin-top:6px">${s.desc}</div>`;
+        el.onclick = ()=> openCategory(s.id, s.name);
+        grid.appendChild(el);
+      });
+    }
+    function renderEmergency(){
+      const grid = $('emergencyGrid'); grid.innerHTML='';
+      EMERGENCY.forEach(e=>{
+        const el=document.createElement('div'); el.className='card service';
+        el.innerHTML = `<div class="row"><div style="font-size:28px">${e.icon}</div><h4>${e.name}</h4></div><div class="small muted" style="margin-top:6px">${e.id==='roadside'?'Describe the issue':'Find nearest/available'}</div><div class="row" style="margin-top:8px"><span class="pill">Instant</span></div>`;
+        el.onclick = ()=>{ if (e.id==='roadside') openItemsModal('roadside'); else openEmergency(e.id, e.name); };
+        grid.appendChild(el);
+      });
+    }
+    function renderRecent(){
+      $('recentList').innerHTML = `
+        <div class="card"><div class="row" style="justify-content:space-between"><div>🚗 Ride to Airport</div><span class="badge success">completed</span></div><div class="small muted" style="margin-top:6px">2h ago</div></div>
+        <div class="card" style="margin-top:8px"><div class="row" style="justify-content:space-between"><div>🔧 Phone Repair</div><span class="badge" style="background:#FFF7ED;color:#9A3412">scheduled</span></div><div class="small muted" style="margin-top:6px">Tomorrow 11:00</div></div>`;
+    }
+    function renderBookings(){
+      $('bookingsList').innerHTML = `
+        <div class="card"><div class="row" style="justify-content:space-between"><div>🔧 Phone Repair</div><span class="badge" style="background:#FFF7ED;color:#9A3412">scheduled</span></div><div class="small muted" style="margin-top:6px">Tomorrow 11:00</div></div>
+        <div class="card" style="margin-top:8px"><div class="row" style="justify-content:space-between"><div>🚗 Ride to Airport</div><span class="badge success">completed</span></div><div class="small muted" style="margin-top:6px">2h ago</div></div>`;
+    }
+
+    // Category open
+    function openCategory(catId, label){
+      lastCategory = catId;
+      if (catId==='transport') {
+        openCategoryOptions('Transport Options', [
+          { id:'ride',   name:'Ride / Taxi', icon:'🚗' },
+          { id:'moving', name:'Truck / Backie', icon:'🚚' },
+        ], opt=>{
+          $('categoryOptionsModal').classList.remove('open');
+          $('providersTitle').textContent = opt.name + ' — Providers';
+          fetchProviders('transport', opt.id).then(renderProviders);
+          $('providersModal').classList.add('open');
+        });
+        return;
+      }
+      if (catId==='food') {
+        openFoodOptions();
+        return;
+      }
+      $('providersTitle').textContent = label + ' — Providers';
+      fetchProviders(catId).then(renderProviders);
+      $('providersModal').classList.add('open');
+    }
+    function openCategoryOptions(title, options, onPick){
+      $('categoryOptionsTitle').textContent = title;
+      $('categoryOptionsList').innerHTML='';
+      options.forEach(o=>{
+        const el=document.createElement('div'); el.className='card';
+        el.innerHTML = `<div class="row" style="justify-content:space-between"><div class="row"><div style="font-size:24px">${o.icon||'•'}</div><div><strong>${o.name}</strong></div></div><button class="btn primary" type="button">Choose</button></div>`;
+        el.querySelector('button').onclick=()=>onPick(o);
+        $('categoryOptionsList').appendChild(el);
+      });
+      $('categoryOptionsModal').classList.add('open');
+      $('closeCategoryOptions').onclick=()=>$('categoryOptionsModal').classList.remove('open');
+    }
+    $('closeProviders').onclick = ()=>$('providersModal').classList.remove('open');
+
+    // Providers (demo/fallback)
+    async function fetchProviders(category, sub=null){
+      try{
+        const q = new URLSearchParams({ category, sub: sub||'', lat: coords?.lat||'', lng: coords?.lng||'' });
+        const r = await fetch(`${BASE_API}/api/providers/nearby?${q.toString()}`);
+        if (!r.ok) throw 0; const d = await r.json(); return d.providers||[];
+      }catch{
+        return [
+          { id:'p1', publicName:'Alex M.', jobTitle:'Driver', verified:true, rating:4.8, phone:'+123456789', icon:'👤', distance:'0.8km', eta:'6-9m', fareMin:120, fareMax:130, currency:'$', available:true },
+          { id:'p2', publicName:'Quick Help', jobTitle:'Mechanic', verified:false, rating:4.5, phone:null, icon:'⚡', distance:'1.2km', eta:'8-12m', fareMin:10, fareMax:15, currency:'$', available:true }
+        ];
+      }
+    }
+    function renderProviders(list){
+      const box=$('providersList'); box.innerHTML='';
+      if (!list?.length){ box.innerHTML='<div class="small muted">No providers found nearby.</div>'; return; }
+      list.forEach(p=>{
+        const name = p.publicName || p.name || 'Provider';
+        const title= p.jobTitle ? ` • ${p.jobTitle}` : '';
+        const verified = p.verified ? `<span class="verify">✔️</span>` : `<span class="small muted">unverified</span>`;
+        const rating = p.rating ? ` <span class="rating">★ ${(+p.rating).toFixed ? (+p.rating).toFixed(1) : p.rating}</span>` : '';
+        const avatar = `<div class="avatar">${(p.icon||'👤')}</div>`;
+        const fare = (p.fareMin && p.fareMax) ? `${p.currency||'$'}${p.fareMin}‑${p.fareMax}` : (p.fee||'—');
+
+        const el=document.createElement('div'); el.className='card';
+        el.innerHTML = `
+          <div class="row" style="justify-content:space-between; align-items:flex-start">
+            <div class="row" style="align-items:center">
+              ${avatar}
+              <div>
+                <div><strong>${name}</strong> ${verified} ${rating}</div>
+                <div class="small muted">${p.distance || '—'} • ETA ${p.eta || '—'}${title}</div>
+                <div class="small"><strong>Est. fare:</strong> ${fare}</div>
+              </div>
+            </div>
+            <span class="badge ${p.available ? 'success':''}">${p.available ? 'available':'unavailable'}</span>
+          </div>
+          <div class="row" style="gap:8px; margin-top:6px">
+            <button class="btn primary" data-k="instant" type="button">Instant</button>
+            <button class="btn ghost" data-k="schedule" type="button">Schedule</button>
+          </div>`;
+        el.querySelector('[data-k="instant"]').onclick = ()=> startInstantEntry(p);
+        el.querySelector('[data-k="schedule"]').onclick = ()=> openBooking(p);
+        box.appendChild(el);
+      });
+    }
+
+    // Booking (scheduled)
+    function openBooking(provider){
+      selectedProvider = provider;
+      $('bookingModal').classList.add('open');
+      $('bookingForm').onsubmit = async (e)=>{
+        e.preventDefault();
+        const date=$('bkDate').value, time=$('bkTime').value, address=$('bkAddress').value, desc=$('bkDesc').value;
+        if (!date||!time||!address) return alert('Fill date, time, address');
+        try{
+          await fetch(`${BASE_API}/api/requests`,{ method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({ type:'scheduled', category:lastCategory||'general', providerId:provider?.id, userPublicName:user.name, date, time, address, details:desc })});
+        }catch{}
+        $('bookingModal').classList.remove('open');
+        alert('Booking requested');
+      };
+      $('closeBooking').onclick = ()=> $('bookingModal').classList.remove('open');
+    }
+
+    // Instant transport
+    const tiModal=$('tiModal'), tiPickup=$('tiPickup'), tiDestination=$('tiDestination'), tiStops=$('tiStops');
+    let tiStopCount=0;
+    $('tiClose').onclick = ()=> tiModal.classList.remove('open');
+    $('tiUseCurrent').onclick = async ()=>{ if (coords) { tiPickup.value = await reverseGeocode(coords.lat, coords.lng) || ''; } else { await initLocation(); if (coords) tiPickup.value = await reverseGeocode(coords.lat, coords.lng) || ''; } };
+    $('tiAddStop').onclick = ()=>{ if (tiStopCount>=5) return alert('Max 5 stops'); tiStopCount++; const wrap=document.createElement('div'); wrap.className='row'; wrap.innerHTML=`<label class="small" style="min-width:56px">Stop ${tiStopCount}</label><input class="tiStopInput" placeholder="Enter stop ${tiStopCount} address" style="flex:1"/>`; tiStops.appendChild(wrap); };
+    $('tiRemoveStop').onclick = ()=>{ if (tiStopCount<=0) return; tiStops.removeChild(tiStops.lastElementChild); tiStopCount--; };
+
+    function startInstantEntry(provider){
+      selectedProvider = provider;
+      if (lastCategory==='transport'){
+        tiModal.classList.add('open');
+        $('tiStart').onclick = ()=> startInstantTransport(provider);
+      } else startInstant(provider);
+    }
+    async function startInstantTransport(provider){
+      const pickup=(tiPickup.value||'').trim(), destination=(tiDestination.value||'').trim();
+      if (!pickup||!destination) return alert('Pickup and Destination are required');
+      const stops = Array.from(document.querySelectorAll('.tiStopInput')).map(i=>i.value.trim()).filter(Boolean).slice(0,5);
+      startInstantCountdownInit();
+      try{
+        const r=await fetch(`${BASE_API}/api/requests`,{ method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ type:'instant', category:'transport', providerId:provider.id, userPublicName:user.name, pickup, destination, stops, location:coords?{latitude:coords.lat,longitude:coords.lng}:null })});
+        const d=await r.json().catch(()=>({})); requestId=d.requestId||('demo-'+Date.now());
+      }catch{ requestId='demo-'+Date.now(); }
+      tiModal.classList.remove('open');
+      openTrackingPending();
+      startInstantCountdown('transport');
+    }
+    async function startInstant(provider){
+      startInstantCountdownInit();
+      try{
+        const r=await fetch(`${BASE_API}/api/requests`,{ method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ type:'instant', category:lastCategory||'general', providerId:provider.id, userPublicName:user.name, location:coords?{latitude:coords.lat,longitude:coords.lng}:null })});
+        const d=await r.json().catch(()=>({})); requestId=d.requestId||('demo-'+Date.now());
+      }catch{ requestId='demo-'+Date.now(); }
+      openTrackingPending();
+      startInstantCountdown(lastCategory||'general');
+    }
+    function startInstantCountdownInit(){ instantLeft=90; $('countdown').textContent=String(instantLeft); $('instantHint').textContent='Waiting for provider to accept…'; $('instantModal').classList.add('open'); }
+    function stopInstant(){ if (instantTimer) clearInterval(instantTimer); instantTimer=null; }
+    async function getRequestStatus(id){
+      try{ const r=await fetch(`${BASE_API}/api/requests/${encodeURIComponent(id)}`); if(!r.ok) throw 0; const d=await r.json(); return d.status||'pending'; }
+      catch{ return (instantLeft<78)?'accepted':'pending'; }
+    }
+    function startInstantCountdown(category){
+      $('cancelInstant').onclick = (e)=>{ e.preventDefault(); openCancelReasons(); };
+      $('findOthers').onclick = ()=>{ $('instantModal').classList.remove('open'); $('providersModal').classList.add('open'); };
+      instantTimer=setInterval(async ()=>{
+        instantLeft-=1; $('countdown').textContent=String(instantLeft);
+        if (instantLeft%3===0){
+          const status=await getRequestStatus(requestId);
+          if (status==='accepted'){ stopInstant(); openTracking(); return; }
+          if (status==='rejected'){ stopInstant(); alert('Provider rejected.'); $('instantModal').classList.remove('open'); return; }
+        }
+        if (instantLeft<=0){ stopInstant(); alert('No response. Try others.'); $('instantModal').classList.remove('open'); }
+      },1000);
+    }
+    function openTrackingPending(){ $('instantModal').classList.remove('open'); $('trackModal').classList.add('open'); setTimeout(initMap,50); $('trackStatus').textContent='Waiting for provider to accept…'; }
+    function openTracking(){ $('instantModal').classList.remove('open'); $('trackModal').classList.add('open'); setTimeout(initMap,50); startTracking(); }
+    function initMap(){
+      if (!map){ map=L.map('track-map',{zoomControl:true}); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'&copy; OSM' }).addTo(map); }
+      const userLatLng = coords ? [coords.lat, coords.lng] : [0,0];
+      map.setView(userLatLng, 14); if (userMarker) userMarker.remove(); userMarker=L.marker(userLatLng,{title:'You'}).addTo(map); if (providerMarker) providerMarker.remove();
+    }
+    function startTracking(){
+      if (trackPoll) clearInterval(trackPoll);
+      trackPoll=setInterval(async ()=>{
+        const pos=await getProviderPosition(requestId); if (!pos) return;
+        const latlng=[pos.lat,pos.lng]; if (!providerMarker) providerMarker=L.marker(latlng,{title:'Provider',icon: L.icon({iconUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',iconRetinaUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41]})}).addTo(map);
+        else providerMarker.setLatLng(latlng);
+        $('trackStatus').textContent = `Provider en route • ${pos.eta || 'ETA —'}`;
+      },3000);
+    }
+    async function getProviderPosition(id){
+      try{ const r=await fetch(`${BASE_API}/api/requests/${encodeURIComponent(id)}/position`); if(!r.ok) throw 0; const d=await r.json(); return {lat:d.provider?.lat,lng:d.provider?.lng,eta:d.eta}; }
+      catch{ const base=coords?{lat:coords.lat+(Math.random()-0.5)/100,lng:coords.lng+(Math.random()-0.5)/100}:{lat:0,lng:0}; return {lat:base.lat,lng:base.lng,eta:'8 min'}; }
+    }
+    $('closeTrack').onclick = ()=>{ if (trackPoll) clearInterval(trackPoll); $('trackModal').classList.remove('open'); };
+
+    // Cancel request
+    $('trackCancelBtn').onclick = ()=> openCancelReasons();
+    function openCancelReasons() {
+      const modal = $('cancelReasonsModal'), crList=$('crList'); modal.classList.add('open'); crList.innerHTML='';
+      ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{
+        const row=document.createElement('label'); row.className='row';
+        row.innerHTML = `<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`;
+        crList.appendChild(row);
+      });
+      const other = document.createElement('input');
+      other.id = 'crOther'; other.placeholder = 'If Other, describe…'; other.style.cssText='width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px';
+      crList.appendChild(other);
+      $('crClose').onclick = ()=> modal.classList.remove('open');
+      $('crBack').onclick  = ()=> modal.classList.remove('open');
+      $('crConfirm').onclick = async ()=> {
+        const picked = document.querySelector('input[name="cr"]:checked')?.value || 'Other';
+        const reason = picked === 'Other' ? (other.value.trim()||'Other') : picked;
+        try { if (requestId) await fetch(`${BASE_API}/api/requests/${encodeURIComponent(requestId)}?reason=${encodeURIComponent(reason)}`, { method:'DELETE' }); } catch {}
+        if (trackPoll) clearInterval(trackPoll); requestId=null;
+        $('cancelReasonsModal').classList.remove('open');
+        $('instantModal').classList.remove('open');
+        $('trackModal').classList.remove('open');
+        showPage('services');
+        alert('Request cancelled');
+      };
+    }
+
+    // Search + voice
+    $('voiceBtn').onclick = ()=> voiceToInput($('search'), ()=>runHomeSearch());
+    function voiceToInput(inputEl, onResult){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert('Voice not supported'); return; }
+      const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult = (e)=>{ const text=e.results[0][0].transcript||''; inputEl.value=text; onResult&&onResult(text); };
+      rec.start();
+    }
+    $('searchBtn').onclick = runHomeSearch;
+    function runHomeSearch(){
+      const q = ($('search').value||'').trim().toLowerCase(); if (!q) return;
+      if (/(ride|taxi|cab|uber|bolt)/.test(q)) return openCategory('transport','Transport');
+      if (/(truck|backie|moving|load)/.test(q)) {
+        openCategoryOptions('Transport Options',[{id:'moving',name:'Truck / Backie',icon:'🚚'}],o=>{
+          $('categoryOptionsModal').classList.remove('open');
+          $('providersTitle').textContent = o.name + ' — Providers';
+          fetchProviders('transport','moving').then(renderProviders);
+          $('providersModal').classList.add('open');
+        });
+        return;
+      }
+      if (/(food|pizza|burger|fries|chicken|drinks)/.test(q)) return openCategory('food','Food');
+      if (/(grocery|milk|bread|eggs|rice|fruit|vegetable|vegetables)/.test(q)) return openCategory('food','Food');
+      if (/(ambulance|medical)/.test(q)) return openEmergency('ambulance','Ambulance');
+      if (/(fire)/.test(q)) return openEmergency('fire','Fire Service');
+      if (/(towing|tow)/.test(q)) return openEmergency('towing','Towing');
+      if (/(security|police)/.test(q)) return openEmergency('security','Security');
+      $('providersTitle').textContent = q + ' — Providers';
+      fetchProviders('search', q).then(renderProviders);
+      $('providersModal').classList.add('open');
+    }
+
+    async function openEmergency(emId, label){
+      $('providersTitle').textContent = label + ' — Nearest';
+      const list = await fetchProviders('emergency', emId);
+      renderProviders(list);
+      $('providersModal').classList.add('open');
+    }
+
+    // Marketplace (contact-only)
+    $('mpVoice').onclick = ()=> voiceToInput($('mpSearch'), ()=> runMarketplaceSearch());
+    $('mpSearchBtn').onclick = runMarketplaceSearch;
+    function initMarketplace(){
+      $('mpChips').innerHTML='';
+      MP_CATEGORIES.forEach(c=>{
+        const b=document.createElement('button'); b.className='btn ghost'; b.type='button'; b.textContent=c.name;
+        b.onclick=()=> renderMarketplace(c.id, $('mpSearch').value.trim().toLowerCase());
+        $('mpChips').appendChild(b);
+      });
+      renderMarketplace();
+    }
+    function runMarketplaceSearch(){ renderMarketplace(null, $('mpSearch').value.trim().toLowerCase()); }
+    function renderMarketplace(category=null, query=''){
+      const grid=$('mpGrid'); grid.innerHTML='';
+      let list = MP_PRODUCTS.slice().concat(getUserProducts().map(p=>({ ...p, seller:user.name, phone:p.phone||'+', whatsapp:p.whatsapp||'+' })));
+      if (category) list = list.filter(p=>p.cat===category);
+      if (query) list = list.filter(p=>p.title.toLowerCase().includes(query)||p.cat.includes(query));
+      if (!list.length){ grid.innerHTML='<div class="small muted">No products found.</div>'; return; }
+      list.forEach(p=>{
+        const el=document.createElement('div'); el.className='card product';
+        el.innerHTML=`<img src="${p.img}" alt="${p.title}"/><div><strong>${p.title}</strong></div>
+          <div class="row" style="justify-content:space-between"><div class="price">$${Number(p.price).toFixed(2)}</div><div class="small muted">Seller: ${p.seller||'—'}</div></div>
+          <div class="row" style="gap:8px;margin-top:6px">
+            <button class="btn primary" type="button">💬 Chat</button>
+            <button class="btn ghost" type="button">📞 Call</button>
+            <button class="btn ghost" type="button">🟢 WhatsApp</button>
+          </div>`;
+        const [chatBtn, callBtn, waBtn] = el.querySelectorAll('button');
+        chatBtn.onclick = ()=> alert('In‑app chat coming soon.');
+        callBtn.onclick = ()=> location.href = `tel:${encodeURIComponent(p.phone||'')}`;
+        waBtn.onclick   = ()=> location.href = `https://wa.me/${encodeURIComponent((p.whatsapp||'').replace(/\D/g,''))}`;
+        grid.appendChild(el);
+      });
+    }
+
+    // Manage Products (user)
+    function getUserProducts(){ try { return JSON.parse(localStorage.getItem('zup_user_products')||'[]'); } catch { return []; } }
+    function setUserProducts(arr){ localStorage.setItem('zup_user_products', JSON.stringify(arr||[])); }
+    $('mpAdd').onclick = ()=>{
+      const cat=$('mpCatSelect').value, name=$('mpName').value.trim(), desc=$('mpDesc').value.trim(), price=Number($('mpPrice').value||0), stock=Number($('mpStock').value||0);
+      if (!name || !price || !stock) return alert('Fill name, price, stock');
+      const files=Array.from(($('mpImages').files||[])).slice(0,10);
+      const images=[]; if (!files.length){ save(); } else {
+        let left=files.length;
+        files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--left===0) save(); }; fr.readAsDataURL(f); });
+      }
+      function save(){
+        const ups=getUserProducts();
+        const id='u'+Date.now();
+        const img=images[0] || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop';
+        ups.push({ id, title:name, cat, price, stock, img, images, desc, user:true });
+        setUserProducts(ups);
+        loadProductsManage();
+        alert('Product added');
+      }
+    };
+    function loadProductsManage(){
+      const box=$('mpManageList'); box.innerHTML='';
+      const ups=getUserProducts();
+      if (!ups.length){ box.innerHTML='<div class="small muted">No products yet.</div>'; return; }
+      ups.forEach(p=>{
+        const imgs=(p.images||[]).map(src=>`<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+        const el=document.createElement('div'); el.className='card';
+        el.innerHTML=`<div class="list">
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div>
+              <div><strong>${p.title}</strong> <span class="small muted">[${p.cat}]</span></div>
+              <div class="small muted">${p.desc||''}</div>
+              <div class="small"><strong>Price:</strong> $${Number(p.price).toFixed(2)} • <strong>Stock:</strong> ${p.stock}</div>
+            </div>
+            <div class="row" style="gap:6px"><button class="btn ghost" data-k="del" data-id="${p.id}">Delete</button></div>
+          </div>
+          <div class="row" style="gap:6px;flex-wrap:wrap">${imgs||'<span class="small muted">No images</span>'}</div>
+        </div>`;
+        box.appendChild(el);
+      });
+      box.querySelectorAll('button[data-k="del"]').forEach(b=> b.onclick=()=>{ const id=b.dataset.id; const arr=getUserProducts().filter(x=>x.id!==id); setUserProducts(arr); loadProductsManage(); });
+    }
+
+    // Manage Services (user)
+    function getUserServices(){ try { return JSON.parse(localStorage.getItem('zup_user_services')||'[]'); } catch { return []; } }
+    function setUserServices(arr){ localStorage.setItem('zup_user_services', JSON.stringify(arr||[])); }
+    $('msAdd').onclick = ()=>{
+      const cat=$('msCategory').value, type=$('msType').value.trim(), details=$('msDetails').value.trim(), price=Number($('msPrice').value||0);
+      if (!type || !details || !price) return alert('Fill category, type, details, price');
+      const id='svc-'+Date.now();
+      const files=Array.from(($('msImages').files||[])).slice(0,4), images=[];
+      if (!files.length) save(); else {
+        let pending=files.length;
+        files.forEach(f=>{ const fr=new FileReader(); fr.onload=()=>{ images.push(fr.result); if(--pending===0) save(); }; fr.readAsDataURL(f); });
+      }
+      function save(){
+        const services=getUserServices();
+        services.push({ id, cat, type, details, price, images, publicName:user.name, status:'available' });
+        setUserServices(services);
+        loadServicesManage(); alert('Service added');
+      }
+    };
+    function loadServicesManage(){
+      const list=$('msList'); list.innerHTML='';
+      const services=getUserServices();
+      if (!services.length){ list.innerHTML='<div class="small muted">No services yet.</div>'; return; }
+      services.forEach(s=>{
+        const el=document.createElement('div'); el.className='card';
+        const imgs = (s.images||[]).map(src=>`<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>`).join('');
+        el.innerHTML=`<div class="list">
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div>
+              <div><strong>${s.type}</strong> <span class="small muted">[${s.cat}]</span></div>
+              <div class="small muted">${s.details}</div>
+              <div class="small"><strong>Price:</strong> $${Number(s.price).toFixed(2)} • <strong>By:</strong> ${s.publicName}</div>
+            </div>
+            <div class="row" style="gap:6px">
+              <button class="btn ghost" data-k="track" data-id="${s.id}">Track</button>
+              <button class="btn ghost" data-k="cancel" data-id="${s.id}">Cancel</button>
+            </div>
+          </div>
+          <div class="row" style="gap:6px;flex-wrap:wrap">${imgs||'<span class="small muted">No catalog images</span>'}</div>
+        </div>`;
+        list.appendChild(el);
+      });
+      list.querySelectorAll('button[data-k="track"]').forEach(b=> b.onclick=()=> openTrackingPending());
+      list.querySelectorAll('button[data-k="cancel"]').forEach(b=> b.onclick=()=> openCancelReasons());
+    }
+
+    function wireProfilePages(){
+      $('manageServicesBtn').onclick   = ()=>{ showPage('manage-services'); loadServicesManage(); };
+      $('manageProductsBtn').onclick   = ()=>{ showPage('manage-products'); loadProductsManage(); };
+      $('emergencyContactsBtn').onclick= ()=>{ showPage('emergency-contacts'); loadContactsForm(); };
+      $('providerVerifyBtn').onclick   = ()=>{ showPage('verify-provider'); };
+      $('vpSubmit').onclick = ()=>{ $('vpStatus').textContent='Submitted. Awaiting admin review.'; };
+      $('confirmClose').onclick = ()=> $('confirmDeliveryModal').classList.remove('open');
+      $('lastOrderClose').onclick = ()=> $('lastOrderModal').classList.remove('open');
+    }
+
+    // Emergency contacts
+    function loadContactsForm(){
+      const wrap=$('ecForm'); wrap.innerHTML='';
+      const saved=loadContacts();
+      for (let i=0;i<5;i++){
+        const row=document.createElement('div'); row.className='grid-2';
+        row.innerHTML=`<div class="field"><label class="small">Name ${i+1}</label><input id="ecName${i}" value="${saved[i]?.name||''}"/></div>
+                       <div class="field"><label class="small">Phone ${i+1}</label><input id="ecPhone${i}" value="${saved[i]?.phone||''}"/></div>`;
+        wrap.appendChild(row);
+      }
+    }
+    function loadContacts(){ try { return JSON.parse(localStorage.getItem('zup_contacts')||'[]'); } catch { return []; } }
+    function saveContacts(){
+      const arr=[]; for(let i=0;i<5;i++){ const name=$('ecName'+i).value.trim(), phone=$('ecPhone'+i).value.trim(); if (name||phone) arr.push({name,phone}); }
+      localStorage.setItem('zup_contacts', JSON.stringify(arr)); alert('Contacts saved');
+    }
+    $('ecSave').onclick = saveContacts;
+
+    // Support stub
+    function wireSupport(){}
+
+    // Food flow
+    function openFoodOptions(){ $('foodOptionsModal').classList.add('open'); }
+    $('closeFoodOptions').onclick = ()=> $('foodOptionsModal').classList.remove('open');
+    $('foodFastBtn').onclick = ()=>{ $('foodOptionsModal').classList.remove('open'); openFoodVendorsFiltered('fastfood'); };
+    $('foodGroceryBtn').onclick = ()=>{ $('foodOptionsModal').classList.remove('open'); openFoodVendorsFiltered('grocery'); };
+    $('foodSearchBtn').onclick = ()=>{
+      const q = ( $('foodSearch')?.value || '' ).toLowerCase().trim();
+      $('foodOptionsModal').classList.remove('open');
+      openFoodVendorsSearch(q);
+    };
+
+    function wireFoodFlow(){
+      $('closeFoodVendors').onclick = ()=> $('foodVendorsModal').classList.remove('open');
+      $('closeFoodMenu').onclick = ()=> $('foodMenuModal').classList.remove('open');
+      $('foodCheckoutBtn').onclick = ()=> openCheckout();
+    }
+    function openFoodVendorsFiltered(kind){
+      renderVendorsList((VENDORS||[]).filter(v=>v.kind===kind));
+    }
+    function openFoodVendorsSearch(q){
+      const inVendors = VENDORS.filter(v=>v.name.toLowerCase().includes(q));
+      const inMenusVendorIds = Object.keys(MENUS).filter(vid => (MENUS[vid]||[]).some(m=>m.title.toLowerCase().includes(q)));
+      const keep = new Set(inVendors.map(v=>v.id).concat(inMenusVendorIds));
+      renderVendorsList(VENDORS.filter(v=>keep.has(v.id)));
+    }
+    function openFoodVendors(){
+      renderVendorsList(VENDORS);
+    }
+    function renderVendorsList(list){
+      const box=$('foodVendorsList'); box.innerHTML='';
+      list.forEach(v=>{
+        const el=document.createElement('div'); el.className='card';
+        el.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div><div><strong>${v.name}</strong></div><div class="small muted">${v.kind==='fastfood'?'Fast food':'Grocery'} • Payments: ${v.payment.join(', ')}</div></div>
+          <div class="row" style="gap:6px"><button class="btn primary" data-k="menu">View Menu</button><button class="btn ghost" data-k="call">📞</button><button class="btn ghost" data-k="wa">🟢</button></div>
+        </div>`;
+        el.querySelector('[data-k="menu"]').onclick = ()=> openFoodMenu(v);
+        el.querySelector('[data-k="call"]').onclick = ()=> location.href=`tel:${encodeURIComponent(v.phone||'')}`;
+        el.querySelector('[data-k="wa"]').onclick   = ()=> location.href=`https://wa.me/${encodeURIComponent((v.whatsapp||'').replace(/\D/g,''))}`;
+        box.appendChild(el);
+      });
+      $('foodVendorsTitle').textContent='Food Vendors';
+      $('foodVendorsModal').classList.add('open');
+    }
+    function openFoodMenu(vendor){
+      if (cart.vendorId && cart.vendorId !== vendor.id) {
+        if (!confirm(`Your cart has items from ${cart.vendorName}. Clear cart to order from ${vendor.name}?`)) return;
+        resetCart();
+      }
+      if (!cart.vendorId){ cart.vendorId=vendor.id; cart.vendorName=vendor.name; cart.vendorPayment=vendor.payment.slice(); saveCart(); }
+      $('foodVendorsModal').classList.remove('open');
+      $('foodMenuTitle').textContent = `${vendor.name} — Menu`;
+      const list=$('foodMenuList'); list.innerHTML='';
+      const menu = MENUS[vendor.id] || [];
+      menu.forEach(m=>{
+        const row=document.createElement('div'); row.className='card';
+        row.innerHTML = `<div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div class="row"><img src="${m.img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/><div style="margin-left:8px"><strong>${m.title}</strong><div class="small muted">$${m.price.toFixed(2)}</div></div></div>
+          <div class="row" style="gap:6px"><button class="btn primary" data-k="add">＋ Add</button></div>
+        </div>`;
+        row.querySelector('[data-k="add"]').onclick = ()=>{
+          const i=cart.items.findIndex(x=>x.id===m.id);
+          if (i>=0) cart.items[i].qty+=1; else cart.items.push({ id:m.id, title:m.title, price:m.price, img:m.img, qty:1 });
+          saveCart(); syncFoodTotals(); window.updateBellBadge && updateBellBadge();
+        };
+        list.appendChild(row);
+      });
+      syncFoodTotals();
+      $('foodMenuModal').classList.add('open');
+    }
+    function syncFoodTotals(){
+      const total=cart.items.reduce((a,b)=>a+b.price*b.qty,0);
+      $('foodCartTotal').textContent=total.toFixed(2);
+    }
+
+    // Cart modal (Food/Grocery)
+    function renderCart(){
+      const list=$('cartList'); const totalEl=$('cartTotal'); list.innerHTML='';
+      if(!cart.items.length){ list.innerHTML='<div class="small muted">Your cart is empty.</div>'; totalEl.textContent='0.00'; return; }
+      let total=0;
+      cart.items.forEach(item=>{
+        total+=item.price*item.qty;
+        const row=document.createElement('div'); row.className='card'; row.dataset.id=item.id;
+        row.innerHTML = `<div class="row" style="justify-content:space-between; align-items:flex-start">
+          <div class="row"><img src="${item.img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/><div style="margin-left:8px"><strong>${item.title}</strong><div class="small muted">$${item.price.toFixed(2)}</div><div class="small muted">Vendor: ${cart.vendorName||'-'}</div></div></div>
+          <div class="row" style="gap:6px; align-items:center">
+            <button class="btn ghost" data-k="dec" type="button">−</button>
+            <div>${item.qty}</div>
+            <button class="btn ghost" data-k="inc" type="button">＋</button>
+            <button class="btn ghost" data-k="rm"  type="button">✖</button>
+          </div>
+        </div>`;
+        list.appendChild(row);
+      });
+      totalEl.textContent=total.toFixed(2);
+
+      list.onclick = (e)=>{
+        const btn=e.target.closest('[data-k]'); if(!btn) return;
+        const id=btn.closest('.card')?.dataset?.id; const k=btn.getAttribute('data-k');
+        const i=cart.items.findIndex(x=>x.id===id); if (i<0) return;
+        if (k==='dec') cart.items[i].qty=Math.max(1,cart.items[i].qty-1);
+        if (k==='inc') cart.items[i].qty=cart.items[i].qty+1;
+        if (k==='rm')  cart.items.splice(i,1);
+        if (!cart.items.length) { resetCart(); } else saveCart();
+        renderCart(); window.updateBellBadge && updateBellBadge();
+      };
+    }
+
+    // Checkout open
+    function openCheckout(){
+      if (!cart.items.length) { alert('Your cart is empty.'); return; }
+      const wrap=$('chkItemsList'); wrap.innerHTML='';
+      cart.items.forEach(it=>{
+        const row=document.createElement('div'); row.className='card'; row.dataset.id=it.id;
+        row.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div class="row"><img src="${it.img||''}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/><div style="margin-left:8px"><strong>${it.title}</strong><div class="small muted">$${it.price.toFixed(2)}</div></div></div>
+          <div class="row"><button class="btn ghost" data-k="dec">−</button><div>${it.qty}</div><button class="btn ghost" data-k="inc">＋</button><button class="btn ghost" data-k="rm">✖</button></div>
+        </div>`;
+        wrap.appendChild(row);
+      });
+      wrap.onclick=(e)=>{
+        const b=e.target.closest('[data-k]'); if(!b) return;
+        const id=b.closest('.card')?.dataset?.id; const k=b.getAttribute('data-k');
+        const i=cart.items.findIndex(x=>x.id===id); if(i<0) return;
+        if (k==='dec') cart.items[i].qty=Math.max(1,cart.items[i].qty-1);
+        if (k==='inc') cart.items[i].qty=cart.items[i].qty+1;
+        if (k==='rm')  cart.items.splice(i,1);
+        if (!cart.items.length) { resetCart(); $('checkoutModal').classList.remove('open'); return; }
+        saveCart(); openCheckout();
+      };
+      $('vendorPayHint').textContent = `Vendor accepts: ${cart.vendorPayment.join(', ') || '—'}`;
+      $('checkoutModal').classList.add('open');
+    }
+
+    // Place order
+    $('placeOrderBtn').onclick = async ()=>{
+      const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+      const name=$('chkName').value.trim(), phone=$('chkPhone').value.trim(), address=$('chkAddress').value.trim(), unit=($('chkUnit').value||'').trim(), notes=($('chkNotes').value||'').trim();
+      if (!cart.items.length) return alert('Cart is empty');
+      if (!$('chkTerms').checked) return alert('Please accept the Terms');
+      if (!address) return alert('Enter delivery address');
+      if (!name||!phone) return alert('Enter name and phone');
+
+      if (cart.vendorPayment.length && !cart.vendorPayment.includes(method)) {
+        return alert(`This vendor does not accept ${method.toUpperCase()} payment. Allowed: ${cart.vendorPayment.join(', ')}`);
+      }
+
+      const payload = {
+        vendorId: cart.vendorId, vendorName: cart.vendorName,
+        items: cart.items.map(i=>({id:i.id,title:i.title,qty:i.qty,price:i.price})),
+        name, phone, address, unit, notes, category:'food'
+      };
+
+      if (method==='card'){
+        try{
+          const r=await fetch(`${BASE_API}/api/payments/checkout-session`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,successUrl:location.origin+'/?checkout=success',cancelUrl:location.origin+'/?checkout=cancel'})});
+          const d=await r.json().catch(()=>({}));
+          if (d?.url){ saveLastOrder({ orderId: d.orderId||('ord-'+Date.now()), code: d.deliveryCode||genCode(), status:'pending', vendorName: cart.vendorName }); resetCart(); window.updateBellBadge&&updateBellBadge(); return location.href=d.url; }
+          if ((d?.id||d?.sessionId) && window.Stripe){ const stripe=window.Stripe(STRIPE_PK); saveLastOrder({ orderId: d.orderId||('ord-'+Date.now()), code: d.deliveryCode||genCode(), status:'pending', vendorName: cart.vendorName }); resetCart(); window.updateBellBadge&&updateBellBadge(); await stripe.redirectToCheckout({sessionId: d.id||d.sessionId}); return; }
+          alert('Payment session error. Try Cash.');
+        }catch{ alert('Payment session error. Try Cash.'); }
+      } else {
+        let orderId='ord-'+Date.now(), code=genCode();
+        try{
+          const r2=await fetch(`${BASE_API}/api/marketplace/orders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,paymentMethod:'cash'})});
+          const d2=await r2.json().catch(()=>({})); orderId=d2.orderId||orderId; code=d2.deliveryCode||code;
+        }catch{}
+        $('checkoutModal').classList.remove('open');
+        showOrderStatus(orderId, code, 'cash', cart.vendorName);
+        saveLastOrder({ orderId, code, status:'pending', vendorName: cart.vendorName });
+        resetCart(); window.updateBellBadge&&updateBellBadge();
+      }
+    };
+    function genCode(){ return String(Math.floor(100000+Math.random()*900000)); }
+    function showOrderStatus(orderId, code, method, vendorName){
+      $('orderInfo').innerHTML = `<div class="card">
+        <div><strong>Order ID:</strong> ${orderId}</div>
+        <div style="margin-top:6px"><strong>Status:</strong> <span id="ordStatus">pending</span></div>
+        <div style="margin-top:6px"><strong>Delivery code:</strong> <span style="font-family:monospace">${code}</span></div>
+        <div class="small muted" style="margin-top:6px">Please don't share this code with the seller until your goods are delivered and confirmed.</div>
+        <div class="small muted" style="margin-top:6px">${method==='card'?'Funds are held until code entry.':'Cash selected: code marks delivered.'}</div>
+        <div class="small muted" style="margin-top:6px">Vendor: ${vendorName||'-'}</div>
+      </div>`;
+      $('orderModal').classList.add('open');
+      const ord=$('ordStatus'); let t=0; const poll=setInterval(async()=>{ t+=3; let s; try{ const r=await fetch(`${BASE_API}/api/marketplace/orders/${encodeURIComponent(orderId)}`); const d=await r.json().catch(()=>({})); s=d.status; }catch{ if (t>=6&&t<12) s='accepted'; else if (t>=12&&t<18) s='out_for_delivery'; else if (t>=18) s='delivered'; else s='pending'; } ord.textContent=s||'pending'; if (s==='delivered'||t>=24) clearInterval(poll); },3000);
+    }
+
+    // Orders
+    function saveLastOrder(o){ localStorage.setItem('zup_last_order', JSON.stringify(o||{})); addOrderRecord(o); }
+    function getLastOrder(){ try{ return JSON.parse(localStorage.getItem('zup_last_order')||'{}'); }catch{return{}} }
+    function addOrderRecord(o){
+      try{
+        const me = auth.currentUser?.email || 'me';
+        const all = JSON.parse(localStorage.getItem('zup_orders')||'[]');
+        all.push({ ...o, buyer: me, seller: o.vendorName||'Vendor', ts: Date.now() });
+        localStorage.setItem('zup_orders', JSON.stringify(all));
+      }catch{}
+    }
+    function loadOrders(){ try{ return JSON.parse(localStorage.getItem('zup_orders')||'[]'); }catch{return[]} }
+    function renderOrders(){
+      const me = auth.currentUser?.email || 'me';
+      const all = loadOrders();
+      const buyerList = all.filter(x=>x.buyer===me);
+      const sellerList = all.filter(x=>x.seller && x.seller!==me);
+
+      const buyerBox=$('buyerOrders'); buyerBox.innerHTML='';
+      if (!buyerList.length) buyerBox.innerHTML='<div class="small muted">No orders.</div>';
+      buyerList.forEach(o=>{
+        const row=document.createElement('div'); row.className='card';
+        row.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div><div><strong>${o.vendorName||'Vendor'}</strong> • <span class="small muted">Order: ${o.orderId||'-'}</span></div>
+          <div class="small">Code: <span style="font-family:monospace">${o.code||'-'}</span></div>
+          <div class="small muted">${new Date(o.ts||Date.now()).toLocaleString()}</div></div>
+          <div class="row" style="gap:6px">
+            <button class="btn ghost" data-k="view">View</button>
+          </div>
+        </div>`;
+        row.querySelector('[data-k="view"]').onclick = ()=>{
+          const box=$('lastOrderInfo');
+          box.innerHTML = `<div><strong>Order ID:</strong> ${o.orderId||'-'}</div><div><strong>Delivery code:</strong> <span style="font-family:monospace">${o.code||'-'}</span></div><div class="small muted" style="margin-top:6px">Please don't share this code with the seller until your goods are delivered and confirmed.</div>`;
+          $('lastOrderModal').classList.add('open');
+        };
+        buyerBox.appendChild(row);
+      });
+
+      const sellerBox=$('sellerOrders'); sellerBox.innerHTML='';
+      if (!sellerList.length) sellerBox.innerHTML='<div class="small muted">No orders for seller.</div>';
+      sellerList.forEach(o=>{
+        const row=document.createElement('div'); row.className='card';
+        row.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div><div><strong>Order:</strong> ${o.orderId||'-'}</div><div class="small muted">${new Date(o.ts||Date.now()).toLocaleString()}</div></div>
+          <div class="row" style="gap:6px"><button class="btn primary" data-k="confirm">Confirm Delivery</button></div>
+        </div>`;
+        row.querySelector('[data-k="confirm"]').onclick = ()=> $('confirmDeliveryModal').classList.add('open');
+        sellerBox.appendChild(row);
+      });
+
+      $('confirmSubmit').onclick = ()=>{
+        const code=($('confirmCode').value||'').trim();
+        if (!code) return alert('Enter the code');
+        const last=getLastOrder();
+        if (String(last.code||'') === code) {
+          localStorage.setItem('zup_last_order', JSON.stringify({ ...last, status:'delivered', code:null }));
+          $('confirmStatus').textContent='Delivery confirmed. Payment will be released.';
+          setTimeout(()=>{ $('confirmDeliveryModal').classList.remove('open'); }, 800);
+        } else {
+          $('confirmStatus').textContent='Incorrect code.';
+        }
+      };
+      $('sendCodeSMS').onclick = ()=>{
+        const last=getLastOrder(); if (!last?.code) return alert('No code found.');
+        const phone = prompt('Enter phone number to send the code to:'); if (!phone) return;
+        const msg = `ZippUp code for Order ${last.orderId||''}: ${last.code}. Do NOT share until delivered.`;
+        location.href = `sms:${encodeURIComponent(phone)}?body=${encodeURIComponent(msg)}`;
+      };
+    }
+
+    // Auth gate branding + handlers
+    function setUserUI(u){ const name=(u?.displayName || u?.email || 'Guest'); user.name=name; $('userName').textContent=name; $('profName').textContent=name; document.getElementById('authGate')?.remove(); }
+    function ensureGate(){
+      let gate=document.getElementById('authGate');
+      if (!gate) {
+        gate=document.createElement('div');
+        gate.id='authGate';
+        gate.style.cssText='position:fixed;inset:0;background:#fff;z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+        gate.innerHTML=`
+          <div style="width:100%;max-width:420px;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 8px 24px rgba(17,24,39,.08);padding:16px;background:#fff">
+            <div class="list">
+              <div style="text-align:center;margin-bottom:10px">
+                <div style="font-weight:800;font-size:18px">ZippUp, speed up ur hustle my Gee</div>
+                <div style="font-size:13px;color:#475569;margin-top:4px">One stop to your OnDemand services.</div>
+              </div>
+              <div class="field"><label class="small">Email</label><input id="lgEmail" type="email"/></div>
+              <div class="field"><label class="small">Password</label><input id="lgPassword" type="password"/></div>
+              <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px">
+                <button class="btn primary" id="lgSignIn" type="button">Sign in</button>
+                <button class="btn ghost" id="lgSignUp" type="button">Sign up</button>
+                <button class="btn ghost" id="lgGoogle" type="button">Google</button>
+              </div>
+              <div class="small" style="text-align:center;margin-top:10px">Forgot password? <a href="#" id="lgReset">Reset</a></div>
+            </div>
+          </div>`;
+        document.body.appendChild(gate);
+      }
+      gate.style.display='flex';
+      wireGateHandlers();
+    }
+    function wireGateHandlers(){
+      const e=$('lgEmail'), p=$('lgPassword'), si=$('lgSignIn'), su=$('lgSignUp'), gg=$('lgGoogle'), rs=$('lgReset');
+      if (si && !si.dataset.bound){ si.dataset.bound='1'; si.onclick=async()=>{ const email=e.value.trim(), pw=p.value.trim(); if(!email||!pw) return alert('Enter email and password'); try{ await auth.signInWithEmailAndPassword(email,pw); }catch(err){ alert(err.message||'Sign in failed'); } }; }
+      if (su && !su.dataset.bound){ su.dataset.bound='1'; su.onclick=async()=>{ const email=e.value.trim(), pw=p.value.trim(); if(!email||!pw) return alert('Enter email and password'); try{ await auth.createUserWithEmailAndPassword(email,pw); alert('Account created. Check your email to verify.'); }catch(err){ alert(err.message||'Sign up failed'); } }; }
+      if (gg && !gg.dataset.bound){ gg.dataset.bound='1'; gg.onclick=async()=>{ try{ await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }catch(err){ alert(err.message||'Google sign in failed'); } }; }
+      if (rs && !rs.dataset.bound){ rs.dataset.bound='1'; rs.onclick=async(ev)=>{ ev.preventDefault(); const email=e.value.trim(); if(!email) return alert('Enter your email'); try{ await auth.sendPasswordResetEmail(email); alert('Password reset email sent'); }catch(err){ alert(err.message||'Reset failed'); } }; }
+    }
+    auth.onAuthStateChanged((u)=>{ if (u) setUserUI(u); else ensureGate(); });
+
+    // Profile edit
+    function updateProfileUI(){
+      $('userName').textContent=(user?.name||'Guest');
+      $('profName').textContent=(user?.name||'Demo User');
+      const saved=localStorage.getItem('zup_profile_photo');
+      if (saved) { const av=$('user-avatar'); av.style.backgroundImage=`url("${saved}")`; av.style.backgroundSize='cover'; av.style.backgroundPosition='center'; av.textContent=''; }
+    }
+    $('editProfileBtn').onclick = ()=>{
+      let m=$('profileEditModal');
+      if (!m) {
+        m=document.createElement('div'); m.id='profileEditModal'; m.className='modal open';
+        m.innerHTML=`
+          <div class="sheet">
+            <div class="head"><strong>Edit Profile</strong><button class="btn ghost" id="peClose" type="button">✖</button></div>
+            <div class="body">
+              <div class="list">
+                <div class="field"><label class="small">Public name</label><input id="peName" value="${(user?.name||'')}" /></div>
+                <div class="field"><label class="small">Photo</label><input id="pePhoto" type="file" accept="image/*"/></div>
+                <button class="btn primary" id="peSave" type="button">Save</button>
+              </div>
+            </div>
+          </div>`;
+        document.body.appendChild(m);
+        m.addEventListener('click',(e)=>{ if(e.target===m) m.classList.remove('open'); });
+        $('peClose').onclick=()=> m.classList.remove('open');
+        $('peSave').onclick=()=>{
+          const name=$('peName').value.trim(); if (name) user.name=name;
+          const f=$('pePhoto').files?.[0];
+          if (f) {
+            const fr=new FileReader();
+            fr.onload=()=>{ localStorage.setItem('zup_profile_photo', fr.result); updateProfileUI(); m.classList.remove('open'); };
+            fr.readAsDataURL(f);
+          } else { updateProfileUI(); m.classList.remove('open'); }
+        };
+      } else m.classList.add('open');
+    };
+
+    // Booking: Use current
+    $('bkUseCurrent').onclick = async ()=>{
+      try {
+        if (!coords) await initLocation();
+        if (coords) { const name = await reverseGeocode(coords.lat, coords.lng); $('bkAddress').value = name || ''; }
+      } catch {}
+    };
   </script>
+  <script>
+(function cancelFix(){
+  const $=id=>document.getElementById(id);
+  function closeAll(){ ['cancelReasonsModal','instantModal','trackModal','providersModal'].forEach(id=>$(id)?.classList.remove('open')); }
+  function doCancel(reason){
+    try{ if (window.requestId && window.BASE_API) fetch(`${BASE_API}/api/requests/${encodeURIComponent(window.requestId)}?reason=${encodeURIComponent(reason||'User cancelled')}`,{method:'DELETE'});}catch{}
+    try{ if (window.stopInstant) window.stopInstant(); }catch{}
+    try{ if (window.trackPoll){ clearInterval(window.trackPoll); window.trackPoll=null; } }catch{}
+    window.requestId=null; closeAll();
+    try{ if (typeof showPage==='function') showPage('services'); }catch{}
+    alert('Request cancelled');
+  }
+  const ensureReasons=()=>{
+    const m=$('cancelReasonsModal'); if (!m) return;
+    const list=$('crList'); if (!list) return;
+    if (!list.children.length){
+      ['Changed my mind','Wait is too long','Found another provider','Wrong service','Other'].forEach((r,i)=>{ const row=document.createElement('label'); row.className='row'; row.innerHTML=`<input type="radio" name="cr" value="${r}" ${i===0?'checked':''}/> <span>${r}</span>`; list.appendChild(row); });
+      const other=document.createElement('input'); other.id='crOther'; other.placeholder='If Other, describe…'; other.style.cssText='width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:6px'; list.appendChild(other);
+    }
+    $('crClose')&&($('crClose').onclick=()=>m.classList.remove('open'));
+    $('crBack') &&($('crBack').onclick =()=>m.classList.remove('open'));
+    $('crConfirm')&&($('crConfirm').onclick=()=>{ const picked=document.querySelector('input[name="cr"]:checked')?.value||'Other'; const other=$('crOther')?.value?.trim(); doCancel(picked==='Other'?(other||'Other'):picked); });
+  };
+  const openReasons=()=>{ const m=$('cancelReasonsModal'); if (m){ ensureReasons(); m.classList.add('open'); } else doCancel('User cancelled'); };
+  const ci=$('cancelInstant'); if (ci) ci.onclick=(e)=>{ e.preventDefault(); openReasons(); };
+  const tcb=$('trackCancelBtn'); if (tcb) tcb.onclick=(e)=>{ e.preventDefault(); openReasons(); };
+})();
+</script>
+  <script>
+(function backbars(){
+  document.querySelectorAll('.page').forEach(p=>{
+    if (p.id==='page-home' || p.querySelector('.backbar')) return;
+    const bar=document.createElement('div'); bar.className='backbar';
+    bar.innerHTML='<button class="backbtn" type="button">← Back</button><strong style="margin-left:8px">'+(p.querySelector('.title')?.textContent||p.id.replace('page-',''))+'</strong>';
+    p.insertBefore(bar, p.firstChild);
+    bar.querySelector('.backbtn').onclick=()=> (history.length>1?history.back():document.querySelector('.nav button[data-page="home"]')?.click());
+  });
+})();
+</script>
 </body>
 </html>
