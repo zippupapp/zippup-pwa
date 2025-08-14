@@ -2529,5 +2529,190 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
   setInterval(()=>{ renderTaxi(); renderElec(); renderMP(); renderFood(); }, 10000);
 })();
 </script>
+  <script>
+/* Replace the previous promos builder with this one (better routing) */
+(function promosDynamicRouted(){
+  const $=s=>document.querySelector(s);
+  const money=n=>`$${(+n||0).toFixed(2)}`;
+
+  // Remove old board
+  document.getElementById('promoBoard')?.remove();
+
+  // Insert under Emergency section
+  const home=$('#page-home'); if(!home) return;
+  const sections=[...home.querySelectorAll('.section')];
+  const emergency = sections.find(sec=> sec.querySelector('.title')?.textContent.trim().toLowerCase()==='emergency');
+  const wrap=document.createElement('section'); wrap.className='section'; wrap.id='promoBoard';
+  (emergency? emergency.insertAdjacentElement('afterend', wrap) : home.appendChild(wrap));
+
+  // Helpers
+  function sec(title){ const c=document.createElement('div'); c.className='promoSec'; c.innerHTML=`<div class="sectionTitle">${title}</div><div class="promoRow"></div>`; wrap.appendChild(c); return c.querySelector('.promoRow'); }
+  function card({img, title, sub, click, emoji}){
+    const d=document.createElement('div'); d.className='promoMini'; d.onclick=click;
+    d.innerHTML = `<div class="thumb">${img? `<img src="${img}" style="height:110px;width:100%;object-fit:cover;border:0">` : (emoji||'')}</div>
+                   <div class="content"><div class="title">${title||''}</div>${sub? `<div class="sub">${sub}</div>`:''}</div>`;
+    return d;
+  }
+  function pick(arr, n=4){ const a=arr.slice(); const out=[]; while(a.length && out.length<n){ out.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); } return out; }
+
+  // Data sources (use what you already have on page)
+  const VENDORS = (window.VENDORS || []);
+  const MENUS   = (window.MENUS   || {});
+  const MP      = (window.MP_PRODUCTS||[]).concat((()=>{ try{return JSON.parse(localStorage.getItem('zup_user_products')||'[]')}catch{return[]} })());
+
+  // Flatten menu with vendor reference (for reliable routing)
+  const MENUS_FLAT = (function(){
+    const out=[];
+    Object.keys(MENUS).forEach(vid=>{
+      const vendor = VENDORS.find(v=>v.id===vid);
+      (MENUS[vid]||[]).forEach(m=> out.push({ ...m, vendorId: vid, vendor }));
+    });
+    return out;
+  })();
+
+  // Routing helpers (go straight to the right UI)
+  function goTransport(kind){
+    if (window.openTransportProviders) openTransportProviders(kind, kind==='taxi'?'Ride / Taxi':'Truck / Backie');
+    else document.getElementById('transportOptionsModal')?.classList.add('open');
+  }
+  function goFoodMenuByVendor(vendor){
+    if (vendor && window.openFoodMenu) { openFoodMenu(vendor); return; }
+    // fallback: open options, then vendors, then first vendor
+    const m=document.getElementById('foodOptionsModal'); if(m){ m.classList.add('open'); }
+    setTimeout(()=>{ if (window.openFoodVendors) openFoodVendors('fastfood'); }, 150);
+    setTimeout(()=>{ const v = VENDORS[0]; if (v && window.openFoodMenu) openFoodMenu(v); }, 350);
+  }
+  function goProvidersFiltered(cat, list){
+    if (window.renderProviders) {
+      document.getElementById('provSearchRow').style.display='';
+      document.getElementById('providersTitle').textContent = 'Providers — Suggested';
+      renderProviders(list, cat);
+      document.getElementById('providersModal')?.classList.add('open');
+    } else if (window.openCategory) {
+      openCategory(cat, cat);
+    }
+  }
+  function goMarketplaceTo(title){
+    if (window.showPage) showPage('marketplace');
+    const s=document.getElementById('mpSearch'); if (s) s.value=title||'';
+    document.getElementById('mpSearchBtn')?.click();
+  }
+
+  // Sections
+
+  // 1) High‑rated taxi drivers around you (dynamic-ish demo)
+  const rowTaxi = sec('High‑rated taxi drivers around you');
+  (function renderTaxi(){
+    rowTaxi.innerHTML='';
+    const drivers = [
+      { name:'Taxi • Alex', eta:'3‑5m' }, { name:'Taxi • Sam', eta:'4‑6m' },
+      { name:'Taxi • Zoe', eta:'5‑7m' },  { name:'Taxi • Ray', eta:'6‑9m' },
+      { name:'Taxi • Neo', eta:'7‑10m' }
+    ];
+    pick(drivers,4).forEach(d=>{
+      rowTaxi.appendChild(card({
+        emoji:'🚖', title:d.name, sub:`ETA ${d.eta}`,
+        click:()=> goTransport('taxi')
+      }));
+    });
+  })();
+
+  // 2) Reliable electricians around you (provider cards)
+  const rowElec = sec('Reliable electricians around you');
+  (function renderElec(){
+    rowElec.innerHTML='';
+    // Use your providers list if available; else demo
+    const base = (window.dummyProviders? window.dummyProviders('construction'):[]).map(p=>({...p, jobTitle:'Electrician'}));
+    const fallback = [
+      { publicName:'Pro Spark', jobTitle:'Electrician', eta:'6‑9m' },
+      { publicName:'Wired Fix', jobTitle:'Electrician', eta:'8‑12m' },
+      { publicName:'Volt Crew', jobTitle:'Electrician', eta:'5‑8m' },
+      { publicName:'Quick Electrix', jobTitle:'Electrician', eta:'7‑10m' }
+    ];
+    pick(base.length?base:fallback,4).forEach(p=>{
+      rowElec.appendChild(card({
+        emoji:'🔌',
+        title:p.publicName||'Electrician',
+        sub:`${p.jobTitle||'Electrician'} • ETA ${p.eta||'—'}`,
+        click:()=> goProvidersFiltered('construction', base.length?base:fallback)
+      }));
+    });
+  })();
+
+  // 3) Best sellers at Marketplace (product cards)
+  const rowMP = sec('Best sellers at Marketplace');
+  (function renderMP(){
+    rowMP.innerHTML='';
+    const pool = MP.length? MP : [
+      {title:'Smartphone', price:499, img:''},
+      {title:'Sneakers', price:79, img:''},
+      {title:'Tool set', price:39, img:''},
+      {title:'Headphones', price:59, img:''},
+    ];
+    pick(pool,4).forEach(p=>{
+      rowMP.appendChild(card({
+        img:p.img, emoji:p.img?'':'🛍️',
+        title:p.title, sub:(p.price!=null? money(p.price):''),
+        click:()=> goMarketplaceTo(p.title)
+      }));
+    });
+  })();
+
+  // 4) Finger‑licking bites from nearby vendors (menu items -> vendor menu)
+  const rowFood = sec('Finger‑licking bites from nearby vendors');
+  (function renderFood(){
+    rowFood.innerHTML='';
+    const pool = MENUS_FLAT.length? MENUS_FLAT : [
+      {title:'Burger', price:8.5, vendor: (VENDORS[0]||null), img:''},
+      {title:'Pizza',  price:12,  vendor: (VENDORS[1]||null), img:''},
+      {title:'Fries',  price:3,   vendor: (VENDORS[0]||null), img:''},
+      {title:'Salad',  price:6,   vendor: (VENDORS[2]||null), img:''},
+    ];
+    pick(pool,4).forEach(m=>{
+      rowFood.appendChild(card({
+        img:m.img, emoji:m.img?'':'🍔',
+        title:m.title, sub: money(m.price),
+        click:()=> goFoodMenuByVendor(m.vendor || (VENDORS.find(v=>v.id===m.vendorId) || VENDORS[0] || null))
+      }));
+    });
+  })();
+
+  // 5) What you can do with ZippUp (navigational promos)
+  const rowZU = sec('What you can do with ZippUp');
+  [
+    {emoji:'🚗', t:'Book rides & trucks', click:()=> goTransport('taxi')},
+    {emoji:'🛠️', t:'Hire providers',     click:()=> goProvidersFiltered('home', (window.dummyProviders? window.dummyProviders('home'):[]))},
+    {emoji:'🛍️', t:'Buy & sell safely',  click:()=> goMarketplaceTo('')},
+    {emoji:'🍔', t:'Order food',          click:()=> document.getElementById('foodOptionsModal')?.classList.add('open') },
+  ].forEach(x=> rowZU.appendChild(card({emoji:x.emoji, title:x.t, click:x.click})));
+
+  // Auto-reshuffle provider/product pools every 12s (feels alive)
+  setInterval(()=>{ 
+    // rerender only data sections
+    while(rowTaxi.firstChild) rowTaxi.removeChild(rowTaxi.firstChild);
+    while(rowElec.firstChild) rowElec.removeChild(rowElec.firstChild);
+    while(rowMP.firstChild)   rowMP.removeChild(rowMP.firstChild);
+    while(rowFood.firstChild) rowFood.removeChild(rowFood.firstChild);
+    // re-run
+    const rePick = (r, pool, cb)=> pick(pool,4).forEach(x=> r.appendChild(cb(x)));
+    // taxi
+    (function(){ const drivers=[{name:'Taxi • Alex',eta:'3‑5m'},{name:'Taxi • Sam',eta:'4‑6m'},{name:'Taxi • Zoe',eta:'5‑7m'},{name:'Taxi • Ray',eta:'6‑9m'},{name:'Taxi • Neo',eta:'7‑10m'}];
+      rePick(rowTaxi, drivers, d=> card({emoji:'🚖', title:d.name, sub:`ETA ${d.eta}`, click:()=>goTransport('taxi')})); })();
+    // electricians
+    (function(){ const base=(window.dummyProviders? window.dummyProviders('construction'):[]).map(p=>({...p, jobTitle:'Electrician'}));
+      const fb=[{publicName:'Pro Spark', jobTitle:'Electrician', eta:'6‑9m'},{publicName:'Wired Fix', jobTitle:'Electrician', eta:'8‑12m'},{publicName:'Volt Crew', jobTitle:'Electrician', eta:'5‑8m'},{publicName:'Quick Electrix', jobTitle:'Electrician', eta:'7‑10m'}];
+      const pool=base.length?base:fb;
+      rePick(rowElec, pool, p=> card({emoji:'🔌', title:p.publicName||'Electrician', sub:`${p.jobTitle||'Electrician'} • ETA ${p.eta||'—'}`, click:()=>goProvidersFiltered('construction', pool)})); })();
+    // marketplace
+    const MP2 = (window.MP_PRODUCTS||[]).concat((()=>{ try{return JSON.parse(localStorage.getItem('zup_user_products')||'[]')}catch{return[]} })());
+    const mpPool = MP2.length? MP2 : [{title:'Smartphone',price:499,img:''},{title:'Sneakers',price:79,img:''},{title:'Tool set',price:39,img:''},{title:'Headphones',price:59,img:''}];
+    rePick(rowMP, mpPool, p=> card({img:p.img, emoji:p.img?'':'🛍️', title:p.title, sub:(p.price!=null? money(p.price):''), click:()=>goMarketplaceTo(p.title)}));
+    // food
+    const FLAT=(function(){ const out=[]; const V=(window.VENDORS||[]); const M=(window.MENUS||{}); Object.keys(M).forEach(vid=>{ const v=V.find(x=>x.id===vid); (M[vid]||[]).forEach(m=> out.push({...m, vendor:v})); }); return out; })();
+    const foodPool = FLAT.length? FLAT : [{title:'Burger', price:8.5, vendor:(VENDORS[0]||null), img:''},{title:'Pizza', price:12, vendor:(VENDORS[1]||null), img:''},{title:'Fries', price:3, vendor:(VENDORS[0]||null), img:''},{title:'Salad', price:6, vendor:(VENDORS[2]||null), img:''}];
+    rePick(rowFood, foodPool, m=> card({img:m.img, emoji:m.img?'':'🍔', title:m.title, sub:money(m.price), click:()=>goFoodMenuByVendor(m.vendor || null)}));
+  }, 12000);
+})();
+</script>
 </body>
 </html>
