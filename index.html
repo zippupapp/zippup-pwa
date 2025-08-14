@@ -3286,5 +3286,102 @@ document.addEventListener('DOMContentLoaded', ()=>{
     new MutationObserver(kill).observe(document.body,{childList:true,subtree:true});
   })();
 </script
+  <!-- Cancel reasons -->
+<div class="modal" id="cancelReasonsModal" style="display:none">
+  <div class="sheet">
+    <div class="head">
+      <strong>Cancel request</strong>
+      <button class="btn ghost" id="crClose" type="button">✖</button>
+    </div>
+    <div class="body">
+      <div class="list">
+        <label class="row" style="gap:8px"><input type="radio" name="cr" value="Driver taking too long"> <span>Driver taking too long</span></label>
+        <label class="row" style="gap:8px"><input type="radio" name="cr" value="Wrong address"> <span>Wrong address</span></label>
+        <label class="row" style="gap:8px"><input type="radio" name="cr" value="Changed my mind"> <span>Changed my mind</span></label>
+        <label class="row" style="gap:8px"><input type="radio" name="cr" value="Booked by mistake"> <span>Booked by mistake</span></label>
+        <div class="field"><label class="small">Other (optional)</label><textarea id="crOther" rows="2" placeholder="Type reason…"></textarea></div>
+        <div class="row" style="justify-content:flex-end; gap:8px">
+          <button class="btn ghost" type="button" id="crCancel">Close</button>
+          <button class="btn primary" type="button" id="crSubmit">Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  <script>
+(function cancelReasons(){
+  const $=s=>document.querySelector(s);
+  const modal=$('#cancelReasonsModal');
+  let cancelTargetId=null;
+
+  function openModal(id){ cancelTargetId=id||null; if(modal){ modal.style.display='flex'; modal.classList.add('open'); } }
+  function closeModal(){ if(modal){ modal.classList.remove('open'); modal.style.display='none'; } }
+
+  // Close handlers (✖, Close button, click outside)
+  $('#crClose')?.addEventListener('click', closeModal);
+  $('#crCancel')?.addEventListener('click', closeModal);
+  modal?.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+
+  // Intercept ANY Cancel buttons in Orders list
+  document.addEventListener('click', (e)=>{
+    const b = e.target.closest('button[data-k="cancel"]');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    openModal(b.getAttribute('data-id'));
+  }, true);
+
+  // Intercept Track screen Cancel
+  const trackBtn = document.getElementById('trackCancel');
+  if (trackBtn){
+    trackBtn.onclick = (e)=>{
+      e.preventDefault();
+      const id = (window.currentTrackingOrderId)
+        || ((window.orders||[]).find(o=>['enroute','assigned','preparing','scheduled'].includes(o.status))?.id)
+        || null;
+      openModal(id);
+    };
+  }
+
+  // Submit reason
+  $('#crSubmit')?.addEventListener('click', async ()=>{
+    const chosen = document.querySelector('input[name="cr"]:checked')?.value || '';
+    const other = ($('#crOther')?.value||'').trim();
+    const reason = other || chosen || 'unspecified';
+
+    // Resolve target order
+    let id = cancelTargetId;
+    if (!id){
+      const act = (window.orders||[]).find(o=>['enroute','assigned','preparing','scheduled'].includes(o.status));
+      if (act) id = act.id;
+    }
+
+    if (id){
+      try{
+        // Update local
+        const list = window.orders||[];
+        const o = list.find(x=>x.id===id);
+        if (o){ o.status='canceled'; o.cancelReason=reason; }
+        if (typeof window.setOrders==='function') window.setOrders(list);
+        if (typeof window.stopTracking==='function') window.stopTracking();
+        if (typeof window.renderOrders==='function') window.renderOrders();
+
+        // Optional backend
+        try{
+          if (window.BASE_API){
+            fetch(`${BASE_API}/api/orders/${encodeURIComponent(id)}`, {
+              method:'PATCH', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ status:'canceled', reason })
+            }).catch(()=>{});
+          }
+        }catch{}
+
+        alert('Request canceled');
+      }catch{ alert('Could not cancel. Please try again.'); }
+    }
+
+    closeModal();
+  });
+})();
+</script>
 </body>
 </html>
