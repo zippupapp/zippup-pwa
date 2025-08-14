@@ -3197,5 +3197,68 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 })();
 </script>
+  <script>
+(function forceAdminButton(){
+  const ADMIN_UIDS = ['NteMlemGVzY9RjqgpiabIJ9LbPh1'];
+
+  function isAdminUid(){
+    try {
+      const u = window.firebase?.auth?.().currentUser;
+      return !!(u && ADMIN_UIDS.includes(u.uid));
+    } catch { return false; }
+  }
+
+  function injectAdminButton(){
+    if (!isAdminUid()) return;
+    const menu = document.getElementById('profileMenu');
+    if (!menu) return;
+    if (document.getElementById('menuAdmin')) return;
+
+    const anchor = document.getElementById('menuSupport')
+                || document.getElementById('menuWallet')
+                || document.getElementById('menuProfile');
+
+    const btn = document.createElement('button');
+    btn.className = 'btn ghost';
+    btn.id = 'menuAdmin';
+    btn.type = 'button';
+    btn.textContent = '🛡️ Admin';
+    btn.onclick = () => {
+      menu.style.display = 'none';
+      if (typeof window.openAdmin === 'function') window.openAdmin();
+      else if (typeof window.showPage === 'function') window.showPage('admin');
+      else alert('Admin page not installed yet in this file.');
+    };
+
+    if (anchor) anchor.insertAdjacentElement('beforebegin', btn);
+    else menu.prepend(btn);
+  }
+
+  // Run when auth changes
+  try {
+    window.firebase.auth().onAuthStateChanged(() => setTimeout(injectAdminButton, 100));
+  } catch {}
+
+  // Run whenever the Account menu is opened
+  document.getElementById('profileBtn')?.addEventListener('click', () => setTimeout(injectAdminButton, 50));
+
+  // Watch DOM (in case menu is rendered later)
+  const mo = new MutationObserver(() => injectAdminButton());
+  mo.observe(document.body, { childList:true, subtree:true });
+
+  // Deep link support: https://your-site/#/admin
+  if (location.hash.toLowerCase() === '#/admin') {
+    const tryOpen = () => {
+      if (isAdminUid()) {
+        if (typeof window.openAdmin === 'function') window.openAdmin();
+        else if (typeof window.showPage === 'function') window.showPage('admin');
+      } else {
+        alert('Sign in first with your admin account.');
+      }
+    };
+    setTimeout(tryOpen, 300);
+  }
+})();
+</script>
 </body>
 </html>
