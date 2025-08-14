@@ -3383,5 +3383,103 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 })();
 </script>
+  <script>
+(function cancelReasonsFix(){
+  const $ = s => document.querySelector(s);
+  const modal = $('#cancelReasonsModal'); // keep your existing modal HTML
+
+  // Helpers
+  function getOrdersLS(){ try{ return JSON.parse(localStorage.getItem('zup_orders')||'[]'); }catch{ return []; } }
+  function setOrdersLS(list){ localStorage.setItem('zup_orders', JSON.stringify(list||[])); }
+  function updateOrders(list){
+    // keep globals and storage in sync
+    window.orders = list || [];
+    if (typeof window.setOrders === 'function') window.setOrders(window.orders);
+    else setOrdersLS(window.orders);
+    if (typeof window.renderOrders === 'function') window.renderOrders();
+  }
+  function stopAllTracking(){
+    try { if (window.trackInterval) { clearInterval(window.trackInterval); window.trackInterval = null; } } catch {}
+    try { $('#trackModal')?.classList.remove('open'); } catch {}
+    try { window.currentTrackingOrderId = null; } catch {}
+    if (typeof window.stopTracking === 'function') { try { window.stopTracking(); } catch {} }
+  }
+  function closeAllOverlays(){
+    ['cancelReasonsModal','trackModal','providersModal','bookingModal','orderModal','cartModal','foodVendorsModal','foodMenuModal','foodOptionsModal']
+      .forEach(id => { const m=document.getElementById(id); if(m){ m.classList.remove('open'); m.style.display='none'; } });
+  }
+  function openModalFor(orderId){
+    modal.style.display='flex'; modal.classList.add('open');
+    modal.dataset.orderId = orderId || '';
+  }
+  function closeModal(){ modal.classList.remove('open'); modal.style.display='none'; }
+
+  // Wire close on overlay and ✖ / Close buttons
+  modal?.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.getElementById('crClose')?.addEventListener('click', closeModal);
+  document.getElementById('crCancel')?.addEventListener('click', closeModal);
+
+  // Intercept Orders list "Cancel" buttons
+  document.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-k="cancel"]');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    openModalFor(btn.getAttribute('data-id') || '');
+  }, true);
+
+  // Patch Track screen Cancel
+  const trackBtn = document.getElementById('trackCancel');
+  if (trackBtn){
+    trackBtn.onclick = (e)=>{
+      e.preventDefault();
+      const active = (window.orders||getOrdersLS()).find(o => ['enroute','assigned','preparing','scheduled'].includes(o.status));
+      openModalFor(active?.id || '');
+    };
+  }
+
+  // Submit reason
+  document.getElementById('crSubmit')?.addEventListener('click', async ()=>{
+    const chosen = document.querySelector('input[name="cr"]:checked')?.value || '';
+    const other  = (document.getElementById('crOther')?.value || '').trim();
+    const reason = other || chosen || 'unspecified';
+
+    // resolve orderId
+    let orderId = modal.dataset.orderId || '';
+    if (!orderId){
+      const active = (window.orders||getOrdersLS()).find(o => ['enroute','assigned','preparing','scheduled'].includes(o.status));
+      orderId = active?.id || '';
+    }
+
+    // Update local state
+    const list = (window.orders && window.orders.length) ? window.orders.slice() : getOrdersLS();
+    const idx  = list.findIndex(o => o.id === orderId);
+    if (idx >= 0){
+      list[idx].status = 'canceled';
+      list[idx].cancelReason = reason;
+      updateOrders(list);
+    }
+
+    // Stop any tracking and close overlays
+    stopAllTracking();
+    closeAllOverlays();
+
+    // Optionally notify backend (non-blocking)
+    try {
+      if (orderId && window.BASE_API){
+        fetch(`${BASE_API}/api/orders/${encodeURIComponent(orderId)}`, {
+          method:'PATCH',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ status:'canceled', reason })
+        }).catch(()=>{});
+      }
+    } catch {}
+
+    // Return to Home/Orders so user sees it canceled
+    try { if (typeof window.showPage === 'function') showPage('orders'); } catch {}
+    closeModal();
+    alert('Request canceled');
+  });
+})();
+</script>
 </body>
 </html>
