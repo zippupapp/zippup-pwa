@@ -1364,7 +1364,15 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
     $('#backToCart').onclick = ()=>{ $('#checkoutModal').classList.remove('open'); $('#cartModal').classList.add('open'); };
     $('#closeCheckout').onclick = ()=> $('#checkoutModal').classList.remove('open');
 
-   
+    async function stripeCheckout(orderId){
+      if (!stripe) { alert('Payment library not loaded'); return; }
+      try {
+        const origin = location.origin;
+        const payload = {
+          items: cart.items.map(i=>({ name:i.title, amount: Math.round(i.price*100), quantity:i.qty })),
+          metadata: { orderId, vendor: cart.vendorName||'' },
+          success_url: `${origin}/?success=1&order=${encodeURIComponent(orderId)}`,
+          cancel_url: `${origin}/?canceled=1&order=${encodeURIComponent(orderId)}`
         };
         const r = await fetch(`${BASE_API}/api/payments/checkout-session`, {
           method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload)
@@ -3252,5 +3260,17 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 })();
 </script>
+  <style>
+  /* Hide/remove greeting on all devices */
+  #headerGreet { display: none !important; }
+</style>
+<script>
+  (function removeHeaderGreetEverywhere(){
+    function kill(){ var x=document.getElementById('headerGreet'); if(x) x.remove(); }
+    kill();
+    // Keep killing if something re-injects it
+    new MutationObserver(kill).observe(document.body,{childList:true,subtree:true});
+  })();
+</script
 </body>
 </html>
