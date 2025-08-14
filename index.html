@@ -2741,5 +2741,67 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
   } catch(e){}
 })();
 </script>
+  <!-- Confirm Delivery -->
+<div class="modal" id="confirmCodeModal" style="display:none">
+  <div class="sheet">
+    <div class="head">
+      <strong>Confirm Delivery</strong>
+      <button class="btn ghost" id="dlvCodeClose" type="button">✖</button>
+    </div>
+    <div class="body">
+      <div class="small muted" style="margin-bottom:6px">Enter the buyer’s 6‑digit delivery code to complete the order.</div>
+      <div class="row" style="gap:8px">
+        <input id="dlvCodeInput" placeholder="e.g., 123456" inputmode="numeric" style="flex:1"/>
+        <button class="btn primary" id="dlvCodeSubmit" type="button">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+  <script>
+(function confirmDeliveryWiring(){
+  const $=s=>document.querySelector(s);
+  // Add a "Confirm Delivery" button on Manage Orders page header
+  (function injectButton(){
+    const page=document.getElementById('page-orders'); if(!page) return;
+    const sec=page.querySelector('.section'); if(!sec) return;
+    if (document.getElementById('openConfirmCode')) return;
+    const btn=document.createElement('button');
+    btn.className='btn ghost'; btn.id='openConfirmCode'; btn.type='button'; btn.textContent='Confirm Delivery';
+    btn.style.margin='6px 0';
+    // place right under the title
+    const title=sec.querySelector('.title');
+    if (title) title.insertAdjacentElement('afterend', btn); else sec.prepend(btn);
+    btn.onclick=()=>{ const m=$('#confirmCodeModal'); if(m){ m.style.display='flex'; m.classList.add('open'); $('#dlvCodeInput')?.focus(); } };
+  })();
+
+  // Close handlers
+  (function wireClose(id){
+    const m=document.getElementById(id); if(!m) return;
+    const hide=()=>{ m.classList.remove('open'); m.style.display='none'; };
+    m.addEventListener('click', e=>{ if(e.target===m) hide(); });
+    m.querySelector('#dlvCodeClose')?.addEventListener('click', hide);
+  })('confirmCodeModal');
+
+  // Confirm handler: match code to an active food order, mark completed
+  const submit=async ()=>{
+    const input=document.getElementById('dlvCodeInput'); if(!input) return;
+    const code=(input.value||'').trim();
+    if (!code) return alert('Enter the 6‑digit code');
+    try{
+      const list = (window.orders||[]);
+      const o = list.find(x=> x && x.type==='food' && ['assigned','enroute','preparing'].includes(x.status) && String(x.code||'')===code);
+      if (!o) { alert('Invalid code or no matching active food order'); return; }
+      o.status='completed';
+      if (typeof window.setOrders==='function') window.setOrders(list);
+      if (typeof window.renderOrders==='function') window.renderOrders();
+      alert('Delivery confirmed. Thank you!');
+      const m=document.getElementById('confirmCodeModal'); if(m){ m.classList.remove('open'); m.style.display='none'; }
+      input.value='';
+    }catch{ alert('Could not confirm delivery, please try again.'); }
+  };
+  document.getElementById('dlvCodeSubmit')?.addEventListener('click', submit);
+  document.getElementById('dlvCodeInput')?.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+})();
+</script>
 </body>
 </html>
