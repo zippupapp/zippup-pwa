@@ -171,6 +171,17 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
 #promoGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
 @media(min-width:720px){ #promoGrid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
 .promoCard { background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; }
+    /* Promo carousels */
+#promoBoard { margin:12px 16px; }
+#promoBoard .sectionTitle { font-weight:700; margin:12px 0 8px; }
+.promoRow { display:flex; gap:12px; overflow-x:auto; padding:4px 2px; scroll-snap-type:x mandatory; }
+.promoMini { min-width:68%; max-width:68%; scroll-snap-align:start; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); }
+@media(min-width:720px){ .promoMini{ min-width:32%; max-width:32%; } }
+.promoMini .thumb { width:100%; height:110px; object-fit:cover; border-top-left-radius:12px; border-top-right-radius:12px; border-bottom:1px solid var(--border); }
+.promoMini .content { padding:10px; display:flex; flex-direction:column; gap:4px }
+.promoMini .title { font-weight:700 }
+.promoMini .sub { font-size:12px; color:var(--muted) }
+.promoCTA { display:flex; align-items:center; justify-content:center; height:110px; font-weight:700; font-size:14px; }
 }
   </style>
 </head>
@@ -2275,6 +2286,97 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
       if (si.value && si.value.includes('@')) si.value='';
     };
   })();
+})();
+</script>
+  <script>
+(function promosRich(){
+  const $=s=>document.querySelector(s);
+  // remove old promo (if any)
+  const old = document.getElementById('promoBoard'); if (old) old.remove();
+
+  const home=$('#page-home'); if(!home) return;
+  // insert under Emergency section
+  const sections=[...home.querySelectorAll('.section')];
+  const emergency = sections.find(sec=> sec.querySelector('.title')?.textContent.trim().toLowerCase()==='emergency');
+  const wrap=document.createElement('section'); wrap.className='section'; wrap.id='promoBoard';
+  (emergency? emergency.insertAdjacentElement('afterend', wrap) : home.appendChild(wrap));
+
+  // Helpers
+  function row(title){ const s=document.createElement('div'); s.innerHTML=`<div class="sectionTitle">${title}</div><div class="promoRow"></div>`; wrap.appendChild(s); return s.querySelector('.promoRow'); }
+  function card({img, title, sub, onClick}){
+    const d=document.createElement('div'); d.className='promoMini'; d.tabIndex=0; d.style.cursor='pointer';
+    d.innerHTML = (img? `<img class="thumb" src="${img}"/>` : `<div class="thumb promoCTA">${title||''}</div>`)
+                + `<div class="content">${img? `<div class="title">${title||''}</div>`:''}${sub? `<div class="sub">${sub}</div>`:''}</div>`;
+    d.onclick=onClick; return d;
+  }
+  function money(n){ return `$${(+n||0).toFixed(2)}`; }
+
+  // Data (use what you already have; fallback safely)
+  const mp = (window.MP_PRODUCTS||[]).slice(0,6);
+  // pick 6 menu items across vendors
+  const menus = (function(){
+    const MENUS = window.MENUS || {}; const out=[];
+    Object.keys(MENUS).forEach(v=> (MENUS[v]||[]).forEach(m=> out.push({...m, vendorId:v})));
+    return out.slice(0,6);
+  })();
+  const providers = (function(){
+    const cats=['home','tech','construction','auto']; const pool=[];
+    cats.forEach(c=> (window.dummyProviders? window.dummyProviders(c):[]).forEach(p=> pool.push({...p, cat:c})));
+    return pool.slice(0,6);
+  })();
+
+  // 1) Food promos
+  const rFood = row('10% off first food order');
+  menus.forEach(m=>{
+    rFood.appendChild(card({
+      img: m.img, title: m.title, sub: money(m.price),
+      onClick: ()=> { const VENDORS=window.VENDORS||[]; const v = VENDORS.find(x=>x.id===m.vendorId)||VENDORS[0]; if (v) window.openFoodMenu? openFoodMenu(v): (document.getElementById('foodOptionsModal')?.classList.add('open'));}
+    }));
+  });
+
+  // 2) Taxi & Truck
+  const rTx = row('Taxi & truck booking');
+  [
+    {emoji:'🚖', t:'Nearby taxis', sub:'Book instantly', kind:'taxi'},
+    {emoji:'🚚', t:'Nearby trucks', sub:'Move goods fast', kind:'truck'}
+  ].forEach(x=>{
+    rTx.appendChild(card({
+      img:'', title:x.emoji+' '+x.t, sub:x.sub,
+      onClick: ()=> { const m=document.getElementById('transportOptionsModal'); if(m){ m.classList.add('open'); m.style.display='flex'; } }
+    }));
+  });
+
+  // 3) Hire providers
+  const rProv = row('Hire verified providers');
+  providers.forEach(p=>{
+    rProv.appendChild(card({
+      img:'', title:p.publicName||'Provider', sub:`${p.jobTitle||p.cat} • ETA ${p.eta||'—'}`,
+      onClick: ()=> window.openCategory? openCategory(p.cat||'home', (p.cat||'Home')) : null
+    }));
+  });
+
+  // 4) Stripe safety
+  const rStripe = row('Pay securely with Stripe');
+  rStripe.appendChild(card({
+    img:'', title:'💳 Card checkout', sub:'Protected payments',
+    onClick: ()=> alert('Use Card in Checkout to pay securely with Stripe.')
+  }));
+
+  // 5) Referral
+  const rRef = row('Refer & earn coupons');
+  rRef.appendChild(card({
+    img:'', title:'🎁 Invite friends', sub:'Earn discount coupons',
+    onClick: ()=> { const m=document.getElementById('refModal'); if(m){ const inp=document.getElementById('refLink'); if(inp){ inp.value = (function(){ const uid=(window.firebase?.auth?.().currentUser?.uid)||'guest'; return `${location.origin}/?ref=${encodeURIComponent(uid)}`; })(); } m.style.display='flex'; m.classList.add('open'); } }
+  }));
+
+  // 6) Marketplace deals
+  const rMp = row('Marketplace deals near you');
+  mp.forEach(p=>{
+    rMp.appendChild(card({
+      img:p.img, title:p.title, sub:`${money(p.price)} • ${p.cat}`,
+      onClick: ()=> { window.showPage && showPage('marketplace'); const s=document.getElementById('mpSearch'); if(s){ s.value=p.title; } const b=document.getElementById('mpSearchBtn'); b&&b.click(); }
+    }));
+  });
 })();
 </script>
 </body>
