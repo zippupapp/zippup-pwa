@@ -2812,5 +2812,51 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if (b){ b.classList.remove('ghost'); b.classList.add('success'); }
 });
 </script>
+  <script>
+(function personalizedGreeting(){
+  const $=s=>document.querySelector(s);
+
+  function getName(){
+    try{
+      if (window.user?.name) return window.user.name;
+      const u = window.firebase?.auth?.().currentUser;
+      const n = (u?.displayName) || (u?.email? u.email.split('@')[0] : '');
+      return n || 'Guest';
+    }catch{return 'Guest'}
+  }
+  function titleCase(n){
+    return (n||'').split(/[\s._-]+/).filter(Boolean)
+      .map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(' ');
+  }
+  function greetPrefix(){
+    const h=new Date().getHours();
+    if (h<12) return 'Good morning';
+    if (h<18) return 'Good afternoon';
+    return 'Good evening';
+  }
+  function ensureSpan(){
+    const bell=$('#notifBtn');
+    let span=$('#headerGreet');
+    if (!span && bell){
+      span=document.createElement('span');
+      span.id='headerGreet';
+      span.className='small';
+      span.style.whiteSpace='nowrap';
+      bell.insertAdjacentElement('afterend', span);
+    }
+    return span;
+  }
+  function update(){
+    const span=ensureSpan(); if (!span) return;
+    const name=titleCase(getName());
+    span.textContent = `${greetPrefix()} ${name}`;
+  }
+
+  document.addEventListener('DOMContentLoaded', update);
+  try { firebase.auth().onAuthStateChanged(()=> setTimeout(update, 50)); } catch {}
+  const prev = window.updateProfileUI;
+  window.updateProfileUI = function(){ if (prev) prev.apply(this, arguments); update(); };
+})();
+</script>
 </body>
 </html>
