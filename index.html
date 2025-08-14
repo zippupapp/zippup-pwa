@@ -196,6 +196,13 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
     /* Green action button */
 .btn.success { background: var(--success); color:#fff; }
 .btn.success:hover { filter: brightness(0.95); }
+    /* Admin page */
+#page-admin { overflow-x:auto; overflow-y:auto; }
+.admin-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 12px; }
+.admin-tabs .btn.active { background:var(--primary); color:#fff; }
+.admin-grid { display:grid; grid-template-columns:1fr; gap:12px; }
+@media(min-width:720px){ .admin-grid { grid-template-columns:1fr 1fr; } }
+.admin-note { font-size:12px; color:var(--muted) }
 }
   </style>
 </head>
@@ -460,6 +467,63 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
     </section>
   </main>
 
+<main id="page-admin" class="page">
+  <section class="section">
+    <div class="title">Admin</div>
+    <div class="admin-note" id="adminRoleNote">Checking admin access…</div>
+
+    <div class="admin-tabs" id="adminTabs">
+      <button class="btn ghost" data-admin-tab="orders" type="button">Orders</button>
+      <button class="btn ghost" data-admin-tab="vendors" type="button">Vendors (Food)</button>
+      <button class="btn ghost" data-admin-tab="market" type="button">Marketplace</button>
+      <button class="btn ghost" data-admin-tab="users" type="button">Users/KYC</button>
+      <button class="btn ghost" data-admin-tab="wallet" type="button">Wallet</button>
+      <button class="btn ghost" data-admin-tab="emergency" type="button">Emergency</button>
+      <button class="btn ghost" data-admin-tab="promos" type="button">Promotions</button>
+    </div>
+
+    <div id="adminView">
+      <div id="admin-orders" class="admin-grid" style="display:none"></div>
+      <div id="admin-vendors" class="admin-grid" style="display:none"></div>
+      <div id="admin-market" class="admin-grid" style="display:none"></div>
+      <div id="admin-users" class="admin-grid" style="display:none"></div>
+      <div id="admin-wallet" class="admin-grid" style="display:none"></div>
+      <div id="admin-emergency" class="admin-grid" style="display:none">
+        <div class="card">
+          <div class="list">
+            <div class="field"><label class="small">Region (e.g., ZA-GP)</label><input id="admEmerRegion" placeholder="Country/Area code"/></div>
+            <div class="field"><label class="small">Default emergency number</label><input id="admEmerNumber" placeholder="+27…"/></div>
+            <button class="btn primary" id="admEmerSave" type="button">Save default</button>
+            <div class="small muted" id="admEmerStatus"></div>
+          </div>
+        </div>
+      </div>
+      <div id="admin-promos" class="admin-grid" style="display:none">
+        <div class="card">
+          <div class="list">
+            <div class="field"><label class="small">Title</label><input id="admPromoTitle" placeholder="e.g., High‑rated taxi drivers around you"/></div>
+            <div class="field"><label class="small">Type</label>
+              <select id="admPromoType">
+                <option value="transport">transport</option>
+                <option value="providers">providers</option>
+                <option value="marketplace">marketplace</option>
+                <option value="food">food</option>
+              </select>
+            </div>
+            <div class="field"><label class="small">Payload (JSON)</label><textarea id="admPromoPayload" rows="3" placeholder='{"kind":"taxi"}'></textarea></div>
+            <button class="btn primary" id="admPromoSave" type="button">Publish</button>
+            <div class="small muted" id="admPromoStatus"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="title" style="margin:0 0 6px">Existing promotions</div>
+          <div id="admPromoList" class="list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+  
   <nav class="nav">
     <button data-page="home" class="active" type="button">🏠 Home</button>
     <button data-page="orders" type="button">📋 My Bookings</button>
@@ -2856,6 +2920,199 @@ document.addEventListener('DOMContentLoaded', ()=>{
   try { firebase.auth().onAuthStateChanged(()=> setTimeout(update, 50)); } catch {}
   const prev = window.updateProfileUI;
   window.updateProfileUI = function(){ if (prev) prev.apply(this, arguments); update(); };
+})();
+</script>
+  <script>
+(function adminDash(){
+  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+  let isAdmin=false, idToken=null;
+
+  // Add "Admin" button in profile menu (visible only if admin)
+  function ensureAdminMenu(){
+    if (!isAdmin) { const b=$('#menuAdmin'); if (b) b.remove(); return; }
+    if ($('#menuAdmin')) return;
+    const anchor=$('#menuSupport') || $('#menuWallet') || $('#menuProfile');
+    const btn=document.createElement('button');
+    btn.className='btn ghost'; btn.id='menuAdmin'; btn.type='button'; btn.textContent='🛡️ Admin';
+    btn.onclick=()=>{ $('#profileMenu').style.display='none'; openAdmin(); };
+    const menu=$('#profileMenu'); if (!menu) return;
+    if (anchor) anchor.insertAdjacentElement('beforebegin', btn); else menu.prepend(btn);
+  }
+
+  async function refreshToken(){
+    try{
+      const u = window.firebase?.auth?.().currentUser;
+      if (!u) { idToken=null; return; }
+      const t = await u.getIdToken(/*forceRefresh*/true);
+      idToken = t;
+      const tr = await u.getIdTokenResult();
+      isAdmin = !!(tr?.claims?.role==='admin' || tr?.claims?.admin===true || tr?.claims?.role==='staff');
+    }catch{ isAdmin=false; idToken=null; }
+    ensureAdminMenu();
+    const note=$('#adminRoleNote'); if (note) note.textContent = isAdmin ? 'Admin access granted' : 'You are not an admin';
+  }
+
+  // Auth change => check claims
+  try { window.firebase.auth().onAuthStateChanged(()=>refreshToken()); } catch {}
+
+  // API helpers
+  async function api(path, opts={}){
+    const url = (window.BASE_API||'') + path;
+    const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+    if (idToken) headers['Authorization']='Bearer '+idToken;
+    const res = await fetch(url, Object.assign({}, opts, { headers }));
+    if (!res.ok) throw new Error(await res.text());
+    if ((res.headers.get('content-type')||'').includes('application/json')) return res.json();
+    return res.text();
+  }
+
+  // Open admin page (guard)
+  window.openAdmin = function(){
+    if (!isAdmin){ alert('Admin access required'); return; }
+    if (window.showPage) window.showPage('admin');
+    activateTab('orders');
+    loadOrders();
+  };
+
+  // Tabs
+  function activateTab(name){
+    $$('#adminTabs .btn').forEach(b=> b.classList.toggle('active', b.getAttribute('data-admin-tab')===name));
+    ['orders','vendors','market','users','wallet','emergency','promos'].forEach(id=>{
+      const v=$('#admin-'+id); if (v) v.style.display = (id===name? 'grid':'none');
+    });
+  }
+  $('#adminTabs')?.addEventListener('click',(e)=>{
+    const b=e.target.closest('[data-admin-tab]'); if(!b) return;
+    const tab=b.getAttribute('data-admin-tab'); activateTab(tab);
+    if (tab==='orders') loadOrders();
+    if (tab==='vendors') loadVendors();
+    if (tab==='market') loadMarket();
+    if (tab==='users') loadUsers();
+    if (tab==='wallet') loadWallet();
+    if (tab==='emergency') {} // form only
+    if (tab==='promos') loadPromos();
+  });
+
+  // Loaders
+  async function loadOrders(){
+    const box=$('#admin-orders'); if (!box) return;
+    box.innerHTML='<div class="small muted">Loading…</div>';
+    try{
+      const data = await api('/api/orders?role=all', { method:'GET' });
+      if (!Array.isArray(data) || !data.length){ box.innerHTML='<div class="small muted">No orders</div>'; return; }
+      box.innerHTML = data.slice(0,20).map(o=>`
+        <div class="card">
+          <div><strong>${o.title||o.vendorName||o.type||'Order'}</strong> <span class="small muted">• ${o.status}</span></div>
+          <div class="small muted">ID: ${o.id}</div>
+          ${o.code? `<div class="small">Code: <span style="font-family:monospace">${o.code}</span></div>`:''}
+          <div class="row" style="gap:6px;margin-top:8px">
+            <button class="btn ghost" data-act="mark" data-id="${o.id}" data-s="completed">Mark completed</button>
+            <button class="btn ghost" data-act="mark" data-id="${o.id}" data-s="canceled">Cancel</button>
+          </div>
+        </div>`).join('');
+      box.onclick=async (e)=>{
+        const b=e.target.closest('[data-act="mark"]'); if(!b) return;
+        const id=b.getAttribute('data-id'), st=b.getAttribute('data-s');
+        try{ await api(`/api/orders/${encodeURIComponent(id)}`, { method:'PATCH', body: JSON.stringify({ status: st }) }); loadOrders(); }catch(err){ alert('Failed: '+err.message); }
+      };
+    }catch(err){ box.innerHTML='<div class="small muted">Failed to load orders</div>'; }
+  }
+
+  async function loadVendors(){
+    const box=$('#admin-vendors'); if (!box) return;
+    box.innerHTML='<div class="small muted">Loading…</div>';
+    try{
+      const v = await api('/api/food/vendors', { method:'GET' });
+      if (!Array.isArray(v) || !v.length){ box.innerHTML='<div class="small muted">No vendors</div>'; return; }
+      box.innerHTML = v.slice(0,20).map(x=>`
+        <div class="card">
+          <div><strong>${x.name||'Vendor'}</strong> <span class="small muted">${x.kind||''}</span></div>
+          <div class="small muted">ID: ${x.id||''}</div>
+        </div>`).join('');
+    }catch{ box.innerHTML='<div class="small muted">Failed to load vendors</div>'; }
+  }
+
+  async function loadMarket(){
+    const box=$('#admin-market'); if (!box) return;
+    box.innerHTML='<div class="small muted">Loading…</div>';
+    try{
+      const items = await api('/api/marketplace/products', { method:'GET' });
+      if (!Array.isArray(items) || !items.length){ box.innerHTML='<div class="small muted">No listings</div>'; return; }
+      box.innerHTML = items.slice(0,20).map(p=>`
+        <div class="card">
+          <div><strong>${p.title||'Item'}</strong> <span class="small muted">• ${p.cat||p.category||''}</span></div>
+          <div class="small muted">${p.price!=null? ('$'+p.price):''}</div>
+          <div class="row" style="gap:6px;margin-top:8px">
+            <button class="btn ghost" data-act="disable" data-id="${p.id}">Disable</button>
+          </div>
+        </div>`).join('');
+      box.onclick=async (e)=>{
+        const b=e.target.closest('[data-act="disable"]'); if(!b) return;
+        const id=b.getAttribute('data-id');
+        try{ await api(`/api/marketplace/listings/${encodeURIComponent(id)}`, { method:'PATCH', body: JSON.stringify({ status:'disabled' }) }); loadMarket(); }catch(err){ alert('Failed: '+err.message); }
+      };
+    }catch{ box.innerHTML='<div class="small muted">Failed to load marketplace</div>'; }
+  }
+
+  async function loadUsers(){
+    const box=$('#admin-users'); if (!box) return;
+    box.innerHTML='<div class="small muted">Loading…</div>';
+    try{
+      // Optional endpoint: /api/admin/users
+      const users = await api('/api/admin/users', { method:'GET' }).catch(()=>[]);
+      if (!Array.isArray(users) || !users.length){ box.innerHTML='<div class="small muted">No user list API. You can still set roles via server script.</div>'; return; }
+      box.innerHTML = users.slice(0,20).map(u=>`
+        <div class="card">
+          <div><strong>${u.name||u.email||u.uid}</strong> <span class="small muted">${u.email||''}</span></div>
+          <div class="row" style="gap:6px;margin-top:8px">
+            <button class="btn ghost" data-role="admin" data-uid="${u.uid}">Make Admin</button>
+            <button class="btn ghost" data-role="staff" data-uid="${u.uid}">Make Staff</button>
+          </div>
+        </div>`).join('');
+      box.onclick=async (e)=>{
+        const b=e.target.closest('[data-role]'); if(!b) return;
+        const uid=b.getAttribute('data-uid'), role=b.getAttribute('data-role');
+        try{ await api(`/api/admin/users/${encodeURIComponent(uid)}/role`, { method:'POST', body: JSON.stringify({ role }) }); alert('Role updated'); }catch(err){ alert('Failed: '+err.message); }
+      };
+    }catch{ box.innerHTML='<div class="small muted">Failed to load users</div>'; }
+  }
+
+  async function loadWallet(){
+    const box=$('#admin-wallet'); if (!box) return;
+    box.innerHTML='<div class="small muted">Wallet admin is coming soon (adjustments, payouts).</div>';
+  }
+
+  // Emergency defaults
+  $('#admEmerSave')?.addEventListener('click', async ()=>{
+    const region=$('#admEmerRegion')?.value.trim(), number=$('#admEmerNumber')?.value.trim();
+    if (!region || !number) return alert('Fill region and number');
+    try{ await api('/api/admin/emergency/default',{ method:'POST', body: JSON.stringify({ region, number }) }); $('#admEmerStatus').textContent='Saved'; }catch(err){ alert('Failed: '+err.message); }
+  });
+
+  // Promotions
+  async function loadPromos(){
+    const list=$('#admPromoList'); if(!list) return;
+    list.innerHTML='<div class="small muted">Loading…</div>';
+    try{
+      const items = await api('/api/promotions', { method:'GET' });
+      if (!Array.isArray(items) || !items.length){ list.innerHTML='<div class="small muted">No promotions</div>'; return; }
+      list.innerHTML = items.map(p=>`<div class="card"><div><strong>${p.title}</strong> <span class="small muted">• ${p.type}</span></div></div>`).join('');
+    }catch{ list.innerHTML='<div class="small muted">Failed to load</div>'; }
+  }
+  $('#admPromoSave')?.addEventListener('click', async ()=>{
+    const title=$('#admPromoTitle')?.value.trim(), type=$('#admPromoType')?.value, payload=$('#admPromoPayload')?.value.trim();
+    if (!title || !type) return alert('Fill title and type');
+    let json={}; try{ if(payload) json=JSON.parse(payload); }catch{ return alert('Payload must be valid JSON'); }
+    try{ await api('/api/admin/promotions', { method:'POST', body: JSON.stringify({ title, type, payload: json }) }); $('#admPromoStatus').textContent='Published'; loadPromos(); }catch(err){ alert('Failed: '+err.message); }
+  });
+
+  // Deep-link: /admin or #/admin
+  (function deepLink(){
+    const path = location.pathname.toLowerCase(), hash=location.hash.toLowerCase();
+    if (path.endsWith('/admin') || hash==='#/admin') {
+      const wait = setInterval(()=>{ if (typeof window.showPage==='function'){ clearInterval(wait); refreshToken().then(()=> openAdmin()); } }, 50);
+    }
+  })();
 })();
 </script>
 </body>
