@@ -142,6 +142,35 @@ body[data-theme="dark"] .search .box { background: var(--card); border-color: va
 @keyframes slidePromo {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
+  /* Allow extra scrolling on these pages */
+#page-manage-services,
+#page-emergency-contacts,
+#page-support { overflow-x: auto; overflow-y: auto; }
+
+/* Profile nav buttons: full width with chevron */
+#page-profile .list > button { width:100%; justify-content:space-between; }
+#page-profile .list > button::after { content:'›'; opacity:.6; }
+
+/* Dark mode palette */
+body[data-theme="dark"] {
+  --bg:#0B1020; --card:#0F172A; --text:#E5E7EB; --muted:#9CA3AF; --border:#1F2A44;
+  --primary:#3B82F6; --primary-600:#2563EB; --shadow:0 8px 24px rgba(0,0,0,.35);
+}
+body[data-theme="dark"] .card,
+body[data-theme="dark"] .sheet { background:var(--card); border-color:var(--border); }
+body[data-theme="dark"] .search .box { background:var(--card); border-color:var(--border); }
+
+/* Marketplace advisory note */
+#marketAdvisory {
+  background:#FFF7ED; border:1px solid #FED7AA; color:#7C2D12;
+  border-radius:12px; padding:10px; margin:10px 16px; font-size:13px;
+}
+
+/* Promotions board under Emergency */
+#promoBoard { margin:12px 16px; }
+#promoGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+@media(min-width:720px){ #promoGrid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+.promoCard { background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; }
 }
   </style>
 </head>
@@ -2114,6 +2143,138 @@ body[data-theme="dark"] .search .box { background: var(--card); border-color: va
   })();
 
   // J) Help center: ensure FAQ exists (already injected by your code)
+})();
+</script>
+  <script>
+(function touchUps(){
+  const $=s=>document.querySelector(s);
+
+  // Header greeting (between bell and account)
+  (function headerGreet(){
+    const bell=$('#notifBtn');
+    if (bell && !$('#headerGreet')) {
+      const span=document.createElement('span');
+      span.id='headerGreet'; span.className='small'; span.style.whiteSpace='nowrap';
+      span.textContent='Hi, Guest';
+      bell.insertAdjacentElement('afterend', span);
+    }
+  })();
+
+  // Modal close helper (works for overlay click and ✖)
+  function wireModalClose(id){
+    const m=document.getElementById(id); if(!m) return;
+    const hide=()=>{ m.classList.remove('open'); m.style.display='none'; };
+    m.addEventListener('click',e=>{ if(e.target===m) hide(); });
+    const x=m.querySelector('.head .btn.ghost'); if(x) x.onclick=hide;
+  }
+  ['settingsModal','refModal','termsModal'].forEach(wireModalClose);
+
+  // Settings button + dark mode + face toggle
+  (function settings(){
+    // Add Settings + Invite buttons under Profile list (if not present)
+    const list = document.querySelector('#page-profile .list');
+    if (list && !document.getElementById('openSettingsBtn')) {
+      const sBtn=document.createElement('button'); sBtn.className='btn ghost'; sBtn.id='openSettingsBtn'; sBtn.type='button'; sBtn.textContent='Settings';
+      sBtn.onclick=()=>{ const m=$('#settingsModal'); if(m){ m.style.display='flex'; m.classList.add('open'); syncToggles(); } };
+      list.appendChild(sBtn);
+      const rBtn=document.createElement('button'); rBtn.className='btn ghost'; rBtn.type='button'; rBtn.textContent='Invite & earn';
+      rBtn.onclick=()=>{ const m=$('#refModal'); if(m){ const inp=$('#refLink'); if(inp) inp.value=genReferralLink(); m.style.display='flex'; m.classList.add('open'); } };
+      list.appendChild(rBtn);
+    }
+    // Toggles
+    function applyTheme(t){ if(t==='dark') document.body.setAttribute('data-theme','dark'); else document.body.removeAttribute('data-theme'); }
+    function syncToggles(){
+      const t=localStorage.getItem('zup_theme')||'light'; applyTheme(t);
+      const d=$('#darkToggle'), dk=$('#darkKnob'); if(d){ d.checked=(t==='dark'); if(dk) dk.style.transform=d.checked?'translateX(20px)':'translateX(0)'; }
+      const fe=localStorage.getItem('zup_face_beta')==='1'; const f=$('#faceToggle'), fk=$('#faceKnob'); if(f){ f.checked=fe; if(fk) fk.style.transform=f.checked?'translateX(20px)':'translateX(0)'; }
+    }
+    document.addEventListener('click',(e)=>{
+      if (e.target?.id==='darkToggle'){ const on=e.target.checked; localStorage.setItem('zup_theme', on?'dark':'light'); applyTheme(on?'dark':'light'); const k=$('#darkKnob'); if(k) k.style.transform=on?'translateX(20px)':'translateX(0)'; }
+      if (e.target?.id==='faceToggle'){ const on=e.target.checked; localStorage.setItem('zup_face_beta', on?'1':'0'); const k=$('#faceKnob'); if(k) k.style.transform=on?'translateX(20px)':'translateX(0)'; }
+    });
+    applyTheme(localStorage.getItem('zup_theme')||'light');
+  })();
+
+  // Terms: add "Read Terms" link next to checkbox; ensure close works (wired above)
+  (function termsLink(){
+    const label = document.querySelector('#chkTerms')?.parentElement;
+    if (!label || document.getElementById('termsLink')) return;
+    const a=document.createElement('a'); a.id='termsLink'; a.href='javascript:void(0)'; a.textContent=' Read Terms';
+    a.style.marginLeft='4px'; a.onclick=()=>{ const m=$('#termsModal'); if(m){ m.style.display='flex'; m.classList.add('open'); } };
+    label.appendChild(a);
+  })();
+
+  // Marketplace safety advisory (ensure visible)
+  (function marketAdvice(){
+    if ($('#marketAdvisory')) return;
+    const page=$('#page-marketplace'); if(!page) return;
+    const section=page.querySelector('.section');
+    const note = document.createElement('div');
+    note.id='marketAdvisory';
+    note.textContent='Safety tip: Never send payment before receiving your goods. Meet sellers in public places.';
+    if (section) section.insertBefore(note, section.querySelector('.search')?.nextElementSibling || section.firstChild);
+  })();
+
+  // Promotions board under Emergency section (as grids)
+  (function promos(){
+    if ($('#promoBoard')) return;
+    const home=$('#page-home'); if(!home) return;
+    const sections=[...home.querySelectorAll('.section')];
+    const emergency = sections.find(sec=> sec.querySelector('.title')?.textContent.trim().toLowerCase()==='emergency');
+    const container=document.createElement('section');
+    container.className='section'; container.id='promoBoard';
+    container.innerHTML = '<div class="title">Promotions & suggestions</div><div id="promoGrid"></div>';
+    (emergency? emergency.insertAdjacentElement('afterend', container) : home.appendChild(container));
+    const grid=container.querySelector('#promoGrid');
+    [
+      {i:'🍔', t:'10% off first food order'},
+      {i:'🚗', t:'Taxi & truck booking'},
+      {i:'🛠️', t:'Hire verified providers'},
+      {i:'💳', t:'Pay securely with Stripe'},
+      {i:'🎁', t:'Refer & earn coupons'},
+      {i:'🛍️', t:'Marketplace deals near you'}
+    ].forEach(c=>{
+      const d=document.createElement('div'); d.className='promoCard';
+      d.innerHTML=`<div class="row"><div style="font-size:22px">${c.i}</div><strong>${c.t}</strong></div>`;
+      grid.appendChild(d);
+    });
+  })();
+
+  // Panic: if no saved contacts, guide user before opening modal
+  (function panicGuard(){
+    const btn=$('#panicBtn'); if(!btn) return;
+    btn.addEventListener('click', ()=>{
+      let contacts=[]; try{ contacts=JSON.parse(localStorage.getItem('zup_contacts')||'[]'); }catch{}
+      if (!contacts.length){
+        alert('Please add emergency contacts in Profile → Emergency Contacts.');
+        if (window.showPage){ showPage('profile'); document.getElementById('page-emergency-contacts')?.classList.add('active'); }
+        return;
+      }
+      const m=$('#panicModal'); if(m){ m.style.display='flex'; m.classList.add('open'); }
+    });
+  })();
+
+  // Referral modal: close on overlay tap (wired), ensure link is ready
+  (function refInit(){
+    const m=$('#refModal'); if(!m) return;
+    const inp=$('#refLink'); if (inp && !inp.value) inp.value = genReferralLink();
+  })();
+  function genReferralLink(){
+    const uid=(window.firebase?.auth?.().currentUser?.uid)||'guest';
+    return `${location.origin}/?ref=${encodeURIComponent(uid)}`;
+  }
+
+  // Search field: avoid email autofill after sign-in
+  (function searchFix(){
+    const si=$('#search'); if(!si) return;
+    si.setAttribute('autocomplete','off'); si.setAttribute('inputmode','search');
+    const _update=window.updateProfileUI;
+    window.updateProfileUI=function(){ if(_update) _update.apply(this, arguments);
+      const name=(window.user&&window.user.name)||'Guest';
+      const greet=$('#headerGreet'); if(greet) greet.textContent='Hi, '+name;
+      if (si.value && si.value.includes('@')) si.value='';
+    };
+  })();
 })();
 </script>
 </body>
