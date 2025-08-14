@@ -182,6 +182,17 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
 .promoMini .title { font-weight:700 }
 .promoMini .sub { font-size:12px; color:var(--muted) }
 .promoCTA { display:flex; align-items:center; justify-content:center; height:110px; font-weight:700; font-size:14px; }
+    /* Promo carousels with provider/product mini-cards */
+#promoBoard { margin:12px 16px; }
+.promoSec { margin:14px 0; }
+.promoSec .sectionTitle { font-weight:700; margin:0 0 8px; }
+.promoRow { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+@media(min-width:720px){ .promoRow{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
+.promoMini { background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; cursor:pointer; }
+.promoMini .thumb { width:100%; height:110px; object-fit:cover; border-bottom:1px solid var(--border); background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-size:20px; }
+.promoMini .content { padding:10px; display:flex; flex-direction:column; gap:4px }
+.promoMini .title { font-weight:700; }
+.promoMini .sub { font-size:12px; color:var(--muted) }
 }
   </style>
 </head>
@@ -2377,6 +2388,145 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
       onClick: ()=> { window.showPage && showPage('marketplace'); const s=document.getElementById('mpSearch'); if(s){ s.value=p.title; } const b=document.getElementById('mpSearchBtn'); b&&b.click(); }
     }));
   });
+})();
+</script>
+  <script>
+(function fixModalClosing(){
+  const hide=m=>{ m.classList.remove('open'); m.style.display='none'; };
+  document.querySelectorAll('.modal').forEach(m=>{
+    m.addEventListener('click', e=>{ if(e.target===m) hide(m); });
+    const x=m.querySelector('.head .btn.ghost'); if(x) x.onclick=()=>hide(m);
+  });
+})();
+
+(function promosDynamic(){
+  const $=s=>document.querySelector(s);
+  const money=n=>`$${(+n||0).toFixed(2)}`;
+
+  // remove old promo (if any)
+  const old = document.getElementById('promoBoard'); if (old) old.remove();
+
+  // create board under Emergency section
+  const home=$('#page-home'); if(!home) return;
+  const sections=[...home.querySelectorAll('.section')];
+  const emergency = sections.find(sec=> sec.querySelector('.title')?.textContent.trim().toLowerCase()==='emergency');
+  const wrap=document.createElement('section'); wrap.className='section'; wrap.id='promoBoard';
+  (emergency? emergency.insertAdjacentElement('afterend', wrap) : home.appendChild(wrap));
+
+  function sec(title){ const c=document.createElement('div'); c.className='promoSec'; c.innerHTML=`<div class="sectionTitle">${title}</div><div class="promoRow"></div>`; wrap.appendChild(c); return c.querySelector('.promoRow'); }
+  function card({img, title, sub, click, emoji}){
+    const d=document.createElement('div'); d.className='promoMini'; d.onclick=click;
+    d.innerHTML = `<div class="thumb">${img? `<img src="${img}" class="thumb" style="height:110px;width:100%;object-fit:cover;border:0">` : (emoji||'')}</div>
+                   <div class="content"><div class="title">${title||''}</div>${sub? `<div class="sub">${sub}</div>`:''}</div>`;
+    return d;
+  }
+
+  // sources
+  const MP = (window.MP_PRODUCTS||[]).concat((function(){ try{return JSON.parse(localStorage.getItem('zup_user_products')||'[]')}catch{return[]} })());
+  const VEND = window.VENDORS || [];
+  const MENUS = window.MENUS || {};
+  function menuFlatten(){
+    const out=[]; Object.keys(MENUS).forEach(v=> (MENUS[v]||[]).forEach(m=> out.push({...m, vendorId:v}))); return out;
+  }
+  function pick(arr, n=4){
+    const a = arr.slice(); const out=[];
+    while (a.length && out.length<n){ out.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); }
+    return out;
+  }
+  function dp(cat){ return (window.dummyProviders? window.dummyProviders(cat):[]); }
+
+  // 1) High‑rated taxi drivers around you
+  const rowTaxi = sec('High‑rated taxi drivers around you');
+  function renderTaxi(){
+    rowTaxi.innerHTML='';
+    const drivers = [
+      { name:'Taxi • Alex', eta:'3‑5m' }, { name:'Taxi • Sam', eta:'4‑6m' },
+      { name:'Taxi • Zoe', eta:'5‑7m' },  { name:'Taxi • Ray', eta:'6‑9m' },
+      { name:'Taxi • Neo', eta:'7‑10m' }
+    ];
+    pick(drivers,4).forEach(d=>{
+      rowTaxi.appendChild(card({
+        emoji:'🚖',
+        title:d.name,
+        sub:`ETA ${d.eta}`,
+        click:()=>{ if (window.openTransportProviders) openTransportProviders('taxi','Ride / Taxi'); else document.getElementById('transportOptionsModal')?.classList.add('open'); }
+      }));
+    });
+  }
+  renderTaxi();
+
+  // 2) Reliable electricians around you
+  const rowElec = sec('Reliable electricians around you');
+  function renderElec(){
+    rowElec.innerHTML='';
+    const prov = dp('construction').map(p=>({...p, jobTitle:'Electrician'}));
+    pick(prov.length?prov:[{publicName:'Pro Spark', eta:'6‑9m'},{publicName:'Wired Fix', eta:'8‑12m'},{publicName:'Volt Crew', eta:'5‑8m'},{publicName:'Quick Electrix', eta:'7‑10m'}],4)
+      .forEach(p=>{
+        rowElec.appendChild(card({
+          emoji:'🔌',
+          title:p.publicName||'Electrician',
+          sub:`ETA ${p.eta||'—'}`,
+          click:()=> window.openCategory ? openCategory('construction','Construction') : null
+        }));
+      });
+  }
+  renderElec();
+
+  // 3) Best sellers at Marketplace
+  const rowMP = sec('Best sellers at Marketplace');
+  function renderMP(){
+    rowMP.innerHTML='';
+    pick(MP.length?MP:[
+      {title:'Smartphone', price:499, img:''},
+      {title:'Sneakers', price:79, img:''},
+      {title:'Tool set', price:39, img:''},
+      {title:'Headphones', price:59, img:''},
+    ],4).forEach(p=>{
+      rowMP.appendChild(card({
+        img:p.img, emoji:p.img?'':'🛍️',
+        title:p.title, sub: (p.price!=null? money(p.price):''),
+        click:()=>{ window.showPage && showPage('marketplace'); const s=document.getElementById('mpSearch'); if(s){ s.value=p.title; } document.getElementById('mpSearchBtn')?.click(); }
+      }));
+    });
+  }
+  renderMP();
+
+  // 4) Finger‑licking bites from nearby vendors
+  const rowFood = sec('Finger‑licking bites from nearby vendors');
+  function renderFood(){
+    rowFood.innerHTML='';
+    const menus = menuFlatten();
+    pick(menus.length?menus:[
+      {title:'Burger', price:8.5, vendorId:(VEND[0]?.id), img:''},
+      {title:'Pizza', price:12, vendorId:(VEND[1]?.id), img:''},
+      {title:'Fries', price:3, vendorId:(VEND[0]?.id), img:''},
+      {title:'Salad', price:6, vendorId:(VEND[2]?.id), img:''},
+    ],4).forEach(m=>{
+      rowFood.appendChild(card({
+        img:m.img, emoji:m.img?'':'🍔',
+        title:m.title, sub: money(m.price),
+        click:()=>{ 
+          const V=window.VENDORS||[];
+          const v = V.find(x=>x.id===m.vendorId) || V[0];
+          if (v && window.openFoodMenu){ openFoodMenu(v); }
+          else { document.getElementById('foodOptionsModal')?.classList.add('open'); }
+        }
+      }));
+    });
+  }
+  renderFood();
+
+  // 5) What you can do with ZippUp
+  const rowZU = sec('What you can do with ZippUp');
+  [
+    {emoji:'🚗', t:'Book rides & trucks', click:()=>document.getElementById('transportOptionsModal')?.classList.add('open')},
+    {emoji:'🛠️', t:'Hire providers', click:()=> window.openCategory && openCategory('home','Home') },
+    {emoji:'🛍️', t:'Buy & sell safely', click:()=> window.showPage && showPage('marketplace') },
+    {emoji:'🍔', t:'Order food', click:()=> document.getElementById('foodOptionsModal')?.classList.add('open') },
+  ].forEach(x=> rowZU.appendChild(card({emoji:x.emoji, title:x.t, click:x.click})));
+
+  // auto-reshuffle every 10s
+  setInterval(()=>{ renderTaxi(); renderElec(); renderMP(); renderFood(); }, 10000);
 })();
 </script>
 </body>
