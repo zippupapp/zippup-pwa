@@ -2714,5 +2714,32 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
   }, 12000);
 })();
 </script>
+  <script>
+(function stopEmailAutofillInSearch(){
+  const s = document.getElementById('search');
+  if (s) {
+    s.setAttribute('name','q');
+    s.setAttribute('autocomplete','off');
+    s.setAttribute('autocapitalize','off');
+    s.setAttribute('spellcheck','false');
+    // If browser already dropped an email, clear it
+    if (/@/.test(s.value)) s.value = '';
+  }
+  // Honeypot to catch autofill away from search
+  const hp = document.createElement('input');
+  hp.type = 'text';
+  hp.autocomplete = 'username';
+  hp.style.cssText = 'position:fixed;left:-9999px;width:0;height:0;opacity:0';
+  document.body.prepend(hp);
+
+  // Also clear after Firebase login changes state
+  try {
+    firebase.auth().onAuthStateChanged(function(u){
+      const box = document.getElementById('search');
+      if (box && /@/.test(box.value)) box.value = '';
+    });
+  } catch(e){}
+})();
+</script>
 </body>
 </html>
