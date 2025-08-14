@@ -1368,13 +1368,20 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
       if (!stripe) { alert('Payment library not loaded'); return; }
       try {
         const origin = location.origin;
-        const payload = {
-          items: cart.items.map(i=>({ name:i.title, amount: Math.round(i.price*100), quantity:i.qty })),
-          metadata: { orderId, vendor: cart.vendorName||'' },
-          success_url: `${origin}/?success=1&order=${encodeURIComponent(orderId)}`,
-          cancel_url: `${origin}/?canceled=1&order=${encodeURIComponent(orderId)}`
-        };
-        const r = await fetch(`${BASE_API}/api/payments/checkout-session`, {
+       const payload = {
+  items: cart.items.map(i => ({ name: i.title, amount: Math.round(i.price * 100), quantity: i.qty })),
+  currency: window.USER_CURRENCY,
+  metadata: { orderId },
+  success_url: `${origin}/?success=1&order=${encodeURIComponent(orderId)}`,
+  cancel_url: `${origin}/?canceled=1&order=${encodeURIComponent(orderId)}`
+};
+const r = await fetch(`${BASE_API}/api/payments/checkout-session3`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload)
+});
+        
+        const r = await fetch(` ${BASE_API}/api/payments/checkout-session3`, {
           method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload)
         });
         const j = await r.json();
@@ -3259,6 +3266,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
     setTimeout(tryOpen, 300);
   }
 })();
+</script>
+  <script>
+(function setUserCurrency(){
+  const map = { ZA:'ZAR', NG:'NGN', KE:'KES', GH:'GHS', US:'USD', GB:'GBP', DE:'EUR', FR:'EUR' };
+  function region(){ try{ return (navigator.language||'').split('-')[1]?.toUpperCase()||''; }catch{return ''} }
+  window.USER_CURRENCY = localStorage.getItem('zup_currency') || map[region()] || 'USD';
+})();
+</script
+  <style>
+  /* Hide/remove greeting on all devices */
+  #headerGreet { display: none !important; }
+</style>
+<script>
+  (function removeHeaderGreetEverywhere(){
+    function kill(){ var x=document.getElementById('headerGreet'); if(x) x.remove(); }
+    kill();
+    // Keep killing if something re-injects it
+    new MutationObserver(kill).observe(document.body,{childList:true,subtree:true});
+  })();
 </script>
 </body>
 </html>
