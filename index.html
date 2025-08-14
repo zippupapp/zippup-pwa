@@ -3274,16 +3274,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   window.USER_CURRENCY = localStorage.getItem('zup_currency') || map[region()] || 'USD';
 })();
 </script
-  <style>
-  /* Hide/remove greeting on all devices */
-  #headerGreet { display: none !important; }
-</style>
-<script>
-  (function removeHeaderGreetEverywhere(){
-    function kill(){ var x=document.getElementById('headerGreet'); if(x) x.remove(); }
-    kill();
-    // Keep killing if something re-injects it
-    new MutationObserver(kill).observe(document.body,{childList:true,subtree:true});
+  
   })();
 </script>
 </body>
