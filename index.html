@@ -193,6 +193,9 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
 .promoMini .content { padding:10px; display:flex; flex-direction:column; gap:4px }
 .promoMini .title { font-weight:700; }
 .promoMini .sub { font-size:12px; color:var(--muted) }
+    /* Green action button */
+.btn.success { background: var(--success); color:#fff; }
+.btn.success:hover { filter: brightness(0.95); }
 }
   </style>
 </head>
@@ -2802,6 +2805,12 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
   document.getElementById('dlvCodeSubmit')?.addEventListener('click', submit);
   document.getElementById('dlvCodeInput')?.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
 })();
+</script>
+  <script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const b=document.getElementById('openConfirmCode');
+  if (b){ b.classList.remove('ghost'); b.classList.add('success'); }
+});
 </script>
 </body>
 </html>
