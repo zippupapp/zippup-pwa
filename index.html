@@ -3156,5 +3156,46 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 })();
 </script>
+  <script>
+(function easyAdminEnable(){
+  const ADMIN_UIDS = ['NteMlemGVzY9RjqgpiabIJ9LbPh1']; // your UID
+
+  function addAdminMenu() {
+    const u = window.firebase?.auth?.().currentUser;
+    if (!u || !ADMIN_UIDS.includes(u.uid)) return;
+
+    // Add Admin button to the Account menu if missing
+    const menu = document.getElementById('profileMenu');
+    if (!menu || document.getElementById('menuAdmin')) return;
+    const anchor = document.getElementById('menuSupport') || document.getElementById('menuWallet') || document.getElementById('menuProfile');
+
+    const btn = document.createElement('button');
+    btn.className = 'btn ghost';
+    btn.id = 'menuAdmin';
+    btn.type = 'button';
+    btn.textContent = '🛡️ Admin';
+    btn.onclick = () => {
+      const m = document.getElementById('profileMenu');
+      if (m) m.style.display = 'none';
+      if (typeof window.openAdmin === 'function') window.openAdmin();
+      else if (typeof window.showPage === 'function') window.showPage('admin');
+    };
+
+    if (anchor) anchor.insertAdjacentElement('beforebegin', btn); else menu.prepend(btn);
+
+    // Deep link: /#/admin or ?admin=1
+    const wantAdmin = location.hash.toLowerCase()==='#/admin' || location.search.toLowerCase().includes('admin=1');
+    if (wantAdmin) btn.click();
+  }
+
+  try {
+    // Run on login changes
+    window.firebase.auth().onAuthStateChanged(() => setTimeout(addAdminMenu, 100));
+  } catch {
+    // Fallback run after DOM ready
+    document.addEventListener('DOMContentLoaded', () => setTimeout(addAdminMenu, 300));
+  }
+})();
+</script>
 </body>
 </html>
