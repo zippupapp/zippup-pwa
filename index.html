@@ -920,7 +920,6 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
   <script>
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
     const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
-    const stripe = (()=>{ try { return Stripe(STRIPE_PK); } catch { return null; } })();
 
     const firebaseConfig = {
       apiKey: "AIzaSyApgmcfu5qGFn9tw872dQ2KkdDz_GPmL70",
@@ -1365,26 +1364,41 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
     $('#closeCheckout').onclick = ()=> $('#checkoutModal').classList.remove('open');
 
     async function stripeCheckout(orderId){
-      if (!stripe) { alert('Payment library not loaded'); return; }
-      try {
-        const origin = location.origin;
-        const payload = {
-          items: cart.items.map(i=>({ name:i.title, amount: Math.round(i.price*100), quantity:i.qty })),
-          metadata: { orderId, vendor: cart.vendorName||'' },
-          success_url: `${origin}/?success=1&order=${encodeURIComponent(orderId)}`,
-          cancel_url: `${origin}/?canceled=1&order=${encodeURIComponent(orderId)}`
-        };
-        const r = await fetch(`${BASE_API}/api/payments/checkout-session`, {
-          method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload)
-        });
-        const j = await r.json();
-        const sid = j.id || j.sessionId || j.session_id;
-        if (!sid) throw new Error('No session');
-        await stripe.redirectToCheckout({ sessionId: sid });
-      } catch(e){
-        alert('Unable to start payment. Please try again.');
-      }
-    }
+  try {
+    if (!window.Stripe) throw new Error('Payment library not loaded');
+    const stripe = window.Stripe(STRIPE_PK);
+
+    const origin = location.origin;
+    const currency = (window.USER_CURRENCY || 'USD').toUpperCase();
+    const items = (cart?.items || []).map(i => ({
+      name: i.title,
+      amount: Math.round((i.price || 0) * 100),
+      quantity: i.qty || 1
+    }));
+    if (!items.length) { alert('Your cart is empty.'); return; }
+
+    const payload = {
+      items,
+      currency,
+      metadata: { orderId },
+      success_url: `${origin}/?success=1&order=${encodeURIComponent(orderId)}`,
+      cancel_url:  `${origin}/?canceled=1&order=${encodeURIComponent(orderId)}`
+    };
+
+    const r = await fetch(`${BASE_API}/api/payments/checkout-session3`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const j = await r.json();
+    if (!r.ok || !j?.id) throw new Error(j?.error || 'Unable to create checkout session');
+
+    const { error } = await stripe.redirectToCheckout({ sessionId: j.id });
+    if (error) alert(error.message || 'Stripe redirect failed');
+  } catch (e) {
+    alert(e.message || 'Card payment unavailable right now. Please try cash or retry later.');
+  }
+}
 
     $('#placeOrderBtn').onclick = async ()=>{
       const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
