@@ -1369,10 +1369,17 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
       try {
         const origin = location.origin;
         const payload = {
-          items: cart.items.map(i=>({ name:i.title, amount: Math.round(i.price*100), quantity:i.qty })),
-          metadata: { orderId, vendor: cart.vendorName||'' },
-          success_url: `${origin}/?success=1&order=${encodeURIComponent(orderId)}`,
-          cancel_url: `${origin}/?canceled=1&order=${encodeURIComponent(orderId)}`
+  items: cart.items.map(i => ({ name: i.title, amount: Math.round(i.price * 100), quantity: i.qty })),
+  currency: window.USER_CURRENCY,
+  metadata: { orderId },
+  success_url: `${origin}/?success=1&order=${encodeURIComponent(orderId)}`,
+  cancel_url: `${origin}/?canceled=1&order=${encodeURIComponent(orderId)}`
+};
+    const r = await fetch(`${BASE_API}/api/payments/checkout-session3`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload)
+});
         };
         const r = await fetch(`${BASE_API}/api/payments/checkout-session`, {
           method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload)
