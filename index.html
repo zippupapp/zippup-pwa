@@ -1595,6 +1595,7 @@ $('#placeOrderBtn').onclick = async ()=>{
   
   const orderId='ord-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
   
+  // Handle different payment methods
   if (method === 'stripe') {
     try {
       await stripeCheckout(orderId);
@@ -1612,6 +1613,7 @@ $('#placeOrderBtn').onclick = async ()=>{
       return;
     }
   } else {
+    // Cash payment
     addFoodOrder(orderId, code, method);
   }
   
@@ -1625,7 +1627,6 @@ $('#placeOrderBtn').onclick = async ()=>{
   $('#orderModal').classList.add('open');
   resetCart(); updateBellBadge();
 };
-
     function addFoodOrder(orderId, code, method){
       const o = {
         id: orderId, type:'food', status:'preparing', vendorName: cart.vendorName, createdAt: Date.now(),
