@@ -1589,41 +1589,26 @@ async function walletPayment(orderData) {
 $('#placeOrderBtn').onclick = async ()=>{
   const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
   console.log('Selected payment method:', method);
-  console.log('Cart vendor payment:', cart.vendorPayment);
-  console.log('Validation result:', validatePaymentMethod(method, cart.vendorPayment));
+  
   if (!$('#chkTerms').checked) return alert('Please accept the Terms');
   if (!cart.items.length) return alert('Cart is empty');
   
-  if (cart.vendorPayment.length && !validatePaymentMethod(method, cart.vendorPayment)) {
-    const allowed = cart.vendorPayment.includes('card') ? 'Card payments, ' + cart.vendorPayment.filter(m => m !== 'card').join(', ') : cart.vendorPayment.join(', ');
-    return alert(`This vendor does not accept ${method.toUpperCase()} payment. Allowed: ${allowed}`);
-  }
-  
   const orderId='ord-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
-
-  console.log('About to process payment for method:', method);
   
-  if (method === 'stripe' || method === 'flutterwave') {
+  if (method === 'stripe') {
     try {
-      console.log('Calling processPayment with:', method, orderId);
-      await processPayment(method, { orderId });
-      console.log('Payment successful, adding order');
+      await stripeCheckout(orderId);
       addFoodOrder(orderId, code, method);
     } catch (error) {
-      console.error('Payment error:', error);
-      alert(`Payment failed: ${error.message}`);
+      alert(`Stripe payment failed: ${error.message}`);
       return;
     }
-  } else {
-    addFoodOrder(orderId, code, method);
-  }
-  
-  if (method === 'stripe' || method === 'flutterwave') {
+  } else if (method === 'flutterwave') {
     try {
-      await processPayment(method, { orderId });
+      await flutterwaveCheckout(orderId);
       addFoodOrder(orderId, code, method);
     } catch (error) {
-      alert(`Payment failed: ${error.message}`);
+      alert(`Flutterwave payment failed: ${error.message}`);
       return;
     }
   } else {
