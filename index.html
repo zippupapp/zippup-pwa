@@ -922,8 +922,75 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
   <script>
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
     window.BASE_API = BASE_API;
-    const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
-    const FLUTTERWAVE_PUBLIC_KEY = "FLWPUBK_TEST-94cb61fc30c1aade9aa2fca54cd89cec-X";
+
+const PAYMENT_METHODS = {
+  stripe: { name: 'Stripe', type: 'card', icon: '💳' },
+  flutterwave: { name: 'Flutterwave', type: 'card', icon: '💳' },
+  paypal: { name: 'PayPal', type: 'card', icon: '💳' },
+  paystack: { name: 'PayStack', type: 'card', icon: '💳' },
+  cash: { name: 'Cash', type: 'cash', icon: '💵' },
+  wallet: { name: 'Wallet', type: 'wallet', icon: '💰' }
+};
+
+function validatePaymentMethod(method, allowedMethods) {
+  if (!allowedMethods || !allowedMethods.length) return true;
+  
+  const isCardPayment = PAYMENT_METHODS[method]?.type === 'card';
+  const acceptsCard = allowedMethods.includes('card');
+  const acceptsSpecific = allowedMethods.includes(method);
+  
+  if (isCardPayment && acceptsCard) return true;
+  if (acceptsSpecific) return true;
+  
+  return false;
+}
+
+async function processPayment(method, orderData) {
+  try {
+    switch (method) {
+      case 'stripe':
+        return await stripeCheckout(orderData.orderId);
+      case 'flutterwave':
+        return await flutterwaveCheckout(orderData.orderId);
+      case 'paypal':
+        return await paypalCheckout(orderData.orderId);
+      case 'paystack':
+        return await paystackCheckout(orderData.orderId);
+      case 'cash':
+        return { success: true, method: 'cash' };
+      case 'wallet':
+        return await walletPayment(orderData);
+      default:
+        throw new Error(`Unknown payment method: ${method}`);
+    }
+  } catch (error) {
+    throw new Error(`Payment failed: ${error.message}`);
+  }
+}
+
+function generatePaymentOptions(allowedMethods = ['card', 'cash']) {
+  const options = [];
+  
+  if (allowedMethods.includes('card')) {
+    options.push(
+      { value: 'stripe', label: '💳 Credit/Debit Card (Stripe)', type: 'card' },
+      { value: 'flutterwave', label: '💳 Credit/Debit Card (Flutterwave)', type: 'card' }
+    );
+  }
+  
+  if (allowedMethods.includes('cash')) {
+    options.push({ value: 'cash', label: '💵 Cash', type: 'cash' });
+  }
+  
+  if (allowedMethods.includes('wallet')) {
+    options.push({ value: 'wallet', label: '💰 Wallet Balance', type: 'wallet' });
+  }
+  
+  return options;
+}
+    
+  const STRIPE_PK = 'pk_test_51RsMiZGMO6NwkYaMOEK0rl7KZXpKnYGJYTvXl2iycbSWj0biC7zD51ODQvlfAM1yWCKICPWUhNSs8dunOWxPdhuA00VyFwvHjd';
+  const FLUTTERWAVE_PUBLIC_KEY = "FLWPUBK_TEST-94cb61fc30c1aade9aa2fca54cd89cec-X";
 
     const firebaseConfig = {
       apiKey: "AIzaSyApgmcfu5qGFn9tw872dQ2KkdDz_GPmL70",
@@ -1341,6 +1408,7 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
     }
 
     function openCheckout(){
+      renderFoodPaymentOptions();
       if (!cart.items.length) { alert('Your cart is empty.'); return; }
       const wrap=$('#chkItemsList'); wrap.innerHTML='';
       cart.items.forEach(it=>{
@@ -1366,6 +1434,31 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
     }
     $('#backToCart').onclick = ()=>{ $('#checkoutModal').classList.remove('open'); $('#cartModal').classList.add('open'); };
     $('#closeCheckout').onclick = ()=> $('#checkoutModal').classList.remove('open');
+
+    function renderFoodPaymentOptions() {
+  const allowedMethods = cart.vendorPayment || ['card', 'cash'];
+  const options = generatePaymentOptions(allowedMethods);
+  
+  const container = document.getElementById('chkFormList');
+  let paymentSection = container.querySelector('.payment-methods');
+  
+  if (!paymentSection) {
+    paymentSection = document.createElement('div');
+    paymentSection.className = 'field payment-methods';
+    container.appendChild(paymentSection);
+  }
+  
+  paymentSection.innerHTML = `
+    <label class="small">Payment Method</label>
+    ${options.map(opt => `
+      <label class="row" style="gap:8px; margin: 4px 0;">
+        <input type="radio" name="payMethod" value="${opt.value}" ${opt.value === 'stripe' ? 'checked' : ''}/>
+        <span>${opt.label}</span>
+      </label>
+    `).join('')}
+    <div class="small muted" id="vendorPayHint"></div>
+  `;
+}
 
     async function stripeCheckout(orderId){
   try {
@@ -1404,18 +1497,60 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
   }
 }
 
+async function flutterwaveCheckout(orderId){
+  try {
+    if (!window.FlutterwaveCheckout) throw new Error('Flutterwave library not loaded');
+    
+    const currency = (window.USER_CURRENCY || 'NGN').toUpperCase();
+    const total = cart.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    
+    const config = {
+      tx_ref: orderId,
+      amount: total,
+      currency: currency,
+      payment_options: 'card,banktransfer,ussd',
+      redirect_url: `${location.origin}/?success=1&order=${encodeURIComponent(orderId)}`,
+      customer: {
+        email: user.email || 'guest@example.com',
+        name: user.name || 'Guest',
+        phone_number: ''
+      },
+      customizations: {
+        title: 'ZippUp Food Order',
+        description: `Payment for ${cart.vendorName}`,
+        logo: 'https://your-logo-url.com/logo.png'
+      },
+      meta: {
+        orderId: orderId,
+        vendorId: cart.vendorId,
+        items: cart.items.length
+      }
+    };
+    
+    FlutterwaveCheckout(config);
+  } catch (e) {
+    alert(e.message || 'Flutterwave payment unavailable right now. Please try Stripe or cash.');
+  }
+}
+    
     $('#placeOrderBtn').onclick = async ()=>{
       const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
-      if (!$('#chkTerms').checked) return alert('Please accept the Terms');
-      if (!cart.items.length) return alert('Cart is empty');
-      if (cart.vendorPayment.length && !cart.vendorPayment.includes(method)) {
-        return alert(`This vendor does not accept ${method.toUpperCase()} payment. Allowed: ${cart.vendorPayment.join(', ')}`);
-      }
-      const orderId='ord-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
-      addFoodOrder(orderId, code, method);
-      if (method==='card') {
-        await stripeCheckout(orderId);
-      }
+      if (cart.vendorPayment.length && !validatePaymentMethod(method, cart.vendorPayment)) {
+  const allowed = cart.vendorPayment.includes('card') ? 'Card payments, ' + cart.vendorPayment.filter(m => m !== 'card').join(', ') : cart.vendorPayment.join(', ');
+  return alert(`This vendor does not accept ${method.toUpperCase()} payment. Allowed: ${allowed}`);
+}
+
+const orderId='ord-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
+addFoodOrder(orderId, code, method);
+
+if (method === 'stripe' || method === 'flutterwave') {
+  try {
+    await processPayment(method, { orderId });
+  } catch (error) {
+    alert(`Payment failed: ${error.message}`);
+    return;
+  }
+}
       $('#checkoutModal').classList.remove('open');
       $('#orderInfo').innerHTML = `<div class="card">
         <div><strong>Order ID:</strong> ${orderId}</div>
