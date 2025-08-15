@@ -735,13 +735,14 @@ body[data-theme="dark"] .search .box { background:var(--card); border-color:var(
           </div>
           <div class="field"><label class="small">Delivery Notes</label><textarea id="chkNotes" rows="3"></textarea></div>
           <div class="field">
-            <label class="small">Payment Method</label>
-            <div class="controls">
-              <label><input type="radio" name="payMethod" value="card" checked/> Card</label>
-              <label><input type="radio" name="payMethod" value="cash"/> Cash</label>
-            </div>
-            <div class="small muted" id="vendorPayHint"></div>
-          </div>
+           <label class="small">Payment Method</label>
+           <<div class="controls">
+           <label><input type="radio" name="payMethod" value="stripe" checked/> Stripe (Card)</label>
+           <label><input type="radio" name="payMethod" value="flutterwave"/> Flutterwave (Card)</label>
+           <label><input type="radio" name="payMethod" value="cash"/> Cash</label>
+           </div>
+           <div class="small muted" id="vendorPayHint"></div>
+           </div>
           <label class="row" style="align-items:flex-start;gap:8px"><input type="checkbox" id="chkTerms"/> <span>I accept the Terms.</span></label>
           <div id="chkItemsList" class="list"></div>
           <button class="btn primary" id="placeOrderBtn" type="button">Place Order</button>
