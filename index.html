@@ -1547,6 +1547,45 @@ async function flutterwaveCheckout(orderId){
     throw new Error(`Flutterwave error: ${e.message}`);
   }
 }
+    async function processPayment(method, orderData) {
+  try {
+    console.log('processPayment called with:', method, orderData);
+    switch (method) {
+      case 'stripe':
+        console.log('Processing Stripe payment');
+        return await stripeCheckout(orderData.orderId);
+      case 'flutterwave':
+        console.log('Processing Flutterwave payment');
+        return await flutterwaveCheckout(orderData.orderId);
+      case 'paypal':
+        console.log('Processing PayPal payment');
+        return await paypalCheckout(orderData.orderId);
+      case 'paystack':
+        console.log('Processing PayStack payment');
+        return await paystackCheckout(orderData.orderId);
+      case 'cash':
+        return { success: true, method: 'cash' };
+      case 'wallet':
+        return await walletPayment(orderData);
+      default:
+        throw new Error(`Unknown payment method: ${method}`);
+    }
+  } catch (error) {
+    console.error('processPayment error:', error);
+    throw new Error(`Payment failed: ${error.message}`);
+  }
+}
+    async function paypalCheckout(orderId) {
+  throw new Error('PayPal not implemented yet');
+}
+
+async function paystackCheckout(orderId) {
+  throw new Error('PayStack not implemented yet');
+}
+
+async function walletPayment(orderData) {
+  throw new Error('Wallet payment not implemented yet');
+}
 $('#placeOrderBtn').onclick = async ()=>{
   const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
   console.log('Selected payment method:', method);
@@ -1561,6 +1600,23 @@ $('#placeOrderBtn').onclick = async ()=>{
   }
   
   const orderId='ord-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
+
+  console.log('About to process payment for method:', method);
+  
+  if (method === 'stripe' || method === 'flutterwave') {
+    try {
+      console.log('Calling processPayment with:', method, orderId);
+      await processPayment(method, { orderId });
+      console.log('Payment successful, adding order');
+      addFoodOrder(orderId, code, method);
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert(`Payment failed: ${error.message}`);
+      return;
+    }
+  } else {
+    addFoodOrder(orderId, code, method);
+  }
   
   if (method === 'stripe' || method === 'flutterwave') {
     try {
