@@ -16,7 +16,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -105,76 +104,93 @@
     #faqList .q { font-weight:700; cursor:pointer }
     #faqList .a { display:none; color:#374151 }
     #faqList .item { padding:10px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:#fff }
-
     /* Make these pages scroll both ways */
-    #page-manage-services,
-    #page-emergency-contacts,
-    #page-support { overflow-x: auto; overflow-y: auto; }
+#page-manage-services,
+#page-emergency-contacts,
+#page-support { overflow-x: auto; overflow-y: auto; }
 
-    /* Profile list: align buttons with chevron to indicate navigation */
-    #page-profile .list > button {
-      width: 100%;
-      justify-content: space-between;
-    }
-    #page-profile .list > button::after {
-      content: '›';
-      opacity: .6;
-    }
+/* Profile list: align buttons with chevron to indicate navigation */
+#page-profile .list > button {
+  width: 100%;
+  justify-content: space-between;
+}
+#page-profile .list > button::after {
+  content: '›';
+  opacity: .6;
+}
 
-    /* Dark mode variables */
-    body[data-theme="dark"] {
-      --bg:#0B1020; --card:#0F172A; --text:#E5E7EB; --muted:#9CA3AF;
-      --border:#1F2A44; --primary:#3B82F6; --primary-600:#2563EB; --shadow:0 8px 24px rgba(0,0,0,.35);
-    }
-    body[data-theme="dark"] .card,
-    body[data-theme="dark"] .sheet { background: var(--card); border-color: var(--border); }
-    body[data-theme="dark"] .search .box { background: var(--card); border-color: var(--border); }
+/* Dark mode variables */
+body[data-theme="dark"] {
+  --bg:#0B1020; --card:#0F172A; --text:#E5E7EB; --muted:#9CA3AF;
+  --border:#1F2A44; --primary:#3B82F6; --primary-600:#2563EB; --shadow:0 8px 24px rgba(0,0,0,.35);
+}
+body[data-theme="dark"] .card,
+body[data-theme="dark"] .sheet { background: var(--card); border-color: var(--border); }
+body[data-theme="dark"] .search .box { background: var(--card); border-color: var(--border); }
 
-    /* Marketplace advisory note */
-    #marketAdvisory {
-      background:#FFF7ED; border:1px solid #FED7AA; color:#7C2D12;
-      border-radius:12px; padding:10px; margin:10px 16px; font-size:13px;
-    }
+/* Marketplace advisory note */
+#marketAdvisory {
+  background:#FFF7ED; border:1px solid #FED7AA; color:#7C2D12;
+  border-radius:12px; padding:10px; margin:10px 16px; font-size:13px;
+}
 
-    /* Image upload preview styles */
-    .image-preview { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-    .image-preview img { width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid var(--border); }
-    .image-upload-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:8px; }
-    .image-slot { 
-      width:60px; height:60px; border:2px dashed var(--border); border-radius:8px; 
-      display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;
-    }
-    .image-slot.filled { border:1px solid var(--border); }
-    .image-slot img { width:100%; height:100%; object-fit:cover; border-radius:6px; }
-    .image-slot .remove { position:absolute; top:-4px; right:-4px; background:var(--danger); color:#fff; border:0; border-radius:50%; width:20px; height:20px; font-size:12px; cursor:pointer; }
+/* Promotions strip */
+#promoStrip {
+  margin: 8px 16px 0; overflow: hidden; border:1px solid var(--border); border-radius:12px; background:#fff;
+}
+#promoStrip .inner {
+  display:flex; gap:16px; padding:10px; white-space:nowrap; animation: slidePromo 24s linear infinite;
+}
+@keyframes slidePromo {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
 
-    /* Green action button */
-    .btn.success { background: var(--success); color:#fff; }
-    .btn.success:hover { filter: brightness(0.95); }
+/* Green action button */
+.btn.success { background: var(--success); color:#fff; }
+.btn.success:hover { filter: brightness(0.95); }
 
-    /* Admin page */
-    #page-admin { overflow-x:auto; overflow-y:auto; }
-    .admin-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 12px; }
-    .admin-tabs .btn.active { background:var(--primary); color:#fff; }
-    .admin-grid { display:grid; grid-template-columns:1fr; gap:12px; }
-    @media(min-width:720px){ .admin-grid { grid-template-columns:1fr 1fr; } }
-    .admin-note { font-size:12px; color:var(--muted) }
+/* Admin page */
+#page-admin { overflow-x:auto; overflow-y:auto; }
+.admin-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 12px; }
+.admin-tabs .btn.active { background:var(--primary); color:#fff; }
+.admin-grid { display:grid; grid-template-columns:1fr; gap:12px; }
+@media(min-width:720px){ .admin-grid { grid-template-columns:1fr 1fr; } }
+.admin-note { font-size:12px; color:var(--muted) }
 
-    /* Edit button styles */
-    .edit-btn { 
-      background: #f59e0b; 
-      color: white; 
-      border: none; 
-      padding: 6px 12px; 
-      border-radius: 6px; 
-      cursor: pointer; 
-      font-size: 12px;
-    }
-    .edit-btn:hover { background: #d97706; }
+/* Promotions board under Emergency */
+#promoBoard { margin:12px 16px; }
+#promoGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+@media(min-width:720px){ #promoGrid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+.promoCard { background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; }
 
-    /* Marketplace image grid */
-    .marketplace-images { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:8px; }
-    .marketplace-images .image-slot { width:100%; height:80px; }
+/* Image upload preview styles */
+.image-preview { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.image-preview img { width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid var(--border); }
+.image-upload-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:8px; }
+.image-slot { 
+  width:60px; height:60px; border:2px dashed var(--border); border-radius:8px; 
+  display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;
+}
+.image-slot.filled { border:1px solid var(--border); }
+.image-slot img { width:100%; height:100%; object-fit:cover; border-radius:6px; }
+.image-slot .remove { position:absolute; top:-4px; right:-4px; background:var(--danger); color:#fff; border:0; border-radius:50%; width:20px; height:20px; font-size:12px; cursor:pointer; }
+
+/* Edit button styles */
+.edit-btn { 
+  background: #f59e0b; 
+  color: white; 
+  border: none; 
+  padding: 6px 12px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  font-size: 12px;
+}
+.edit-btn:hover { background: #d97706; }
+
+/* Marketplace image grid */
+.marketplace-images { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:8px; }
+.marketplace-images .image-slot { width:100%; height:80px; }
   </style>
 </head>
 <body>
@@ -207,7 +223,7 @@
     </section>
     <section class="search">
       <div class="box">
-        <input id="search" placeholder="Search transport, food, services, emergency…" autocomplete="off" name="q"/>
+        <input id="search" placeholder="Search transport, food, services, emergency…"/>
         <button class="btn ghost" id="voiceBtn" type="button">🎤</button>
         <button class="btn primary" id="searchBtn" type="button">Search</button>
       </div>
@@ -220,6 +236,31 @@
       <div class="title">Emergency</div>
       <div class="grid" id="emergencyGrid"></div>
     </section>
+    <section id="promoBoard">
+      <div class="section">
+        <div class="title">Promotions & suggestions</div>
+        <div id="promoGrid">
+          <div class="promoCard">
+            <div class="row"><div style="font-size:22px">🍔</div><strong>10% off first food order</strong></div>
+          </div>
+          <div class="promoCard">
+            <div class="row"><div style="font-size:22px">🚗</div><strong>Taxi & truck booking</strong></div>
+          </div>
+          <div class="promoCard">
+            <div class="row"><div style="font-size:22px">🛠️</div><strong>Hire verified providers</strong></div>
+          </div>
+          <div class="promoCard">
+            <div class="row"><div style="font-size:22px">💳</div><strong>Pay securely with Stripe</strong></div>
+          </div>
+          <div class="promoCard">
+            <div class="row"><div style="font-size:22px">🎁</div><strong>Refer & earn coupons</strong></div>
+          </div>
+          <div class="promoCard">
+            <div class="row"><div style="font-size:22px">🛍️</div><strong>Marketplace deals near you</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <main id="page-marketplace" class="page">
@@ -228,7 +269,6 @@
         <div class="title" style="margin:0">Marketplace</div>
         <button class="btn ghost" id="sellProductsBtn" type="button">Sell Products</button>
       </div>
-      <div id="marketAdvisory">Safety tip: Never send payment before receiving your goods. Meet sellers in public places.</div>
       <div class="search">
         <div class="box">
           <input id="mpSearch" placeholder="Search products…"/>
@@ -440,62 +480,62 @@
     </section>
   </main>
 
-  <main id="page-admin" class="page">
-    <section class="section">
-      <div class="title">Admin</div>
-      <div class="admin-note" id="adminRoleNote">Checking admin access…</div>
+<main id="page-admin" class="page">
+  <section class="section">
+    <div class="title">Admin</div>
+    <div class="admin-note" id="adminRoleNote">Checking admin access…</div>
 
-      <div class="admin-tabs" id="adminTabs">
-        <button class="btn ghost" data-admin-tab="orders" type="button">Orders</button>
-        <button class="btn ghost" data-admin-tab="vendors" type="button">Vendors (Food)</button>
-        <button class="btn ghost" data-admin-tab="market" type="button">Marketplace</button>
-        <button class="btn ghost" data-admin-tab="users" type="button">Users/KYC</button>
-        <button class="btn ghost" data-admin-tab="wallet" type="button">Wallet</button>
-        <button class="btn ghost" data-admin-tab="emergency" type="button">Emergency</button>
-        <button class="btn ghost" data-admin-tab="promos" type="button">Promotions</button>
-      </div>
+    <div class="admin-tabs" id="adminTabs">
+      <button class="btn ghost" data-admin-tab="orders" type="button">Orders</button>
+      <button class="btn ghost" data-admin-tab="vendors" type="button">Vendors (Food)</button>
+      <button class="btn ghost" data-admin-tab="market" type="button">Marketplace</button>
+      <button class="btn ghost" data-admin-tab="users" type="button">Users/KYC</button>
+      <button class="btn ghost" data-admin-tab="wallet" type="button">Wallet</button>
+      <button class="btn ghost" data-admin-tab="emergency" type="button">Emergency</button>
+      <button class="btn ghost" data-admin-tab="promos" type="button">Promotions</button>
+    </div>
 
-      <div id="adminView">
-        <div id="admin-orders" class="admin-grid" style="display:none"></div>
-        <div id="admin-vendors" class="admin-grid" style="display:none"></div>
-        <div id="admin-market" class="admin-grid" style="display:none"></div>
-        <div id="admin-users" class="admin-grid" style="display:none"></div>
-        <div id="admin-wallet" class="admin-grid" style="display:none"></div>
-        <div id="admin-emergency" class="admin-grid" style="display:none">
-          <div class="card">
-            <div class="list">
-              <div class="field"><label class="small">Region (e.g., ZA-GP)</label><input id="admEmerRegion" placeholder="Country/Area code"/></div>
-              <div class="field"><label class="small">Default emergency number</label><input id="admEmerNumber" placeholder="+27…"/></div>
-              <button class="btn primary" id="admEmerSave" type="button">Save default</button>
-              <div class="small muted" id="admEmerStatus"></div>
-            </div>
-          </div>
-        </div>
-        <div id="admin-promos" class="admin-grid" style="display:none">
-          <div class="card">
-            <div class="list">
-              <div class="field"><label class="small">Title</label><input id="admPromoTitle" placeholder="e.g., High‑rated taxi drivers around you"/></div>
-              <div class="field"><label class="small">Type</label>
-                <select id="admPromoType">
-                  <option value="transport">transport</option>
-                  <option value="providers">providers</option>
-                  <option value="marketplace">marketplace</option>
-                  <option value="food">food</option>
-                </select>
-              </div>
-              <div class="field"><label class="small">Payload (JSON)</label><textarea id="admPromoPayload" rows="3" placeholder='{"kind":"taxi"}'></textarea></div>
-              <button class="btn primary" id="admPromoSave" type="button">Publish</button>
-              <div class="small muted" id="admPromoStatus"></div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="title" style="margin:0 0 6px">Existing promotions</div>
-            <div id="admPromoList" class="list"></div>
+    <div id="adminView">
+      <div id="admin-orders" class="admin-grid" style="display:none"></div>
+      <div id="admin-vendors" class="admin-grid" style="display:none"></div>
+      <div id="admin-market" class="admin-grid" style="display:none"></div>
+      <div id="admin-users" class="admin-grid" style="display:none"></div>
+      <div id="admin-wallet" class="admin-grid" style="display:none"></div>
+      <div id="admin-emergency" class="admin-grid" style="display:none">
+        <div class="card">
+          <div class="list">
+            <div class="field"><label class="small">Region (e.g., ZA-GP)</label><input id="admEmerRegion" placeholder="Country/Area code"/></div>
+            <div class="field"><label class="small">Default emergency number</label><input id="admEmerNumber" placeholder="+27…"/></div>
+            <button class="btn primary" id="admEmerSave" type="button">Save default</button>
+            <div class="small muted" id="admEmerStatus"></div>
           </div>
         </div>
       </div>
-    </section>
-  </main>
+      <div id="admin-promos" class="admin-grid" style="display:none">
+        <div class="card">
+          <div class="list">
+            <div class="field"><label class="small">Title</label><input id="admPromoTitle" placeholder="e.g., High‑rated taxi drivers around you"/></div>
+            <div class="field"><label class="small">Type</label>
+              <select id="admPromoType">
+                <option value="transport">transport</option>
+                <option value="providers">providers</option>
+                <option value="marketplace">marketplace</option>
+                <option value="food">food</option>
+              </select>
+            </div>
+            <div class="field"><label class="small">Payload (JSON)</label><textarea id="admPromoPayload" rows="3" placeholder='{"kind":"taxi"}'></textarea></div>
+            <button class="btn primary" id="admPromoSave" type="button">Publish</button>
+            <div class="small muted" id="admPromoStatus"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="title" style="margin:0 0 6px">Existing promotions</div>
+          <div id="admPromoList" class="list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
   
   <nav class="nav">
     <button data-page="home" class="active" type="button">🏠 Home</button>
@@ -504,7 +544,7 @@
     <button data-page="profile" type="button">👤 Profile</button>
   </nav>
 
-  <!-- Modals start here - keeping all existing modals but updating key ones -->
+  <!-- All the modals (keeping them minimal for now) -->
   
   <!-- Sell Products Modal with improved image handling -->
   <div class="modal" id="sellModal">
@@ -634,30 +674,8 @@
     </div>
   </div>
 
-  <!-- All other existing modals remain the same... -->
-  <div class="modal" id="providersModal">
-    <div class="sheet">
-      <div class="head">
-        <strong id="providersTitle">Providers</strong>
-        <button class="btn ghost" id="closeProviders" type="button">✖</button>
-      </div>
-      <div class="body">
-        <div class="row" id="provSearchRow" style="gap:8px;margin-bottom:10px;display:none">
-          <input id="provSearch" placeholder="Search providers or specialties…" style="flex:1"/>
-          <button class="btn ghost" id="provVoice" type="button">🎤</button>
-          <button class="btn primary" id="provSearchBtn" type="button">Search</button>
-        </div>
-        <div class="list" id="providersList"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Additional modals would continue here... I'll include the key ones for this fix -->
-
-  <!-- Floating panic button -->
   <button class="floating-panic" id="panicBtn" title="Emergency">🚨</button>
 
-  <!-- Splash screen -->
   <div id="splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff">
     <div style="font-size:28px;font-weight:800;margin-top:12px">ZippUp</div>
     <div style="opacity:.9;margin-top:4px">On‑demand services, fast.</div>
@@ -716,11 +734,9 @@
   </div>
 
   <script>
-    // ==================== CORE CONFIGURATION ====================
     const BASE_API = 'https://zippup-backend-v3.onrender.com';
     window.BASE_API = BASE_API;
 
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyApgmcfu5qGFn9tw872dQ2KkdDz_GPmL70",
       authDomain: "zippup-535ca.firebaseapp.com",
@@ -729,18 +745,18 @@
       messagingSenderId: "382212325227",
       measurementId: "G-YKJEVL8M6V"
     };
-
-    // Initialize Firebase
     if (!window.firebase?.apps?.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
-
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+    const db = firebase.firestore();
 
     // ==================== USER PROFILE MANAGEMENT (FIXED) ====================
     let currentUser = null;
-    let userProfile = { name:'Guest', email:'guest@example.com', wallet: 0, avatar: null };
+    let user = { name:'Guest', email:'guest@example.com', wallet: 0 };
+    let coords = null, homeMap=null, vehicleMarkers=[];
+    let cart = loadCart();
+    let orders = getOrders();
+    let notifications = getNotifications();
 
     // Get current user's UID (this is the key fix for profile sharing issue)
     function getCurrentUID() {
@@ -753,97 +769,20 @@
       return `zup_${type}_${uid}`;
     }
 
-    // Profile data management with UID separation
-    function loadUserProfile() {
-      const uid = getCurrentUID();
-      if (uid === 'guest') {
-        userProfile = { name:'Guest', email:'guest@example.com', wallet: 0, avatar: null };
-        return;
-      }
-      
-      try {
-        const saved = localStorage.getItem(getUserDataKey('profile'));
-        if (saved) {
-          userProfile = JSON.parse(saved);
-        } else {
-          // Create new profile for this user
-          userProfile = {
-            name: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User',
-            email: currentUser?.email || '',
-            wallet: 0,
-            avatar: null
-          };
-          saveUserProfile();
-        }
-      } catch (e) {
-        console.error('Error loading user profile:', e);
-        userProfile = { name:'Guest', email:'guest@example.com', wallet: 0, avatar: null };
-      }
-    }
+    function loadCart(){ try{ return JSON.parse(localStorage.getItem(getUserDataKey('cart'))||'{"vendorId":null,"vendorName":null,"vendorPayment":[],"items":[]}'); }catch{ return { vendorId:null, vendorName:null, vendorPayment:[], items:[] } } }
+    function saveCart(){ localStorage.setItem(getUserDataKey('cart'), JSON.stringify(cart)); }
+    function resetCart(){ cart={ vendorId:null, vendorName:null, vendorPayment:[], items:[] }; saveCart(); }
 
-    function saveUserProfile() {
-      const uid = getCurrentUID();
-      if (uid === 'guest') return;
-      
-      try {
-        localStorage.setItem(getUserDataKey('profile'), JSON.stringify(userProfile));
-      } catch (e) {
-        console.error('Error saving user profile:', e);
-      }
-    }
+    function getOrders(){ try{ return JSON.parse(localStorage.getItem(getUserDataKey('orders'))||'[]'); } catch{ return []; } }
+    function setOrders(o){ orders=o||[]; localStorage.setItem(getUserDataKey('orders'), JSON.stringify(orders)); }
+    function getNotifications(){ try{ return JSON.parse(localStorage.getItem(getUserDataKey('notifications'))||'[]'); } catch{ return []; } }
+    function setNotifications(n){ notifications=n||[]; localStorage.setItem(getUserDataKey('notifications'), JSON.stringify(notifications)); }
 
-    // Get user-specific data
-    function getUserData(type) {
-      try {
-        return JSON.parse(localStorage.getItem(getUserDataKey(type)) || '[]');
-      } catch {
-        return [];
-      }
-    }
+    function getFoodItems(){ try{ return JSON.parse(localStorage.getItem(getUserDataKey('food_items'))||'[]'); } catch{ return []; } }
+    function setFoodItems(x){ localStorage.setItem(getUserDataKey('food_items'), JSON.stringify(x||[])); }
 
-    // Save user-specific data
-    function saveUserData(type, data) {
-      try {
-        localStorage.setItem(getUserDataKey(type), JSON.stringify(data || []));
-      } catch (e) {
-        console.error(`Error saving ${type}:`, e);
-      }
-    }
-
-    // ==================== FOOD ITEMS MANAGEMENT (FIXED) ====================
-    function getFoodItems() {
-      return getUserData('food_items');
-    }
-
-    function setFoodItems(items) {
-      saveUserData('food_items', items);
-    }
-
-    function addFoodItem(item) {
-      const items = getFoodItems();
-      item.id = 'fi' + Date.now() + Math.random();
-      item.userId = getCurrentUID();
-      items.unshift(item);
-      setFoodItems(items);
-      return item;
-    }
-
-    function updateFoodItem(itemId, updates) {
-      const items = getFoodItems();
-      const index = items.findIndex(item => item.id === itemId);
-      if (index >= 0) {
-        items[index] = { ...items[index], ...updates };
-        setFoodItems(items);
-        return items[index];
-      }
-      return null;
-    }
-
-    function deleteFoodItem(itemId) {
-      const items = getFoodItems();
-      const filtered = items.filter(item => item.id !== itemId);
-      setFoodItems(filtered);
-    }
+    function getUserProducts(){ try{ return JSON.parse(localStorage.getItem(getUserDataKey('marketplace_products'))||'[]'); } catch{ return []; } }
+    function setUserProducts(arr){ localStorage.setItem(getUserDataKey('marketplace_products'), JSON.stringify(arr||[])); }
 
     // ==================== IMAGE UPLOAD HANDLING (FIXED) ====================
     function createImageUploadGrid(container, maxImages = 5) {
@@ -892,7 +831,212 @@
       return Array.from(slots).map(slot => slot.dataset.imageData).filter(Boolean);
     }
 
-    // ==================== FOOD PRODUCT MANAGEMENT UI (FIXED) ====================
+    const $ = s => document.querySelector(s);
+    const $$ = s => Array.from(document.querySelectorAll(s));
+    function money(n){ return `$${(+n||0).toFixed(2)}`; }
+    function showPage(id){
+      $$('.page').forEach(p=>p.classList.remove('active'));
+      const el=$('#page-'+id); if (el) el.classList.add('active');
+      $$('.nav button').forEach(b=>b.classList.toggle('active', b.getAttribute('data-page')===id));
+    }
+
+    function updateProfileUI(){
+      $('#profName').textContent=(user?.name||'Guest');
+      $('#profEmail').textContent=(user?.email||'guest@example.com');
+      const saved=localStorage.getItem(getUserDataKey('profile_photo'));
+      if (saved) { const av=$('#user-avatar'); av.style.backgroundImage=`url("${saved}")`; av.style.backgroundSize='cover'; av.style.backgroundPosition='center'; av.textContent=''; }
+    }
+
+    $$('.nav button').forEach(b=>{
+      b.onclick = ()=>{
+        const page=b.getAttribute('data-page');
+        showPage(page);
+        if (page==='marketplace') { renderMarketplace(); }
+        if (page==='wallet') { openWallet(); }
+        if (page==='orders') { renderOrders(); }
+      };
+    });
+
+    $('#profileBtn').onclick = (e)=>{ e.stopPropagation(); const m=$('#profileMenu'); m.style.display = (m.style.display==='block'?'none':'block'); };
+    document.addEventListener('click', ()=>{ const m=$('#profileMenu'); if (m) m.style.display='none'; });
+    $('#menuProfile').onclick = ()=>{ $('#profileMenu').style.display='none'; showPage('profile'); };
+    $('#menuOrders').onclick  = ()=>{ $('#profileMenu').style.display='none'; showPage('orders'); renderOrders(); };
+    $('#menuWallet').onclick  = ()=>{ $('#profileMenu').style.display='none'; showPage('wallet'); };
+    $('#menuTopup').onclick   = ()=>{ $('#profileMenu').style.display='none'; showPage('digital'); };
+    $('#menuSupport').onclick = ()=>{ $('#profileMenu').style.display='none'; showPage('support'); };
+    $('#menuLogout').onclick  = async ()=>{
+      $('#profileMenu').style.display='none';
+      try{ await auth.signOut(); }catch{}
+      user = { name:'Guest', email:'' };
+      $('#authModal').style.display='flex'; $('#authModal').classList.add('open');
+    };
+
+    const SERVICES = [
+      { id:'transport',   name:'Transport',         icon:'🚗', desc:'Ride & moving' },
+      { id:'food',        name:'Food',              icon:'🍔', desc:'Restaurants & groceries' },
+      { id:'tech',        name:'Tech',              icon:'🔧', desc:'Phone/computer/ repair' },
+      { id:'home',        name:'Home',              icon:'🏠', desc:'Cleaning, maintenance, fixes & more' },
+      { id:'construction',name:'Construction',      icon:'🏗️', desc:'Builders, Plumbers, electricians & more' },
+      { id:'auto',        name:'Automobile',        icon:'🛠️', desc:'Mechanics, tires, roadside' },
+      { id:'digital',     name:'Digital Services',  icon:'💳', desc:'Airtime, data, bills, digital products' },
+      { id:'marketplace', name:'Marketplace',       icon:'🛍️', desc:'Buy & Sell (contact sellers)' },
+      { id:'others',      name:'Others',            icon:'🎯', desc:'Events, tutors, more' },
+    ];
+    const EMERGENCY = [
+      { id:'ambulance', name:'Ambulance', icon:'🚑' },
+      { id:'fire',      name:'Fire Service', icon:'🚒' },
+      { id:'towing',    name:'Towing', icon:'🚛' },
+      { id:'security',  name:'Security', icon:'🛡️' },
+      { id:'roadside',  name:'Roadside', icon:'🔧' },
+    ];
+
+    function renderServices(){
+      const grid = $('#servicesGrid'); grid.innerHTML='';
+      SERVICES.forEach(s=>{
+        const el=document.createElement('div'); el.className='card service';
+        el.innerHTML = `<div class="row"><div style="font-size:28px">${s.icon}</div><h4>${s.name}</h4></div><div class="small muted" style="margin-top:6px">${s.desc}</div>`;
+        el.onclick = ()=> openCategory(s.id, s.name);
+        grid.appendChild(el);
+      });
+    }
+    function renderEmergency(){
+      const grid = $('#emergencyGrid'); grid.innerHTML='';
+      EMERGENCY.forEach(e=>{
+        const el=document.createElement('div'); el.className='card service';
+        el.innerHTML = `<div class="row"><div style="font-size:28px">${e.icon}</div><h4>${e.name}</h4></div>`;
+        el.onclick = ()=> alert(`Calling ${e.name}...`);
+        grid.appendChild(el);
+      });
+    }
+
+    function openCategory(catId, label){
+      if (catId==='digital'){ showPage('digital'); return; }
+      if (catId==='marketplace'){ showPage('marketplace'); return; }
+      alert(`Opening ${label} providers...`);
+    }
+
+    let MP_PRODUCTS = [
+      { id:'p100', title:'Smartphone X', cat:'electronics', price:499, stock:12, img:'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop', seller:'Tony', phone:'+12025550123' },
+      { id:'p200', title:'Running Shoes', cat:'sports', price:79,  stock:18, img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop', seller:'Kelvin', phone:'+12025550124' },
+    ];
+
+    function renderMarketplace(category = null, query = '') {
+      const grid = $('#mpGrid');
+      const allProducts = [...MP_PRODUCTS, ...getUserProducts()];
+      
+      const filteredProducts = allProducts.filter(p => {
+        if (category && p.cat !== category) return false;
+        if (query && !(p.title.toLowerCase().includes(query) || String(p.cat).toLowerCase().includes(query))) return false;
+        return true;
+      });
+
+      if (!filteredProducts.length) {
+        grid.innerHTML = '<div class="small muted">No products found.</div>';
+        return;
+      }
+
+      grid.innerHTML = filteredProducts.map(p => `
+        <div class="card product">
+          <img src="${p.img || p.images?.[0] || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop'}" alt="${p.title}"/>
+          <div><strong>${p.title}</strong></div>
+          <div class="row" style="justify-content:space-between">
+            <div class="price">${money(p.price)}</div>
+            <div class="small muted">Seller: ${p.seller || 'Unknown'}</div>
+          </div>
+          <div class="row" style="gap:8px;margin-top:6px">
+            <button class="btn primary" onclick="openChat('${p.seller || 'Seller'}')">💬 Chat</button>
+            <button class="btn ghost" onclick="location.href='tel:${p.phone || '+12025550123'}'">📞 Call</button>
+            <button class="btn ghost" onclick="location.href='https://wa.me/${(p.phone || '+12025550123').replace(/\\D/g,'')}'">🟢 WhatsApp</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function initMarketplace() {
+      const chips = $('#mpChips');
+      const categories = [
+        { id: 'electronics', name: 'Electronics' },
+        { id: 'fashion', name: 'Fashion' },
+        { id: 'home', name: 'Home & Garden' },
+        { id: 'sports', name: 'Sports' },
+        { id: 'automobile', name: 'Automobile' },
+        { id: 'spares', name: 'Spare Parts' },
+        { id: 'others', name: 'Others' }
+      ];
+      
+      chips.innerHTML = '';
+      categories.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'btn ghost';
+        btn.textContent = c.name;
+        btn.onclick = () => renderMarketplace(c.id, $('#mpSearch').value.trim().toLowerCase());
+        chips.appendChild(btn);
+      });
+      
+      renderMarketplace();
+      
+      $('#sellProductsBtn').onclick = () => {
+        const previewGrid = $('#sellImagePreview');
+        createImageUploadGrid(previewGrid, 10);
+        $('#sellModal').classList.add('open');
+      };
+      $('#mpSearchBtn').onclick = () => renderMarketplace(null, $('#mpSearch').value.trim().toLowerCase());
+      $('#sellSubmit').onclick = submitMarketplace;
+      $('#sellBack').onclick = () => $('#sellModal').classList.remove('open');
+    }
+
+    async function submitMarketplace() {
+      const cat = $('#sellCat').value;
+      const type = $('#sellType').value.trim();
+      const title = $('#sellTitle').value.trim();
+      const price = parseFloat($('#sellPrice').value || '0');
+      const stock = parseInt($('#sellStock').value || '0', 10);
+      const desc = $('#sellDesc').value.trim();
+      
+      if (!title || !price || !stock) {
+        alert('Please fill in title, price, and stock');
+        return;
+      }
+
+      const previewGrid = $('#sellImagePreview');
+      const images = getImagesFromGrid(previewGrid);
+
+      const item = {
+        id: 'mp' + Date.now() + Math.random(),
+        cat, type, title, price, stock, desc, images,
+        img: images[0] || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop',
+        seller: user.name || 'You',
+        phone: '+12025550123',
+        userId: getCurrentUID()
+      };
+
+      const products = getUserProducts();
+      products.unshift(item);
+      setUserProducts(products);
+
+      // Reset form
+      $('#sellCat').value = 'electronics';
+      $('#sellType').value = '';
+      $('#sellTitle').value = '';
+      $('#sellPrice').value = '';
+      $('#sellStock').value = '';
+      $('#sellDesc').value = '';
+      createImageUploadGrid(previewGrid, 10);
+
+      $('#sellModal').classList.remove('open');
+      renderMarketplace();
+      alert('Product listed successfully!');
+    }
+
+    $('#manageProductsBtn').onclick = () => {
+      showPage('profile');
+      $('#page-manage-products').classList.add('active');
+      ensureFoodRow();
+      renderFoodItemsList();
+    };
+
+    $('#mpBack').onclick = () => showPage('profile');
+
     function foodRowTemplate() {
       const div = document.createElement('div');
       div.className = 'card';
@@ -931,7 +1075,6 @@
         </div>
       `;
       
-      // Initialize image upload grid
       const imageGrid = div.querySelector('[data-k="images"]');
       createImageUploadGrid(imageGrid, 5);
       
@@ -940,14 +1083,14 @@
     }
 
     function ensureFoodRow() {
-      const form = document.getElementById('foodItemsForm');
+      const form = $('#foodItemsForm');
       if (!form.children.length) {
         form.appendChild(foodRowTemplate());
       }
     }
 
     function renderFoodItemsList() {
-      const box = document.getElementById('foodItemsList');
+      const box = $('#foodItemsList');
       const items = getFoodItems();
       
       if (!items.length) {
@@ -979,7 +1122,6 @@
       `).join('');
     }
 
-    // ==================== FOOD ITEM EDITING (NEW FEATURE) ====================
     let editingItemId = null;
 
     function editFoodItem(itemId) {
@@ -989,19 +1131,16 @@
 
       editingItemId = itemId;
 
-      // Populate edit form
-      document.getElementById('editKind').value = item.kind || 'fastfood';
-      document.getElementById('editTitle').value = item.title || '';
-      document.getElementById('editPrice').value = item.price || '';
-      document.getElementById('editDesc').value = item.desc || '';
-      document.getElementById('editPmCard').checked = (item.payment || []).includes('card');
-      document.getElementById('editPmCash').checked = (item.payment || []).includes('cash');
+      $('#editKind').value = item.kind || 'fastfood';
+      $('#editTitle').value = item.title || '';
+      $('#editPrice').value = item.price || '';
+      $('#editDesc').value = item.desc || '';
+      $('#editPmCard').checked = (item.payment || []).includes('card');
+      $('#editPmCash').checked = (item.payment || []).includes('cash');
 
-      // Handle images
-      const previewGrid = document.getElementById('editImagePreview');
+      const previewGrid = $('#editImagePreview');
       createImageUploadGrid(previewGrid, 5);
       
-      // Load existing images
       if (item.images && item.images.length > 0) {
         item.images.forEach((imageData, index) => {
           const slot = previewGrid.children[index];
@@ -1016,190 +1155,25 @@
         });
       }
 
-      document.getElementById('editProductModal').classList.add('open');
-      document.getElementById('editProductModal').style.display = 'flex';
+      $('#editProductModal').classList.add('open');
+      $('#editProductModal').style.display = 'flex';
     }
 
     function deleteFoodItemConfirm(itemId) {
       if (confirm('Are you sure you want to delete this item?')) {
-        deleteFoodItem(itemId);
+        const items = getFoodItems();
+        const filtered = items.filter(item => item.id !== itemId);
+        setFoodItems(filtered);
         renderFoodItemsList();
       }
     }
 
-    // ==================== MARKETPLACE FIXES ====================
-    function getUserProducts() {
-      return getUserData('marketplace_products');
-    }
-
-    function setUserProducts(products) {
-      saveUserData('marketplace_products', products);
-    }
-
-    // Fixed marketplace submission
-    async function submitMarketplace() {
-      const cat = document.getElementById('sellCat').value;
-      const type = document.getElementById('sellType').value.trim();
-      const title = document.getElementById('sellTitle').value.trim();
-      const price = parseFloat(document.getElementById('sellPrice').value || '0');
-      const stock = parseInt(document.getElementById('sellStock').value || '0', 10);
-      const desc = document.getElementById('sellDesc').value.trim();
-      
-      if (!title || !price || !stock) {
-        alert('Please fill in title, price, and stock');
-        return;
-      }
-
-      // Get images from the preview grid
-      const previewGrid = document.getElementById('sellImagePreview');
-      const images = getImagesFromGrid(previewGrid);
-
-      const item = {
-        id: 'mp' + Date.now() + Math.random(),
-        cat,
-        type,
-        title,
-        price,
-        stock,
-        desc,
-        images,
-        img: images[0] || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop',
-        seller: userProfile.name || 'You',
-        phone: '+12025550123',
-        userId: getCurrentUID()
-      };
-
-      // Try API save, fallback to local
-      let saved = false;
-      try {
-        const response = await fetch(`${BASE_API}/api/marketplace/listings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(item)
-        });
-        saved = response.ok;
-      } catch (error) {
-        console.warn('API save failed, using local storage:', error);
-      }
-
-      if (!saved) {
-        const products = getUserProducts();
-        products.unshift(item);
-        setUserProducts(products);
-      }
-
-      // Reset form
-      document.getElementById('sellCat').value = 'electronics';
-      document.getElementById('sellType').value = '';
-      document.getElementById('sellTitle').value = '';
-      document.getElementById('sellPrice').value = '';
-      document.getElementById('sellStock').value = '';
-      document.getElementById('sellDesc').value = '';
-      createImageUploadGrid(previewGrid, 10);
-
-      document.getElementById('sellModal').classList.remove('open');
-      renderMarketplace();
-      alert('Product listed successfully!');
-    }
-
-    // ==================== UI UTILITY FUNCTIONS ====================
-    const $ = s => document.querySelector(s);
-    const $$ = s => Array.from(document.querySelectorAll(s));
-    function money(n) { return `$${(+n || 0).toFixed(2)}`; }
-
-    function showPage(id) {
-      $$('.page').forEach(p => p.classList.remove('active'));
-      const el = $(`#page-${id}`);
-      if (el) el.classList.add('active');
-      $$('.nav button').forEach(b => b.classList.toggle('active', b.getAttribute('data-page') === id));
-    }
-
-    function updateProfileUI() {
-      document.getElementById('profName').textContent = userProfile.name || 'Guest';
-      document.getElementById('profEmail').textContent = userProfile.email || 'guest@example.com';
-      
-      // Update avatar
-      const avatar = document.getElementById('user-avatar');
-      if (userProfile.avatar) {
-        avatar.style.backgroundImage = `url("${userProfile.avatar}")`;
-        avatar.style.backgroundSize = 'cover';
-        avatar.style.backgroundPosition = 'center';
-        avatar.textContent = '';
-      } else {
-        avatar.style.backgroundImage = '';
-        avatar.textContent = '👤';
-      }
-    }
-
-    // ==================== EVENT HANDLERS ====================
-    
-    // Authentication state change handler
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        currentUser = user;
-        loadUserProfile();
-        updateProfileUI();
-        document.getElementById('authModal').style.display = 'none';
-        document.getElementById('authModal').classList.remove('open');
-      } else {
-        currentUser = null;
-        userProfile = { name: 'Guest', email: 'guest@example.com', wallet: 0, avatar: null };
-        updateProfileUI();
-        document.getElementById('authModal').style.display = 'flex';
-        document.getElementById('authModal').classList.add('open');
-      }
-    });
-
-    // Navigation handlers
-    $$('.nav button').forEach(b => {
-      b.onclick = () => {
-        const page = b.getAttribute('data-page');
-        showPage(page);
-        if (page === 'marketplace') renderMarketplace();
-        if (page === 'orders') renderOrders();
-        if (page === 'profile') updateProfileUI();
-      };
-    });
-
-    // Profile menu handlers
-    $('#profileBtn').onclick = (e) => {
-      e.stopPropagation();
-      const m = $('#profileMenu');
-      m.style.display = (m.style.display === 'block' ? 'none' : 'block');
-    };
-    
-    document.addEventListener('click', () => {
-      const m = $('#profileMenu');
-      if (m) m.style.display = 'none';
-    });
-
-    $('#menuProfile').onclick = () => { $('#profileMenu').style.display = 'none'; showPage('profile'); };
-    $('#menuOrders').onclick = () => { $('#profileMenu').style.display = 'none'; showPage('orders'); };
-    $('#menuWallet').onclick = () => { $('#profileMenu').style.display = 'none'; showPage('wallet'); };
-    $('#menuTopup').onclick = () => { $('#profileMenu').style.display = 'none'; showPage('digital'); };
-    $('#menuSupport').onclick = () => { $('#profileMenu').style.display = 'none'; showPage('support'); };
-    $('#menuLogout').onclick = async () => {
-      $('#profileMenu').style.display = 'none';
-      try { await auth.signOut(); } catch (e) { console.error('Logout error:', e); }
-    };
-
-    // Page navigation handlers
-    $('#manageProductsBtn').onclick = () => {
-      showPage('profile');
-      $('#page-manage-products').classList.add('active');
-      ensureFoodRow();
-      renderFoodItemsList();
-    };
-
-    $('#mpBack').onclick = () => showPage('profile');
-
-    // Food items form handlers
     $('#addFoodRow').onclick = () => {
-      document.getElementById('foodItemsForm').appendChild(foodRowTemplate());
+      $('#foodItemsForm').appendChild(foodRowTemplate());
     };
 
     $('#saveFoodItems').onclick = async () => {
-      const rows = Array.from(document.getElementById('foodItemsForm').children || []);
+      const rows = Array.from($('#foodItemsForm').children || []);
       if (!rows.length) {
         alert('Add at least one item');
         return;
@@ -1220,103 +1194,81 @@
 
         if (!title || !price) continue;
 
-        const item = {
-          kind,
-          title,
-          price,
-          desc,
-          images,
-          payment: pm
-        };
-        
-        items.push(addFoodItem(item));
+        items.push({
+          id: 'fi' + Date.now() + Math.random(),
+          kind, title, price, desc, images, payment: pm,
+          userId: getCurrentUID()
+        });
       }
 
-      // Clear form
-      document.getElementById('foodItemsForm').innerHTML = '';
+      const currentItems = getFoodItems();
+      setFoodItems(items.concat(currentItems));
+
+      $('#foodItemsForm').innerHTML = '';
       ensureFoodRow();
       renderFoodItemsList();
       alert(`${items.length} items saved successfully!`);
     };
 
-    // Edit product modal handlers
     $('#editProductClose').onclick = () => {
-      document.getElementById('editProductModal').classList.remove('open');
-      document.getElementById('editProductModal').style.display = 'none';
+      $('#editProductModal').classList.remove('open');
+      $('#editProductModal').style.display = 'none';
     };
 
     $('#cancelEditProduct').onclick = () => {
-      document.getElementById('editProductModal').classList.remove('open');
-      document.getElementById('editProductModal').style.display = 'none';
+      $('#editProductModal').classList.remove('open');
+      $('#editProductModal').style.display = 'none';
     };
 
     $('#saveEditProduct').onclick = () => {
       if (!editingItemId) return;
 
       const updates = {
-        kind: document.getElementById('editKind').value,
-        title: document.getElementById('editTitle').value.trim(),
-        price: parseFloat(document.getElementById('editPrice').value || '0'),
-        desc: document.getElementById('editDesc').value.trim(),
-        images: getImagesFromGrid(document.getElementById('editImagePreview')),
+        kind: $('#editKind').value,
+        title: $('#editTitle').value.trim(),
+        price: parseFloat($('#editPrice').value || '0'),
+        desc: $('#editDesc').value.trim(),
+        images: getImagesFromGrid($('#editImagePreview')),
         payment: []
       };
 
-      if (document.getElementById('editPmCard').checked) updates.payment.push('card');
-      if (document.getElementById('editPmCash').checked) updates.payment.push('cash');
+      if ($('#editPmCard').checked) updates.payment.push('card');
+      if ($('#editPmCash').checked) updates.payment.push('cash');
 
       if (!updates.title || !updates.price) {
         alert('Please fill in title and price');
         return;
       }
 
-      updateFoodItem(editingItemId, updates);
-      renderFoodItemsList();
+      const items = getFoodItems();
+      const index = items.findIndex(item => item.id === editingItemId);
+      if (index >= 0) {
+        items[index] = { ...items[index], ...updates };
+        setFoodItems(items);
+        renderFoodItemsList();
+      }
 
-      document.getElementById('editProductModal').classList.remove('open');
-      document.getElementById('editProductModal').style.display = 'none';
+      $('#editProductModal').classList.remove('open');
+      $('#editProductModal').style.display = 'none';
       editingItemId = null;
 
       alert('Item updated successfully!');
     };
 
-    // Marketplace handlers
-    $('#sellProductsBtn').onclick = () => {
-      // Initialize image preview grid
-      const previewGrid = document.getElementById('sellImagePreview');
-      createImageUploadGrid(previewGrid, 10);
-      document.getElementById('sellModal').classList.add('open');
-    };
-
-    $('#sellSubmit').onclick = submitMarketplace;
-    $('#sellBack').onclick = () => document.getElementById('sellModal').classList.remove('open');
-
-    // Confirm delivery handlers
     $('#openConfirmCode').onclick = () => {
-      document.getElementById('confirmCodeModal').style.display = 'flex';
-      document.getElementById('confirmCodeModal').classList.add('open');
-      document.getElementById('dlvCodeInput').focus();
+      $('#confirmCodeModal').style.display = 'flex';
+      $('#confirmCodeModal').classList.add('open');
+      $('#dlvCodeInput').focus();
     };
 
     $('#dlvCodeClose').onclick = () => {
-      document.getElementById('confirmCodeModal').classList.remove('open');
-      document.getElementById('confirmCodeModal').style.display = 'none';
+      $('#confirmCodeModal').classList.remove('open');
+      $('#confirmCodeModal').style.display = 'none';
     };
 
-    // ==================== ORDERS MANAGEMENT ====================
-    function getOrders() {
-      return getUserData('orders');
-    }
-
-    function setOrders(orders) {
-      saveUserData('orders', orders);
-    }
-
     function renderOrders() {
-      const active = document.getElementById('buyerOrders');
-      const history = document.getElementById('sellerOrders');
-      const orders = getOrders();
-      
+      const active = $('#buyerOrders');
+      const history = $('#sellerOrders');
       const activeOrders = orders.filter(o => ['preparing', 'assigned', 'enroute', 'scheduled'].includes(o.status));
       const pastOrders = orders.filter(o => ['completed', 'canceled'].includes(o.status));
 
@@ -1343,107 +1295,94 @@
       `).join('') || '<div class="small muted">No history yet</div>';
     }
 
-    // ==================== MARKETPLACE RENDERING ====================
-    function renderMarketplace(category = null, query = '') {
-      const grid = document.getElementById('mpGrid');
-      const allProducts = [...(window.MP_PRODUCTS || []), ...getUserProducts()];
-      
-      const filteredProducts = allProducts.filter(p => {
-        if (category && p.cat !== category) return false;
-        if (query && !(p.title.toLowerCase().includes(query) || String(p.cat).toLowerCase().includes(query))) return false;
-        return true;
-      });
-
-      if (!filteredProducts.length) {
-        grid.innerHTML = '<div class="small muted">No products found.</div>';
-        return;
-      }
-
-      grid.innerHTML = filteredProducts.map(p => `
-        <div class="card product">
-          <img src="${p.img || p.images?.[0] || 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=800&auto=format&fit=crop'}" alt="${p.title}"/>
-          <div><strong>${p.title}</strong></div>
-          <div class="row" style="justify-content:space-between">
-            <div class="price">${money(p.price)}</div>
-            <div class="small muted">Seller: ${p.seller || 'Unknown'}</div>
-          </div>
-          <div class="row" style="gap:8px;margin-top:6px">
-            <button class="btn primary" onclick="openChat('${p.seller || 'Seller'}')">💬 Chat</button>
-            <button class="btn ghost" onclick="location.href='tel:${p.phone || '+12025550123'}'">📞 Call</button>
-            <button class="btn ghost" onclick="location.href='https://wa.me/${(p.phone || '+12025550123').replace(/\\D/g,'')}'">🟢 WhatsApp</button>
-          </div>
-        </div>
-      `).join('');
+    function openWallet(){
+      $('#walletBalance').textContent = money(user.wallet||0);
+      const tx = [];
+      $('#walletTx').innerHTML = '<div class="small muted">No transactions</div>';
     }
 
-    // Initialize marketplace
-    function initMarketplace() {
-      const chips = document.getElementById('mpChips');
-      const categories = [
-        { id: 'electronics', name: 'Electronics' },
-        { id: 'fashion', name: 'Fashion' },
-        { id: 'home', name: 'Home & Garden' },
-        { id: 'sports', name: 'Sports' },
-        { id: 'automobile', name: 'Automobile' },
-        { id: 'spares', name: 'Spare Parts' },
-        { id: 'others', name: 'Others' }
-      ];
-      
-      chips.innerHTML = '';
-      categories.forEach(c => {
-        const btn = document.createElement('button');
-        btn.className = 'btn ghost';
-        btn.textContent = c.name;
-        btn.onclick = () => renderMarketplace(c.id, document.getElementById('mpSearch').value.trim().toLowerCase());
-        chips.appendChild(btn);
-      });
-      
-      renderMarketplace();
-      
-      document.getElementById('mpSearchBtn').onclick = () => 
-        renderMarketplace(null, document.getElementById('mpSearch').value.trim().toLowerCase());
-    }
-
-    // ==================== DEMO DATA ====================
-    window.MP_PRODUCTS = [
-      {
-        id: 'p100',
-        title: 'Smartphone X',
-        cat: 'electronics',
-        price: 499,
-        stock: 12,
-        img: 'https://images.unsplash.com/photo-1510552776732-01acc9a4c14f?q=80&w=800&auto=format&fit=crop',
-        seller: 'Tony',
-        phone: '+12025550123'
-      },
-      {
-        id: 'p200',
-        title: 'Running Shoes',
-        cat: 'sports',
-        price: 79,
-        stock: 18,
-        img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop',
-        seller: 'Kelvin',
-        phone: '+12025550124'
-      }
-    ];
-
-    // ==================== CHAT FUNCTIONALITY ====================
     function openChat(peer) {
       alert(`Chat with ${peer} - Feature coming soon!`);
     }
 
-    // ==================== INITIALIZATION ====================
-    document.addEventListener('DOMContentLoaded', () => {
+    async function initLocation(){
+      try {
+        const pos = await new Promise((res, rej)=>navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy:true, timeout:8000 }));
+        coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}`);
+          const j = await r.json();
+          const addr = j?.display_name || `Lat ${coords.lat.toFixed(4)}, Lng ${coords.lng.toFixed(4)}`;
+          $('#userLocUnder').textContent = addr;
+        } catch {
+          $('#userLocUnder').textContent = `Lat ${coords.lat.toFixed(4)}, Lng ${coords.lng.toFixed(4)}`;
+        }
+      } catch {
+        $('#userLocUnder').textContent = 'Location unavailable';
+      }
+    }
+
+    function initHomeMap(){
+      try {
+        homeMap = L.map('homeMap',{ zoomControl:false }).setView([coords?.lat||0, coords?.lng||0], coords?15:2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(homeMap);
+        if (coords) {
+          for (let i=0;i<6;i++){
+            const lat = coords.lat + (Math.random()-0.5)/100;
+            const lng = coords.lng + (Math.random()-0.5)/100;
+            const m = L.circleMarker([lat,lng],{radius:6,color:'#2563EB',fillColor:'#2563EB',fillOpacity:.9});
+            m.addTo(homeMap); vehicleMarkers.push(m);
+          }
+          setInterval(()=>{
+            vehicleMarkers.forEach(m=>{
+              const p = m.getLatLng();
+              m.setLatLng([p.lat + (Math.random()-0.5)/1000, p.lng + (Math.random()-0.5)/1000]);
+            });
+          }, 1500);
+        }
+      } catch {}
+    }
+
+    // Authentication state change handler
+    auth.onAuthStateChanged(authUser => {
+      if (authUser) {
+        currentUser = authUser;
+        user.email = authUser.email || '';
+        user.name = authUser.displayName || (user.email ? user.email.split('@')[0] : 'Guest');
+        updateProfileUI();
+        $('#authModal').style.display = 'none';
+        $('#authModal').classList.remove('open');
+        // Reload user-specific data
+        cart = loadCart();
+        orders = getOrders();
+        notifications = getNotifications();
+      } else {
+        currentUser = null;
+        user = { name: 'Guest', email: 'guest@example.com', wallet: 0 };
+        updateProfileUI();
+        $('#authModal').style.display = 'flex';
+        $('#authModal').classList.add('open');
+      }
+    });
+
+    // Make key functions globally available
+    window.editFoodItem = editFoodItem;
+    window.deleteFoodItemConfirm = deleteFoodItemConfirm;
+    window.removeImage = removeImage;
+    window.openChat = openChat;
+
+    document.addEventListener('DOMContentLoaded', async () => {
       showPage('home');
+      renderServices();
+      renderEmergency();
       initMarketplace();
+      await initLocation();
+      initHomeMap();
       updateProfileUI();
       ensureFoodRow();
       renderFoodItemsList();
-      
-      // Remove splash screen
       setTimeout(() => {
-        const splash = document.getElementById('splash');
+        const splash = $('#splash');
         if (splash) {
           splash.style.opacity = '0';
           setTimeout(() => splash.remove(), 250);
@@ -1451,32 +1390,21 @@
       }, 250);
     });
 
-    // ==================== WINDOW LOAD EVENT ====================
     window.addEventListener('load', () => {
-      const splash = document.getElementById('splash');
+      const splash = $('#splash');
       if (splash) {
         splash.style.opacity = '0';
         setTimeout(() => splash.remove(), 250);
       }
     });
 
-    // Fallback splash removal
     setTimeout(() => {
-      const splash = document.getElementById('splash');
+      const splash = $('#splash');
       if (splash) {
         splash.style.opacity = '0';
         setTimeout(() => splash.remove(), 250);
       }
     }, 2000);
-
-    // Make key functions globally available
-    window.editFoodItem = editFoodItem;
-    window.deleteFoodItemConfirm = deleteFoodItemConfirm;
-    window.removeImage = removeImage;
-    window.openChat = openChat;
-    window.renderMarketplace = renderMarketplace;
-    window.renderOrders = renderOrders;
-    window.showPage = showPage;
   </script>
 
   <!-- Authentication Scripts -->
