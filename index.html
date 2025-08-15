@@ -1527,41 +1527,63 @@ async function flutterwaveCheckout(orderId){
       }
     };
     
-    FlutterwaveCheckout(config);
-  } catch (e) {
-    alert(e.message || 'Flutterwave payment unavailable right now. Please try Stripe or cash.');
-  }
-}
+    return new Promise((resolve, reject) => {
+      FlutterwaveCheckout({
+        ...config,
+        callback: function(response) {
+          if (response.status === 'successful') {
+            resolve({ success: true, transactionId: response.transaction_id });
+          } else {
+            reject(new Error('Payment was not successful'));
+          }
+        },
+        onClose: function() {
+          reject(new Error('Payment was cancelled'));
+        }
+      });
+    });
     
-    $('#placeOrderBtn').onclick = async ()=>{
-      const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
-      if (cart.vendorPayment.length && !validatePaymentMethod(method, cart.vendorPayment)) {
-  const allowed = cart.vendorPayment.includes('card') ? 'Card payments, ' + cart.vendorPayment.filter(m => m !== 'card').join(', ') : cart.vendorPayment.join(', ');
-  return alert(`This vendor does not accept ${method.toUpperCase()} payment. Allowed: ${allowed}`);
-}
-
-const orderId='ord-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
-addFoodOrder(orderId, code, method);
-
-if (method === 'stripe' || method === 'flutterwave') {
-  try {
-    await processPayment(method, { orderId });
-  } catch (error) {
-    alert(`Payment failed: ${error.message}`);
-    return;
+  } catch (e) {
+    throw new Error(`Flutterwave error: ${e.message}`);
   }
 }
-      $('#checkoutModal').classList.remove('open');
-      $('#orderInfo').innerHTML = `<div class="card">
-        <div><strong>Order ID:</strong> ${orderId}</div>
-        <div style="margin-top:6px"><strong>Status:</strong> <span>preparing (15 min)</span></div>
-        <div style="margin-top:6px"><strong>Delivery code:</strong> <span style="font-family:monospace">${code}</span></div>
-        <div class="small muted" style="margin-top:6px">Please don’t share this code with the seller until your goods are delivered and confirmed. You can always view it under Manage Orders.</div>
-      </div>`;
-      $('#orderModal').classList.add('open');
-      resetCart(); updateBellBadge();
-    };
-    $('#closeOrder').onclick = ()=> $('#orderModal').classList.remove('open');
+$('#placeOrderBtn').onclick = async ()=>{
+  const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+  console.log('Selected payment method:', method);
+  console.log('Cart vendor payment:', cart.vendorPayment);
+  console.log('Validation result:', validatePaymentMethod(method, cart.vendorPayment));
+  if (!$('#chkTerms').checked) return alert('Please accept the Terms');
+  if (!cart.items.length) return alert('Cart is empty');
+  
+  if (cart.vendorPayment.length && !validatePaymentMethod(method, cart.vendorPayment)) {
+    const allowed = cart.vendorPayment.includes('card') ? 'Card payments, ' + cart.vendorPayment.filter(m => m !== 'card').join(', ') : cart.vendorPayment.join(', ');
+    return alert(`This vendor does not accept ${method.toUpperCase()} payment. Allowed: ${allowed}`);
+  }
+  
+  const orderId='ord-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
+  
+  if (method === 'stripe' || method === 'flutterwave') {
+    try {
+      await processPayment(method, { orderId });
+      addFoodOrder(orderId, code, method);
+    } catch (error) {
+      alert(`Payment failed: ${error.message}`);
+      return;
+    }
+  } else {
+    addFoodOrder(orderId, code, method);
+  }
+  
+  $('#checkoutModal').classList.remove('open');
+  $('#orderInfo').innerHTML = `<div class="card">
+    <div><strong>Order ID:</strong> ${orderId}</div>
+    <div style="margin-top:6px"><strong>Status:</strong> <span>preparing (15 min)</span></div>
+    <div style="margin-top:6px"><strong>Delivery code:</strong> <span style="font-family:monospace">${code}</span></div>
+    <div class="small muted" style="margin-top:6px">Please don't share this code with the seller until your goods are delivered and confirmed. You can always view it under Manage Orders.</div>
+  </div>`;
+  $('#orderModal').classList.add('open');
+  resetCart(); updateBellBadge();
+};
 
     function addFoodOrder(orderId, code, method){
       const o = {
