@@ -1604,20 +1604,34 @@ async function paystackCheckout(orderId) {
 async function walletPayment(orderData) {
   throw new Error('Wallet payment not implemented yet');
 }
-  $('#placeOrderBtn').onclick = async ()=>{
-  const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'stripe';
+    $('#placeOrderBtn').onclick = async ()=>{
+  console.log('=== PLACE ORDER CLICKED ===');
+  console.log('Button clicked at:', new Date().toISOString());
+  
+  const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+  console.log('Selected payment method:', method);
+  // ... rest of your function
   
   if (!$('#chkTerms').checked) return alert('Please accept the Terms');
   if (!cart.items.length) return alert('Cart is empty');
   
   const orderId='ord-'+Date.now(), code=String(Math.floor(100000+Math.random()*900000));
   
+  // Handle different payment methods
   if (method === 'stripe') {
     try {
       await stripeCheckout(orderId);
       addFoodOrder(orderId, code, method);
     } catch (error) {
-      alert(`Payment failed: ${error.message}`);
+      alert(`Stripe payment failed: ${error.message}`);
+      return;
+    }
+  } else if (method === 'flutterwave') {
+    try {
+      await flutterwaveCheckout(orderId);
+      addFoodOrder(orderId, code, method);
+    } catch (error) {
+      alert(`Flutterwave payment failed: ${error.message}`);
       return;
     }
   } else {
@@ -1630,7 +1644,7 @@ async function walletPayment(orderData) {
     <div><strong>Order ID:</strong> ${orderId}</div>
     <div style="margin-top:6px"><strong>Status:</strong> <span>preparing (15 min)</span></div>
     <div style="margin-top:6px"><strong>Delivery code:</strong> <span style="font-family:monospace">${code}</span></div>
-    <div class="small muted" style="margin-top:6px">Please don't share this code with the seller until your goods are delivered and confirmed.</div>
+    <div class="small muted" style="margin-top:6px">Please don't share this code with the seller until your goods are delivered and confirmed. You can always view it under Manage Orders.</div>
   </div>`;
   $('#orderModal').classList.add('open');
   resetCart(); updateBellBadge();
