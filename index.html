@@ -1498,11 +1498,19 @@ function generatePaymentOptions(allowedMethods = ['card', 'cash']) {
 }
 
 async function flutterwaveCheckout(orderId){
+  console.log('=== FLUTTERWAVE CHECKOUT STARTED ===');
+  console.log('Order ID:', orderId);
+  console.log('FlutterwaveCheckout available:', !!window.FlutterwaveCheckout);
+  console.log('Cart items:', cart.items);
+  
   try {
     if (!window.FlutterwaveCheckout) throw new Error('Flutterwave library not loaded');
     
     const currency = (window.USER_CURRENCY || 'NGN').toUpperCase();
     const total = cart.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    
+    console.log('Currency:', currency);
+    console.log('Total:', total);
     
     const config = {
       tx_ref: orderId,
@@ -1527,10 +1535,16 @@ async function flutterwaveCheckout(orderId){
       }
     };
     
+    console.log('Flutterwave config:', config);
+    console.log('About to call FlutterwaveCheckout...');
+    
     return new Promise((resolve, reject) => {
+      console.log('Creating Flutterwave promise...');
+      
       FlutterwaveCheckout({
         ...config,
         callback: function(response) {
+          console.log('Flutterwave callback received:', response);
           if (response.status === 'successful') {
             resolve({ success: true, transactionId: response.transaction_id });
           } else {
@@ -1538,12 +1552,16 @@ async function flutterwaveCheckout(orderId){
           }
         },
         onClose: function() {
+          console.log('Flutterwave modal closed');
           reject(new Error('Payment was cancelled'));
         }
       });
+      
+      console.log('FlutterwaveCheckout called successfully');
     });
     
   } catch (e) {
+    console.error('Flutterwave error:', e);
     throw new Error(`Flutterwave error: ${e.message}`);
   }
 }
