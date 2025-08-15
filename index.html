@@ -1019,6 +1019,46 @@ async function testFirestore() {
     });
     
     console.log('✅ Firestore test successful! Document ID:', docRef.id);
+
+    // Test reading from your collections
+async function testCollections() {
+  try {
+    console.log('🧪 Testing collections...');
+    
+    // Test reading users
+    const usersSnapshot = await db.collection('users').get();
+    console.log('✅ Users collection:', usersSnapshot.size, 'documents');
+    
+    // Test reading orders
+    const ordersSnapshot = await db.collection('orders').get();
+    console.log('✅ Orders collection:', ordersSnapshot.size, 'documents');
+    
+    // Test reading providers
+    const providersSnapshot = await db.collection('providers').get();
+    console.log('✅ Providers collection:', providersSnapshot.size, 'documents');
+    
+    // Test reading emergency services
+    const emergencySnapshot = await db.collection('emergencyServices').get();
+    console.log('✅ Emergency services collection:', emergencySnapshot.size, 'documents');
+    
+    // Test reading vendors
+    const vendorsSnapshot = await db.collection('vendors').get();
+    console.log('✅ Vendors collection:', vendorsSnapshot.size, 'documents');
+    
+    // Test reading menu items
+    const menuSnapshot = await db.collection('menuItems').get();
+    console.log('✅ Menu items collection:', menuSnapshot.size, 'documents');
+    
+  } catch (error) {
+    console.error('❌ Collections test failed:', error);
+  }
+}
+
+// Run both tests
+document.addEventListener('DOMContentLoaded', () => {
+  testFirestore();
+  testCollections();
+});
     
     // Listen for real-time updates
     db.collection('test').onSnapshot((snapshot) => {
