@@ -1603,9 +1603,56 @@ async function paystackCheckout(orderId) {
 
 async function walletPayment(orderData) {
   throw new Error('Wallet payment not implemented yet');
-}$('#placeOrderBtn').onclick = async ()=>{
+}
+$('#placeOrderBtn').onclick = async ()=>{
   console.log('=== PLACE ORDER CLICKED ===');
   console.log('Button clicked at:', new Date().toISOString());
+  $('#placeOrderBtn').onclick = async ()=>{
+  console.log('=== PLACE ORDER CLICKED ===');
+  console.log('Button clicked at:', new Date().toISOString());
+  
+  // 🔥 ADD THIS TEST BUTTON 🔥
+  if (!document.getElementById('testFlutterwaveBtn')) {
+    const testBtn = document.createElement('button');
+    testBtn.id = 'testFlutterwaveBtn';
+    testBtn.textContent = '🧪 Test Flutterwave';
+    testBtn.className = 'btn ghost';
+    testBtn.style.margin = '10px';
+    testBtn.onclick = () => {
+      console.log('Testing Flutterwave directly...');
+      if (window.FlutterwaveCheckout) {
+        FlutterwaveCheckout({
+          tx_ref: 'test-' + Date.now(),
+          amount: 100,
+          currency: 'NGN',
+          payment_options: 'card',
+          redirect_url: location.origin,
+          customer: {
+            email: 'test@example.com',
+            name: 'Test User'
+          },
+          customizations: {
+            title: 'Test Payment',
+            description: 'Testing Flutterwave'
+          },
+          callback: function(response) {
+            console.log('Test callback:', response);
+            alert('Test payment result: ' + response.status);
+          },
+          onClose: function() {
+            console.log('Test modal closed');
+            alert('Test modal closed');
+          }
+        });
+      } else {
+        alert('FlutterwaveCheckout not available');
+      }
+    };
+    document.body.appendChild(testBtn);
+  }
+  
+  const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
+  console.log('Selected payment method:', method);
   
   const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
   console.log('Selected payment method:', method);
