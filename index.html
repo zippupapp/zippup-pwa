@@ -1585,10 +1585,13 @@ async function paystackCheckout(orderId) {
 
 async function walletPayment(orderData) {
   throw new Error('Wallet payment not implemented yet');
-}
-$('#placeOrderBtn').onclick = async ()=>{
+}$('#placeOrderBtn').onclick = async ()=>{
+  console.log('=== PLACE ORDER CLICKED ===');
+  console.log('Button clicked at:', new Date().toISOString());
+  
   const method = [...document.querySelectorAll('input[name="payMethod"]')].find(r=>r.checked)?.value || 'card';
   console.log('Selected payment method:', method);
+  // ... rest of your function
   
   if (!$('#chkTerms').checked) return alert('Please accept the Terms');
   if (!cart.items.length) return alert('Cart is empty');
@@ -2362,16 +2365,24 @@ $('#placeOrderBtn').onclick = async ()=>{
     label.appendChild(a);
   })();
 
-  // C) Marketplace advisory note (one-liner above listings)
-  (function injectMarketAdvisory(){
-    if (document.getElementById('marketAdvisory')) return;
-    const page = document.getElementById('page-marketplace');
-    if (!page) return;
-    const note = document.createElement('div');
-    note.id='marketAdvisory';
-    note.innerHTML='Safety tip: Never send payment before receiving your goods. Meet sellers in public places.';
-    page.insertBefore(note, page.querySelector('.search')?.nextElementSibling || page.firstChild);
-  })();
+  function injectMarketAdvisory(){
+  if (document.getElementById('marketAdvisory')) return;
+  const page = document.getElementById('page-marketplace');
+  if (!page) return;
+  const section = page.querySelector('.section');
+  if (!section) return;
+  
+  const note = document.createElement('div');
+  note.id = 'marketAdvisory';
+  note.textContent='Safety tip: Never send payment before receiving your goods. Meet sellers in public places.';
+  
+  const searchElement = section.querySelector('.search');
+  if (searchElement && searchElement.nextElementSibling) {
+    section.insertBefore(note, searchElement.nextElementSibling);
+  } else {
+    section.appendChild(note);
+  }
+}
 
   // D) Promotions strip on Home
   (function injectPromos(){
